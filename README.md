@@ -21,3 +21,8 @@ The repository includes automated build and test scripts and runs continuous int
 - Docker Compose
 - Node.js (only if running frontend outside Docker)
 - Python 3.12 (only if running backend outside Docker)
+
+## Running Tests
+
+- Windows PowerShell: `./test.ps1`
+- Bash (Git Bash/WSL/macOS/Linux): `bash test.sh`

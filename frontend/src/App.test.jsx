@@ -5,6 +5,7 @@ import App from "./App";
 describe("Sign Up flow", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   test("shows inline field errors returned by API", async () => {
@@ -54,9 +55,11 @@ describe("Sign Up flow", () => {
       }),
     });
 
-    const assignSpy = vi
-      .spyOn(window.location, "assign")
-      .mockImplementation(() => {});
+    const assignSpy = vi.fn();
+    vi.stubGlobal("location", {
+      ...window.location,
+      assign: assignSpy,
+    });
 
     render(<App />);
 
