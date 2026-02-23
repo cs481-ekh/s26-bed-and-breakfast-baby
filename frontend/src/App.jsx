@@ -1,15 +1,20 @@
-import { useState } from "react";
+import AdminDash from "../admin/admin_dash";
 import "./App.css";
 
 export default function App() {
-  const [count, setCount] = useState(0);
+  const handleAddUser = (userData) => {
+    console.log("Adding user:", userData);
+    // TODO: Add link to user table
+  };
+
+  const handleRemoveUser = (username) => {
+    console.log("Removing user:", username);
+    // TODO: Add link to user table
+  };
 
   return (
     <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((c) => c + 1)}>count is {count}</button>
-      </div>
+      <AdminDash onAddUser={handleAddUser} onRemoveUser={handleRemoveUser} />
     </>
   );
 }
