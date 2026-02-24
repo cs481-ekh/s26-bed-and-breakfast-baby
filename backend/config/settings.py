@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'api',
+    'housing',
 ]
 
 MIDDLEWARE = [
@@ -137,3 +138,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Use the custom user model provided by the `housing` app
+AUTH_USER_MODEL = 'housing.User'
