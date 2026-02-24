@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 
 export default function AdminDash({ onAddUser, onRemoveUser }) {
     const [addForm, setAddForm] = useState({
-        name: '',
+        first_name: '',
+        last_name: '',
         employee_id: '',
+        email: '',
         password: '',
         confirm_password: '',
-        role: 'user',
     });
     const [addErrors, setAddErrors] = useState({});
     const [addMessage, setAddMessage] = useState('');
@@ -16,11 +17,17 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
     const validateAddForm = () => {
         const errors = {};
 
-        if (!addForm.name.trim()) {
-            errors.name = 'Name is required.';
+        if (!addForm.first_name.trim()) {
+            errors.first_name = 'First name is required.';
+        }
+        if (!addForm.last_name.trim()) {
+            errors.last_name = 'Last name is required.';
         }
         if (!addForm.employee_id.trim()) {
             errors.employee_id = 'Employee ID is required.';
+        }
+        if (!addForm.email.trim()) {
+            errors.email = 'Email is required.';
         }
         if (!addForm.password) {
             errors.password = 'Password is required.';
@@ -64,7 +71,7 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                 setAddMessage('User created successfully. Redirecting...');
                 window.location.assign('/');
             }
-            setAddForm({ name: '', employee_id: '', password: '', confirm_password: '', role: 'user' });
+            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', password: '', confirm_password: '' });
         } catch (error) {
             setAddErrors(error.fieldErrors || {});
             setAddMessage('Please fix the highlighted fields.');
@@ -80,20 +87,29 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
 
     return (
         <div className="container">
-            <h1>Admin Dashboard</h1>
+            <h1>Sign Up</h1>
             <div className="options">
                 <div className="option">
-                    <h2>Add User</h2>
+                    <h2>Create Account</h2>
                     <form onSubmit={handleAddSubmit}>
                         <input
                             type="text"
-                            name="name"
-                            placeholder="Name"
+                            name="first_name"
+                            placeholder="First Name"
                             required
-                            value={addForm.name}
-                            onChange={(e) => updateAddField('name', e.target.value)}
+                            value={addForm.first_name}
+                            onChange={(e) => updateAddField('first_name', e.target.value)}
                         />
-                        {addErrors.name && <div>{addErrors.name}</div>}
+                        {addErrors.first_name && <div>{addErrors.first_name}</div>}
+                        <input
+                            type="text"
+                            name="last_name"
+                            placeholder="Last Name"
+                            required
+                            value={addForm.last_name}
+                            onChange={(e) => updateAddField('last_name', e.target.value)}
+                        />
+                        {addErrors.last_name && <div>{addErrors.last_name}</div>}
                         <input
                             type="text"
                             name="employee_id"
@@ -103,6 +119,15 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                             onChange={(e) => updateAddField('employee_id', e.target.value)}
                         />
                         {addErrors.employee_id && <div>{addErrors.employee_id}</div>}
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="Email"
+                            required
+                            value={addForm.email}
+                            onChange={(e) => updateAddField('email', e.target.value)}
+                        />
+                        {addErrors.email && <div>{addErrors.email}</div>}
                         <input
                             type="password"
                             name="password"
@@ -121,28 +146,8 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                             onChange={(e) => updateAddField('confirm_password', e.target.value)}
                         />
                         {addErrors.confirm_password && <div>{addErrors.confirm_password}</div>}
-                        <label>
-                            <input
-                                name="role"
-                                type="radio"
-                                value="user"
-                                checked={addForm.role === 'user'}
-                                onChange={(e) => updateAddField('role', e.target.value)}
-                            />{' '}
-                            User
-                        </label>
-                        <label>
-                            <input
-                                name="role"
-                                type="radio"
-                                value="admin"
-                                checked={addForm.role === 'admin'}
-                                onChange={(e) => updateAddField('role', e.target.value)}
-                            />{' '}
-                            Admin
-                        </label>
                         {addMessage && <div>{addMessage}</div>}
-                        <button type="submit">Add User</button>
+                        <button type="submit">Sign Up</button>
                     </form>
                 </div>
 

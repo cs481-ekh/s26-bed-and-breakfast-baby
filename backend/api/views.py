@@ -15,16 +15,22 @@ class HealthView(APIView):
 
 class SignUpView(APIView):
     def post(self, request):
-        name = (request.data.get("name") or "").strip()
+        first_name = (request.data.get("first_name") or "").strip()
+        last_name = (request.data.get("last_name") or "").strip()
         employee_id = (request.data.get("employee_id") or "").strip()
+        email = (request.data.get("email") or "").strip()
         password = request.data.get("password") or ""
         confirm_password = request.data.get("confirm_password") or ""
 
         errors = {}
-        if not name:
-            errors["name"] = "Name is required."
+        if not first_name:
+            errors["first_name"] = "First name is required."
+        if not last_name:
+            errors["last_name"] = "Last name is required."
         if not employee_id:
             errors["employee_id"] = "Employee ID is required."
+        if not email:
+            errors["email"] = "Email is required."
         if not password:
             errors["password"] = "Password is required."
         if not confirm_password:
@@ -33,8 +39,8 @@ class SignUpView(APIView):
         if password and confirm_password and password != confirm_password:
             errors["confirm_password"] = "Passwords do not match."
 
-        if employee_id and User.objects.filter(username=employee_id).exists():
-            errors["employee_id"] = "A user with this employee ID already exists."
+        if email and User.objects.filter(username=email).exists():
+            errors["email"] = "A user with this email already exists."
 
         if password:
             try:
@@ -45,22 +51,21 @@ class SignUpView(APIView):
         if errors:
             return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        role = request.data.get("role")
-        is_staff = role == "admin"
-
         user = User.objects.create_user(
-            username=employee_id,
-            first_name=name,
+            username=email,
+            first_name=first_name,
+            last_name=last_name,
             password=password,
-            is_staff=is_staff,
+            email=email,
         )
 
         return Response(
             {
                 "id": user.id,
-                "username": user.username,
-                "name": user.first_name,
-                "is_staff": user.is_staff,
+                "email": user.email,
+                "employee_id": employee_id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "redirect_to": "/",
             },
             status=status.HTTP_201_CREATED,

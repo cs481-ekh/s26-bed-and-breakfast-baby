@@ -13,18 +13,24 @@ describe("Sign Up flow", () => {
       ok: false,
       json: async () => ({
         errors: {
-          employee_id: "A user with this employee ID already exists.",
+          email: "A user with this email already exists.",
         },
       }),
     });
 
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText("Name"), {
-      target: { value: "Jane Doe" },
+    fireEvent.change(screen.getByPlaceholderText("First Name"), {
+      target: { value: "Jane" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Last Name"), {
+      target: { value: "Doe" },
     });
     fireEvent.change(screen.getByPlaceholderText("Employee ID"), {
       target: { value: "E12345" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Email"), {
+      target: { value: "jane.doe@example.com" },
     });
     fireEvent.change(screen.getByPlaceholderText("Password"), {
       target: { value: "StrongPassword123!" },
@@ -33,10 +39,10 @@ describe("Sign Up flow", () => {
       target: { value: "StrongPassword123!" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Add User" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign Up" }));
 
     expect(
-      await screen.findByText("A user with this employee ID already exists.")
+      await screen.findByText("A user with this email already exists.")
     ).toBeInTheDocument();
     expect(
       screen.getByText("Please fix the highlighted fields.")
@@ -48,9 +54,10 @@ describe("Sign Up flow", () => {
       ok: true,
       json: async () => ({
         id: 1,
-        username: "E12345",
-        name: "Jane Doe",
-        is_staff: false,
+        email: "jane.doe@example.com",
+        employee_id: "E12345",
+        first_name: "Jane",
+        last_name: "Doe",
         redirect_to: "/",
       }),
     });
@@ -63,11 +70,17 @@ describe("Sign Up flow", () => {
 
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText("Name"), {
-      target: { value: "Jane Doe" },
+    fireEvent.change(screen.getByPlaceholderText("First Name"), {
+      target: { value: "Jane" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Last Name"), {
+      target: { value: "Doe" },
     });
     fireEvent.change(screen.getByPlaceholderText("Employee ID"), {
       target: { value: "E12345" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Email"), {
+      target: { value: "jane.doe@example.com" },
     });
     fireEvent.change(screen.getByPlaceholderText("Password"), {
       target: { value: "StrongPassword123!" },
@@ -76,7 +89,7 @@ describe("Sign Up flow", () => {
       target: { value: "StrongPassword123!" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Add User" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sign Up" }));
 
     await waitFor(() => {
       expect(assignSpy).toHaveBeenCalledWith("/");
