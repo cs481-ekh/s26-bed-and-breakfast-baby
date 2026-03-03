@@ -14,9 +14,15 @@ docker compose run --rm backend bash -lc "\
 echo "==> Frontend tests ..."
 # If your frontend doesn't have tests yet, start with: npm run lint
 # and later add: npm test / npm run test / vitest / jest
+
+#docker compose run --rm frontend bash -lc "\
+#  npm run lint && \
+#  (npm run test -- --watch=false || npm run test || true) \
+#"
+
 docker compose run --rm frontend bash -lc "\
   npm run lint && \
-  (npm run test -- --watch=false || npm run test || true) \
+  npm test \
 "
 
 echo "==> Tests complete."
