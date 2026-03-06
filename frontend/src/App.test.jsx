@@ -3,23 +3,17 @@ import { vi, beforeEach, afterEach, describe, test, expect } from "vitest";
 import App from "./App";
 
 describe("App", () => {
-  beforeEach(() => {
-    // Default mock for any fetch calls App makes during rendering (e.g., admin user list).
-    // Individual tests can override this with vi.spyOn(...).mockResolvedValue(...)
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => [],
-      })
-    );
+ beforeEach(() => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => [],
   });
+});
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
-  });
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
   test("shows inline field errors returned by API", async () => {
     // Override the default fetch mock for this test
