@@ -1,16 +1,31 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
+import { vi, beforeEach, afterEach, describe, test, expect } from "vitest";
 import App from "./App";
 
-describe("Sign Up flow", () => {
+describe("App", () => {
+  beforeEach(() => {
+    // Default mock for any fetch calls App makes during rendering (e.g., admin user list).
+    // Individual tests can override this with vi.spyOn(...).mockResolvedValue(...)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => [],
+      })
+    );
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
   test("shows inline field errors returned by API", async () => {
+    // Override the default fetch mock for this test
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: false,
+      status: 400,
       json: async () => ({
         errors: {
           email: "A user with this email already exists.",
@@ -44,6 +59,7 @@ describe("Sign Up flow", () => {
     expect(
       await screen.findByText("A user with this email already exists.")
     ).toBeInTheDocument();
+
     expect(
       screen.getByText("Please fix the highlighted fields.")
     ).toBeInTheDocument();
@@ -52,6 +68,7 @@ describe("Sign Up flow", () => {
   test("redirects to homepage after successful signup", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
+      status: 200,
       json: async () => ({
         id: 1,
         email: "jane.doe@example.com",
@@ -95,10 +112,20 @@ describe("Sign Up flow", () => {
       expect(assignSpy).toHaveBeenCalledWith("/");
     });
   });
-});
-test("renders the admin dashboard heading", () => {
-  render(<App />);
-  expect(
-    screen.getByRole("heading", { name: /admin dashboard/i })
-  ).toBeInTheDocument();
+
+  test("renders the admin dashboard heading", async () => {
+    // Ensure any initial fetches succeed so the render isn't disrupted.
+    // (The beforeEach default already does this; this is just explicit.)
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole("heading", { name: /admin dashboard/i })
+    ).toBeInTheDocument();
+  });
 });
