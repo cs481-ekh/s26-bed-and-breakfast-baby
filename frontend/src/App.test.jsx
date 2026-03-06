@@ -3,21 +3,28 @@ import { vi, beforeEach, afterEach, describe, test, expect } from "vitest";
 import App from "./App";
 
 describe("App", () => {
- beforeEach(() => {
-  vi.spyOn(globalThis, "fetch").mockResolvedValue({
-    ok: true,
-    status: 200,
-    json: async () => [],
-  });
-});
+  let fetchMock;
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+  beforeEach(() => {
+    // Create ONE fetch spy per test, and give it a safe default:
+    // any unexpected fetch (like /api/users/) returns an empty list.
+    fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+  });
+
+  afterEach(() => {
+    // Clean up any spies/mocks (including fetchMock) and any stubbed globals (like location).
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   test("shows inline field errors returned by API", async () => {
-    // Override the default fetch mock for this test
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    // Only the NEXT fetch call (the signup submit) should fail with 400.
+    // Any other fetches (e.g., /api/users/) will still use the beforeEach default (200, []).
+    fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 400,
       json: async () => ({
@@ -60,7 +67,8 @@ afterEach(() => {
   });
 
   test("redirects to homepage after successful signup", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    // Only the NEXT fetch call (the signup submit) should succeed with a redirect response.
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({
@@ -108,14 +116,6 @@ afterEach(() => {
   });
 
   test("renders the admin dashboard heading", async () => {
-    // Ensure any initial fetches succeed so the render isn't disrupted.
-    // (The beforeEach default already does this; this is just explicit.)
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => [],
-    });
-
     render(<App />);
 
     expect(
