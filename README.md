@@ -22,7 +22,23 @@ The repository includes automated build and test scripts and runs continuous int
 - Node.js (only if running frontend outside Docker)
 - Python 3.12 (only if running backend outside Docker)
 
+<<<<<<< HEAD
 ## Running Tests
 
 - Windows PowerShell: `./test.ps1`
 - Bash (Git Bash/WSL/macOS/Linux): `bash test.sh`
+=======
+## Development
+
+Start the development environment:
+
+```bash
+./dev.sh
+```
+
+Frontend:
+http://localhost:5173
+
+Backend API:
+http://localhost:8000
+>>>>>>> f0f32d66962b75194dabb20063062788644f3bdd

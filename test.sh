@@ -28,9 +28,21 @@ echo "==> Backend tests (pytest) ..."
 "
 
 echo "==> Frontend tests ..."
+<<<<<<< HEAD
 "${compose_cmd[@]}" run --rm frontend bash -lc "\
+=======
+# If your frontend doesn't have tests yet, start with: npm run lint
+# and later add: npm test / npm run test / vitest / jest
+
+#docker compose run --rm frontend bash -lc "\
+#  npm run lint && \
+#  (npm run test -- --watch=false || npm run test || true) \
+#"
+
+docker compose run --rm frontend bash -lc "\
+>>>>>>> f0f32d66962b75194dabb20063062788644f3bdd
   npm run lint && \
-  (npm run test -- --watch=false || npm run test || true) \
+  npm test \
 "
 
 echo "==> Tests complete."

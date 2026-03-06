@@ -4,6 +4,9 @@ from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework import viewsets
+from housing.models import User
+from .serializers import UserSerializer
 
 
 User = get_user_model()
@@ -13,6 +16,7 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
+<<<<<<< HEAD
 class SignUpView(APIView):
     def post(self, request):
         first_name = (request.data.get("first_name") or "").strip()
@@ -70,4 +74,15 @@ class SignUpView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+=======
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing users.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        return User.objects.all().order_by('-date_joined')
+>>>>>>> f0f32d66962b75194dabb20063062788644f3bdd
 
