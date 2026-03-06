@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import App from "./App";
 
-<<<<<<< HEAD
 describe("Sign Up flow", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -97,11 +96,9 @@ describe("Sign Up flow", () => {
     });
   });
 });
-=======
 test("renders the admin dashboard heading", () => {
   render(<App />);
   expect(
     screen.getByRole("heading", { name: /admin dashboard/i })
   ).toBeInTheDocument();
 });
->>>>>>> f0f32d66962b75194dabb20063062788644f3bdd
