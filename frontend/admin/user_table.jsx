@@ -16,7 +16,7 @@ const UserTable = forwardRef((props, ref) => {
     try {
       setLoading(true);
 
-      const response = await fetch("http://localhost:8000/api/users/");
+      const response = await fetch("/api/users/");;
 
       // If fetch returned something non-Response-ish, fail gracefully
       if (!response || typeof response.ok !== "boolean") {
