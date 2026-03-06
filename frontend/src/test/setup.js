@@ -1,8 +1,18 @@
 import "@testing-library/jest-dom";
+import { vi, beforeEach, afterEach } from "vitest";
 
-// Default fetch mock for unit tests (prevents real network calls)
-globalThis.fetch = async () => ({
-  ok: true,
-  status: 200,
-  json: async () => [],
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    })
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });

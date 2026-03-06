@@ -16,7 +16,6 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
-<<<<<<< HEAD
 class SignUpView(APIView):
     def post(self, request):
         first_name = (request.data.get("first_name") or "").strip()
@@ -74,7 +73,6 @@ class SignUpView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-=======
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing users.
@@ -84,5 +82,4 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return User.objects.all().order_by('-date_joined')
->>>>>>> f0f32d66962b75194dabb20063062788644f3bdd
 
