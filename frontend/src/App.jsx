@@ -4,6 +4,25 @@ import UserTable from "../admin/user_table";
 import "./App.css";
 
 export default function App() {
+<<<<<<< HEAD
+  const handleAddUser = async (userData) => {
+    const response = await fetch("/api/signup/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      const error = new Error("Sign up failed");
+      error.fieldErrors = payload.errors || {};
+      throw error;
+    }
+
+    return payload;
+=======
   const userTableRef = useRef();
 
   const handleAddUser = async (userData) => {
@@ -27,6 +46,7 @@ export default function App() {
       alert(`Error adding user: ${error.message}`);
       console.error('Error adding user:', error);
     }
+>>>>>>> f0f32d66962b75194dabb20063062788644f3bdd
   };
 
   const handleRemoveUser = async (username) => {
