@@ -28,8 +28,8 @@ export default function App() {
   };
 
   // Optional: implement later; for now avoid breaking the UI
-  const handleRemoveUser = async (_username) => {
-    alert("Remove user not implemented yet.");
+  const handleRemoveUser = async (username) => {
+  alert(`Remove user not implemented yet for: ${username}`);
   };
 
   return (
