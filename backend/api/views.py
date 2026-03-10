@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from housing.models import User
 from .serializers import UserSerializer
 
@@ -82,4 +83,36 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return User.objects.all().order_by('-date_joined')
+    
+    @action(detail=False, methods=['post'], url_path='disable')
+    def disable_user(self, request):
+        """
+        Disable a user account by setting is_active to False.
+        Expects: {"username": "user@example.com"}
+        """
+        username = request.data.get('username')
+        
+        if not username:
+            return Response(
+                {"error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = User.objects.get(username=username)
+            user.is_active = False
+            user.save()
+            
+            return Response(
+                {
+                    "message": f"User {username} has been disabled.",
+                    "user": UserSerializer(user).data
+                },
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"User {username} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 

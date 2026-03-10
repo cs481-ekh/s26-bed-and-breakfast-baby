@@ -29,12 +29,40 @@ export default function App() {
 
   // Optional: implement later; for now avoid breaking the UI
   const handleRemoveUser = async (username) => {
-  alert(`Remove user not implemented yet for: ${username}`);
+    alert(`Remove user not implemented yet for: ${username}`);
+  };
+
+  const handleDisableUser = async (username) => {
+    try {
+      const response = await fetch("/api/users/disable/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        alert(`Failed to disable user: ${payload.error || "Unknown error"}`);
+        return;
+      }
+
+      alert(`User ${username} has been disabled successfully.`);
+      
+      // Refresh the user table if available
+      userTableRef.current?.fetchUsers?.();
+    } catch (error) {
+      alert(`Error disabling user: ${error.message}`);
+    }
   };
 
   return (
     <>
-      <AdminDash onAddUser={handleAddUser} onRemoveUser={handleRemoveUser} />
+      <AdminDash 
+        onAddUser={handleAddUser} 
+        onRemoveUser={handleRemoveUser} 
+        onDisableUser={handleDisableUser}
+      />
       <UserTable ref={userTableRef} />
     </>
   );
