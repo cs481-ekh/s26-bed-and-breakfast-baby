@@ -73,12 +73,35 @@ export default function App() {
     }
   };
 
+  const handleChangeRole = async (username, role) => {
+    try {
+      const response = await fetch("/api/users/update-role/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, role }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        alert(`Failed to update role: ${payload.error || "Unknown error"}`);
+        return;
+      }
+
+      alert(`User ${username} role updated successfully.`);
+      userTableRef.current?.fetchUsers?.();
+    } catch (error) {
+      alert(`Error updating role: ${error.message}`);
+    }
+  };
+
   return (
     <>
       <AdminDash 
         onAddUser={handleAddUser} 
         onRemoveUser={handleRemoveUser} 
         onDisableUser={handleDisableUser}
+        onChangeRole={handleChangeRole}
       />
       <UserTable ref={userTableRef} />
     </>

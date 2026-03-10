@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
+export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onChangeRole }) {
     const [addForm, setAddForm] = useState({
         first_name: '',
         last_name: '',
@@ -13,6 +13,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
     const [addMessage, setAddMessage] = useState('');
 
     const [removeForm, setRemoveForm] = useState({ username: '' });
+    const [roleForm, setRoleForm] = useState({ username: '', role: 'case_manager' });
 
     const validateAddForm = () => {
         const errors = {};
@@ -98,6 +99,13 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
         setRemoveForm({ username: '' });
     };
 
+    const handleRoleSubmit = (e) => {
+        e.preventDefault();
+        if (onChangeRole) onChangeRole(roleForm.username, roleForm.role);
+        else console.log('Change role', roleForm);
+        setRoleForm({ username: '', role: 'case_manager' });
+    };
+
     return (
         <div className="container">
             <h1>Sign Up</h1>
@@ -177,6 +185,30 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
                         />
                         <button type="submit">Remove User</button>
                         <button type="button" onClick={handleDisableSubmit}>Disable Account</button>
+                    </form>
+                </div>
+
+                <div className="option">
+                    <h2>Change User Role</h2>
+                    <form onSubmit={handleRoleSubmit}>
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Username"
+                            required
+                            value={roleForm.username}
+                            onChange={(e) => setRoleForm({ ...roleForm, username: e.target.value })}
+                        />
+                        <select
+                            name="role"
+                            value={roleForm.role}
+                            onChange={(e) => setRoleForm({ ...roleForm, role: e.target.value })}
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="case_manager">Case Manager</option>
+                            <option value="provider">Housing Provider</option>
+                        </select>
+                        <button type="submit">Update Role</button>
                     </form>
                 </div>
             </div>

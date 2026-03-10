@@ -83,6 +83,60 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return User.objects.all().order_by('-date_joined')
+
+    @action(detail=False, methods=['post'], url_path='update-role')
+    def update_role(self, request):
+        """
+        Update a user's role by username.
+        Expects: {"username": "user@example.com", "role": "admin|case_manager|provider"}
+        """
+        username = (request.data.get('username') or '').strip()
+        role = (request.data.get('role') or '').strip()
+
+        if not username:
+            return Response(
+                {"error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        valid_roles = {choice[0] for choice in User.Role.choices}
+        if role not in valid_roles:
+            return Response(
+                {"error": "Invalid role. Use admin, case_manager, or provider."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+
+            # Safety guard: an active admin cannot demote their own account.
+            if (
+                request.user.is_authenticated
+                and request.user.pk == user.pk
+                and getattr(request.user, "role", None) == User.Role.ADMIN
+                and request.user.is_active
+                and role != User.Role.ADMIN
+            ):
+                return Response(
+                    {"error": "Active admins cannot demote their own account."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            user.role = role
+            user.save(update_fields=['role'])
+
+            return Response(
+                {
+                    "message": f"User {username} role updated to {role}.",
+                    "user": UserSerializer(user).data,
+                },
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"User {username} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=False, methods=['post'], url_path='disable')
     def disable_user(self, request):
