@@ -116,3 +116,44 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    @action(detail=False, methods=['post'], url_path='remove')
+    def remove_user(self, request):
+        """
+        Remove a user account from the database by username.
+        Expects: {"username": "user@example.com"}
+        """
+        username = (request.data.get('username') or '').strip()
+
+        if not username:
+            return Response(
+                {"error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+
+            # Safety guard: do not allow an admin to delete their own active account.
+            if (
+                request.user.is_authenticated
+                and request.user.pk == user.pk
+                and getattr(request.user, "role", None) == User.Role.ADMIN
+                and request.user.is_active
+            ):
+                return Response(
+                    {"error": "Admins cannot delete their own active account."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            user.delete()
+
+            return Response(
+                {"message": f"User {username} has been removed."},
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"User {username} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+

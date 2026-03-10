@@ -27,9 +27,26 @@ export default function App() {
     return payload;
   };
 
-  // Optional: implement later; for now avoid breaking the UI
   const handleRemoveUser = async (username) => {
-    alert(`Remove user not implemented yet for: ${username}`);
+    try {
+      const response = await fetch("/api/users/remove/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        alert(`Failed to remove user: ${payload.error || "Unknown error"}`);
+        return;
+      }
+
+      alert(`User ${username} has been removed successfully.`);
+      userTableRef.current?.fetchUsers?.();
+    } catch (error) {
+      alert(`Error removing user: ${error.message}`);
+    }
   };
 
   const handleDisableUser = async (username) => {
