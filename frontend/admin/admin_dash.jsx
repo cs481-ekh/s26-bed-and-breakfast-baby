@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function AdminDash({ onAddUser, onRemoveUser }) {
+export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
     const [addForm, setAddForm] = useState({
         first_name: '',
         last_name: '',
@@ -85,6 +85,13 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
         setRemoveForm({ username: '' });
     };
 
+    const handleDisableSubmit = (e) => {
+        e.preventDefault();
+        if (onDisableUser) onDisableUser(removeForm.username);
+        else console.log('Disable user', removeForm.username);
+        setRemoveForm({ username: '' });
+    };
+
     return (
         <div className="container">
             <h1>Sign Up</h1>
@@ -163,6 +170,7 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                             onChange={(e) => setRemoveForm({ username: e.target.value })}
                         />
                         <button type="submit">Remove User</button>
+                        <button type="button" onClick={handleDisableSubmit}>Disable Account</button>
                     </form>
                 </div>
             </div>
