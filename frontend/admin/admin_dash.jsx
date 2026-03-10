@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 
-export default function AdminDash({ onAddUser, onRemoveUser }) {
+export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onChangeRole }) {
     const [addForm, setAddForm] = useState({
         first_name: '',
         last_name: '',
         employee_id: '',
         email: '',
+        role: 'case_manager',
         password: '',
         confirm_password: '',
     });
@@ -13,6 +14,7 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
     const [addMessage, setAddMessage] = useState('');
 
     const [removeForm, setRemoveForm] = useState({ username: '' });
+    const [roleForm, setRoleForm] = useState({ username: '', role: 'case_manager' });
 
     const validateAddForm = () => {
         const errors = {};
@@ -71,7 +73,7 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                 setAddMessage('User created successfully. Redirecting...');
                 window.location.assign('/');
             }
-            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', password: '', confirm_password: '' });
+            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', role: 'case_manager', password: '', confirm_password: '' });
         } catch (error) {
             setAddErrors(error.fieldErrors || {});
             setAddMessage('Please fix the highlighted fields.');
@@ -80,9 +82,29 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
 
     const handleRemoveSubmit = (e) => {
         e.preventDefault();
+        const confirmed = window.confirm(
+            `Are you sure you want to remove account "${removeForm.username}"? This action cannot be undone.`
+        );
+        if (!confirmed) {
+            return;
+        }
         if (onRemoveUser) onRemoveUser(removeForm.username);
         else console.log('Remove user', removeForm.username);
         setRemoveForm({ username: '' });
+    };
+
+    const handleDisableSubmit = (e) => {
+        e.preventDefault();
+        if (onDisableUser) onDisableUser(removeForm.username);
+        else console.log('Disable user', removeForm.username);
+        setRemoveForm({ username: '' });
+    };
+
+    const handleRoleSubmit = (e) => {
+        e.preventDefault();
+        if (onChangeRole) onChangeRole(roleForm.username, roleForm.role);
+        else console.log('Change role', roleForm);
+        setRoleForm({ username: '', role: 'case_manager' });
     };
 
     return (
@@ -128,6 +150,16 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                             onChange={(e) => updateAddField('email', e.target.value)}
                         />
                         {addErrors.email && <div>{addErrors.email}</div>}
+                        <select
+                            name="role"
+                            value={addForm.role}
+                            onChange={(e) => updateAddField('role', e.target.value)}
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="case_manager">Case Manager</option>
+                            <option value="provider">Housing Provider</option>
+                        </select>
+                        {addErrors.role && <div>{addErrors.role}</div>}
                         <input
                             type="password"
                             name="password"
@@ -163,6 +195,31 @@ export default function AdminDash({ onAddUser, onRemoveUser }) {
                             onChange={(e) => setRemoveForm({ username: e.target.value })}
                         />
                         <button type="submit">Remove User</button>
+                        <button type="button" onClick={handleDisableSubmit}>Disable Account</button>
+                    </form>
+                </div>
+
+                <div className="option">
+                    <h2>Change User Role</h2>
+                    <form onSubmit={handleRoleSubmit}>
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Username"
+                            required
+                            value={roleForm.username}
+                            onChange={(e) => setRoleForm({ ...roleForm, username: e.target.value })}
+                        />
+                        <select
+                            name="role"
+                            value={roleForm.role}
+                            onChange={(e) => setRoleForm({ ...roleForm, role: e.target.value })}
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="case_manager">Case Manager</option>
+                            <option value="provider">Housing Provider</option>
+                        </select>
+                        <button type="submit">Update Role</button>
                     </form>
                 </div>
             </div>
