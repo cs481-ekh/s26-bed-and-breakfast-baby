@@ -6,6 +6,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
         last_name: '',
         employee_id: '',
         email: '',
+        role: 'case_manager',
         password: '',
         confirm_password: '',
     });
@@ -72,7 +73,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                 setAddMessage('User created successfully. Redirecting...');
                 window.location.assign('/');
             }
-            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', password: '', confirm_password: '' });
+            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', role: 'case_manager', password: '', confirm_password: '' });
         } catch (error) {
             setAddErrors(error.fieldErrors || {});
             setAddMessage('Please fix the highlighted fields.');
@@ -149,6 +150,16 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                             onChange={(e) => updateAddField('email', e.target.value)}
                         />
                         {addErrors.email && <div>{addErrors.email}</div>}
+                        <select
+                            name="role"
+                            value={addForm.role}
+                            onChange={(e) => updateAddField('role', e.target.value)}
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="case_manager">Case Manager</option>
+                            <option value="provider">Housing Provider</option>
+                        </select>
+                        {addErrors.role && <div>{addErrors.role}</div>}
                         <input
                             type="password"
                             name="password"
