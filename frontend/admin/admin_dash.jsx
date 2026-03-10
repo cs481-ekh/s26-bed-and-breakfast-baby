@@ -80,6 +80,12 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser }) {
 
     const handleRemoveSubmit = (e) => {
         e.preventDefault();
+        const confirmed = window.confirm(
+            `Are you sure you want to remove account "${removeForm.username}"? This action cannot be undone.`
+        );
+        if (!confirmed) {
+            return;
+        }
         if (onRemoveUser) onRemoveUser(removeForm.username);
         else console.log('Remove user', removeForm.username);
         setRemoveForm({ username: '' });
