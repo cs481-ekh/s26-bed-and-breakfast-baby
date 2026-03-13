@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db.models import Count, Q
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from housing.models import User
+from housing.models import Facility, User
 from .serializers import UserSerializer
 
 
@@ -15,6 +16,48 @@ User = get_user_model()
 class HealthView(APIView):
     def get(self, request):
         return Response({"status": "ok"})
+
+
+class FacilityAvailabilityView(APIView):
+    def get(self, request):
+        include_inactive = str(
+            request.query_params.get("include_inactive", "false")
+        ).lower() in {"1", "true", "yes"}
+
+        facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
+
+        facilities = (
+            facility_queryset.select_related("provider", "district")
+            .annotate(
+                total_beds=Count("beds", distinct=True),
+                assigned_beds=Count(
+                    "beds",
+                    filter=Q(beds__assigned_parolee__isnull=False),
+                    distinct=True,
+                ),
+            )
+            .order_by("provider__name", "name")
+        )
+
+        data = []
+        for facility in facilities:
+            available_beds = max(facility.total_beds - facility.assigned_beds, 0)
+            data.append(
+                {
+                    "facility_id": facility.id,
+                    "facility_name": facility.name,
+                    "provider_name": facility.provider.name,
+                    "district_number": facility.district.number,
+                    "district_name": facility.district.name,
+                    "tier": facility.tier,
+                    "is_active": facility.is_active,
+                    "total_beds": facility.total_beds,
+                    "assigned_beds": facility.assigned_beds,
+                    "available_beds": available_beds,
+                }
+            )
+
+        return Response(data)
 
 
 class SignUpView(APIView):
