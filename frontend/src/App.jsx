@@ -97,6 +97,9 @@ export default function App() {
 
   return (
     <>
+      <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+        <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
+      </div>
       <AdminDash 
         onAddUser={handleAddUser} 
         onRemoveUser={handleRemoveUser} 

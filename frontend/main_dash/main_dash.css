@@ -1,0 +1,49 @@
+.main-dash {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid #d5dbe3;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.main-dash-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+}
+
+.main-dash-header p {
+  margin: 0;
+  color: #556476;
+}
+
+.main-dash-status {
+  margin-top: 1rem;
+}
+
+.main-dash-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.main-dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.main-dash-table th,
+.main-dash-table td {
+  border-bottom: 1px solid #e4e9ef;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.main-dash-table th {
+  background: #f7f9fb;
+  font-weight: 600;
+}
+
+.main-dash-table tbody tr:hover {
+  background: #fafcff;
+}
