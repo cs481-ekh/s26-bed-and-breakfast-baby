@@ -1,12 +1,9 @@
 import { useRef } from "react";
 import AdminDash from "../admin/admin_dash";
-import MainDash from "../main_dash/main_dash";
 import UserTable from "../admin/user_table";
 import "./App.css";
 
 export default function App() {
-  const currentPath = window.location.pathname;
-  const isMainDashboardPage = currentPath === "/main-dashboard";
   const userTableRef = useRef(null);
 
   const handleAddUser = async (userData) => {
@@ -98,21 +95,10 @@ export default function App() {
     }
   };
 
-  if (isMainDashboardPage) {
-    return (
-      <>
-        <div style={{ textAlign: "left", marginBottom: "1rem" }}>
-          <a href="/">Back To Admin Dashboard</a>
-        </div>
-        <MainDash />
-      </>
-    );
-  }
-
   return (
     <>
       <div style={{ textAlign: "left", marginBottom: "1rem" }}>
-        <a href="/main-dashboard">Open Main Bed Dashboard</a>
+        <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
       </div>
       <AdminDash 
         onAddUser={handleAddUser} 
