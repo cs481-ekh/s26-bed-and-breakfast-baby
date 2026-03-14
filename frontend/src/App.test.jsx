@@ -141,6 +141,8 @@ describe("App", () => {
   test("renders the admin dashboard heading", async () => {
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: /sign up/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /sign up/i })
+    ).toBeInTheDocument();
   });
 });
