@@ -65,7 +65,7 @@ export default function App() {
       }
 
       alert(`User ${username} has been disabled successfully.`);
-      
+
       // Refresh the user table if available
       userTableRef.current?.fetchUsers?.();
     } catch (error) {
@@ -99,10 +99,12 @@ export default function App() {
     <>
       <div style={{ textAlign: "left", marginBottom: "1rem" }}>
         <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/login.html">Open Login Page</a>
       </div>
-      <AdminDash 
-        onAddUser={handleAddUser} 
-        onRemoveUser={handleRemoveUser} 
+      <AdminDash
+        onAddUser={handleAddUser}
+        onRemoveUser={handleRemoveUser}
         onDisableUser={handleDisableUser}
         onChangeRole={handleChangeRole}
       />
