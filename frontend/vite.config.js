@@ -1,3 +1,5 @@
+/* global process */
+
 import { defineConfig } from 'vite'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
