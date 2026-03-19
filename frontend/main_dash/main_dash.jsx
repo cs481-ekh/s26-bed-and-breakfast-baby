@@ -5,6 +5,7 @@ export default function MainDash() {
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     // Assign-bed modal state
     const [assignTarget, setAssignTarget] = useState(null);
@@ -107,6 +108,7 @@ export default function MainDash() {
 
         setResetting(true);
         setError('');
+        setSuccessMessage('');
         try {
             const response = await fetch('/api/beds/unassign-all/', {
                 method: 'POST',
@@ -115,6 +117,9 @@ export default function MainDash() {
             if (!response.ok) {
                 throw new Error(payload.error || 'Could not unassign all beds.');
             }
+            setSuccessMessage(
+                `Cleared assignments for ${payload.parolees_unassigned ?? 0} parolee(s) and reset ${payload.beds_reset ?? 0} bed(s).`
+            );
             closeModal();
             fetchAvailability();
         } catch (requestError) {
@@ -141,6 +146,9 @@ export default function MainDash() {
 
             {loading && <p className="main-dash-status">Loading facilities...</p>}
             {!loading && error && <p className="main-dash-status error">{error}</p>}
+            {!loading && !error && successMessage && (
+                <p className="main-dash-status success">{successMessage}</p>
+            )}
 
             {!loading && !error && facilities.length === 0 && (
                 <p className="main-dash-status">No facilities found.</p>
