@@ -81,7 +81,10 @@ export default function MainDash() {
         }
         setAssigning(true);
         setModalError('');
+        setSuccessMessage('');
         try {
+            const selectedBedData = availableBeds.find((bed) => String(bed.id) === String(selectedBed));
+            const selectedParoleeData = parolees.find((p) => String(p.id) === String(selectedParolee));
             const response = await fetch(`/api/beds/${selectedBed}/assign/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -89,6 +92,18 @@ export default function MainDash() {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Assignment failed.');
+
+            const bedLabel = selectedBedData?.label || `Bed ${selectedBed}`;
+            const facilityName = assignTarget?.facility_name || 'Unknown facility';
+            const paroleeName = selectedParoleeData
+                ? `${selectedParoleeData.last_name}, ${selectedParoleeData.first_name}`
+                : 'Unknown parolee';
+            const paroleeId = selectedParoleeData?.idoc_id || selectedParolee;
+
+            setSuccessMessage(
+                `Assigned ${bedLabel} at ${facilityName} to ${paroleeName} (ID: ${paroleeId}).`
+            );
+
             closeModal();
             fetchAvailability();
         } catch (err) {
@@ -96,7 +111,15 @@ export default function MainDash() {
         } finally {
             setAssigning(false);
         }
-    }, [selectedBed, selectedParolee, closeModal, fetchAvailability]);
+    }, [
+        selectedBed,
+        selectedParolee,
+        availableBeds,
+        parolees,
+        assignTarget,
+        closeModal,
+        fetchAvailability,
+    ]);
 
     const handleUnassignAllBeds = useCallback(async () => {
         const confirmed = window.confirm(
