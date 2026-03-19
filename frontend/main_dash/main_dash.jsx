@@ -15,6 +15,7 @@ export default function MainDash() {
     const [modalLoading, setModalLoading] = useState(false);
     const [modalError, setModalError] = useState('');
     const [assigning, setAssigning] = useState(false);
+    const [resetting, setResetting] = useState(false);
 
     const fetchAvailability = useCallback(async () => {
         try {
@@ -96,11 +97,46 @@ export default function MainDash() {
         }
     }, [selectedBed, selectedParolee, closeModal, fetchAvailability]);
 
+    const handleUnassignAllBeds = useCallback(async () => {
+        const confirmed = window.confirm(
+            'This will unassign every currently assigned bed. Continue?'
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setResetting(true);
+        setError('');
+        try {
+            const response = await fetch('/api/beds/unassign-all/', {
+                method: 'POST',
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || 'Could not unassign all beds.');
+            }
+            closeModal();
+            fetchAvailability();
+        } catch (requestError) {
+            setError(requestError.message || 'Could not unassign all beds.');
+        } finally {
+            setResetting(false);
+        }
+    }, [closeModal, fetchAvailability]);
+
     return (
         <section className="main-dash" aria-label="Main bed dashboard">
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Live view of available beds by housing facility.</p>
+                <button
+                    type="button"
+                    className="unassign-all-btn"
+                    onClick={handleUnassignAllBeds}
+                    disabled={resetting}
+                >
+                    {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
+                </button>
             </div>
 
             {loading && <p className="main-dash-status">Loading facilities...</p>}

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.response import Response
@@ -316,6 +317,35 @@ class BedAssignView(APIView):
 
         return Response(
             {"message": f"Bed '{bed.label}' assigned to {parolee.last_name}, {parolee.first_name}."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class BedUnassignAllView(APIView):
+    """Clear all bed assignments for test/demo reset flows."""
+
+    def post(self, request):
+        assigned_bed_ids = list(
+            Bed.objects.filter(assigned_parolee__isnull=False).values_list("id", flat=True)
+        )
+
+        with transaction.atomic():
+            unassigned_count = Parolee.objects.filter(assigned_bed__isnull=False).update(
+                assigned_bed=None,
+                housing_start_date=None,
+                housing_end_date=None,
+            )
+            reset_bed_count = Bed.objects.filter(
+                id__in=assigned_bed_ids,
+                status=Bed.Status.OCCUPIED,
+            ).update(status=Bed.Status.AVAILABLE)
+
+        return Response(
+            {
+                "message": "All bed assignments have been cleared.",
+                "parolees_unassigned": unassigned_count,
+                "beds_reset": reset_bed_count,
+            },
             status=status.HTTP_200_OK,
         )
 

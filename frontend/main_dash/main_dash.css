@@ -17,6 +17,26 @@
   color: #556476;
 }
 
+.unassign-all-btn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  background: #b42318;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.unassign-all-btn:hover:not(:disabled) {
+  background: #912018;
+}
+
+.unassign-all-btn:disabled {
+  background: #d8a5a1;
+  cursor: not-allowed;
+}
+
 .main-dash-status {
   margin-top: 1rem;
 }
