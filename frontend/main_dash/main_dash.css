@@ -17,8 +17,36 @@
   color: #556476;
 }
 
+.unassign-all-btn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  background: #b42318;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.unassign-all-btn:hover:not(:disabled) {
+  background: #912018;
+}
+
+.unassign-all-btn:disabled {
+  background: #d8a5a1;
+  cursor: not-allowed;
+}
+
 .main-dash-status {
   margin-top: 1rem;
+}
+
+.main-dash-status.success {
+  color: #166534;
+  background: #ecfdf3;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
 }
 
 .main-dash-table-wrap {
@@ -46,4 +74,99 @@
 
 .main-dash-table tbody tr:hover {
   background: #fafcff;
+}
+
+/* ── Assign Bed button ─────────────────────────────────────── */
+.assign-bed-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.assign-bed-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.assign-bed-btn:disabled {
+  background: #93adc8;
+  cursor: not-allowed;
+}
+
+/* ── Modal ─────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.modal h3 {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+}
+
+.modal label {
+  display: block;
+  font-weight: 600;
+  margin: 0.75rem 0 0.3rem;
+  font-size: 0.9rem;
+}
+
+.modal select {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #c8d0da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.modal select:disabled {
+  background: #f3f5f8;
+  color: #8a97a6;
+}
+
+.modal-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.modal-cancel-btn {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #c8d0da;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.modal-cancel-btn:hover {
+  background: #f0f4f8;
+}
+
+.modal-status {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.modal-status.error {
+  color: #c0392b;
 }

@@ -1,14 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from housing.models import Facility, User
-from .serializers import UserSerializer
+from housing.models import Facility, User, Bed, Parolee
+from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
 User = get_user_model()
@@ -259,4 +261,91 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"error": f"User {username} not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class FacilityBedsView(APIView):
+    """Return available beds for a given facility."""
+
+    def get(self, request, facility_id):
+        try:
+            facility = Facility.objects.get(pk=facility_id)
+        except Facility.DoesNotExist:
+            return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        beds = Bed.objects.filter(facility=facility, status=Bed.Status.AVAILABLE).order_by("label")
+        return Response(BedSerializer(beds, many=True).data)
+
+
+class ParoleeListView(APIView):
+    """Return parolees that have no current bed assignment."""
+
+    def get(self, request):
+        parolees = Parolee.objects.filter(assigned_bed__isnull=True).order_by("last_name", "first_name")
+        return Response(ParoleeSerializer(parolees, many=True).data)
+
+
+class BedAssignView(APIView):
+    """Assign an unassigned parolee to an available bed."""
+
+    def post(self, request, bed_id):
+        parolee_id = request.data.get("parolee_id")
+        if not parolee_id:
+            return Response({"error": "parolee_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bed = Bed.objects.get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if bed.status != Bed.Status.AVAILABLE:
+            return Response({"error": "Bed is not available."}, status=status.HTTP_409_CONFLICT)
+
+        try:
+            parolee = Parolee.objects.get(pk=parolee_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Parolee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parolee.assigned_bed is not None:
+            return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
+
+        bed.status = Bed.Status.OCCUPIED
+        bed.save(update_fields=["status"])
+
+        parolee.assigned_bed = bed
+        parolee.housing_start_date = timezone.now().date()
+        parolee.save(update_fields=["assigned_bed", "housing_start_date"])
+
+        return Response(
+            {"message": f"Bed '{bed.label}' assigned to {parolee.last_name}, {parolee.first_name}."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class BedUnassignAllView(APIView):
+    """Clear all bed assignments for test/demo reset flows."""
+
+    def post(self, request):
+        assigned_bed_ids = list(
+            Bed.objects.filter(assigned_parolee__isnull=False).values_list("id", flat=True)
+        )
+
+        with transaction.atomic():
+            unassigned_count = Parolee.objects.filter(assigned_bed__isnull=False).update(
+                assigned_bed=None,
+                housing_start_date=None,
+                housing_end_date=None,
+            )
+            reset_bed_count = Bed.objects.filter(
+                id__in=assigned_bed_ids,
+                status=Bed.Status.OCCUPIED,
+            ).update(status=Bed.Status.AVAILABLE)
+
+        return Response(
+            {
+                "message": "All bed assignments have been cleared.",
+                "parolees_unassigned": unassigned_count,
+                "beds_reset": reset_bed_count,
+            },
+            status=status.HTTP_200_OK,
+        )
 
