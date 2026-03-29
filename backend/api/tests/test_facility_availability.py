@@ -130,3 +130,59 @@ def test_facility_availability_include_inactive_query_param(client):
     names_to_active = {item["facility_name"]: item["is_active"] for item in body}
     assert names_to_active["Active Facility"] is True
     assert names_to_active["Inactive Facility"] is False
+
+
+@pytest.mark.django_db
+def test_facility_availability_filters_district_gender_and_sex_offender(client):
+    district_1 = District.objects.create(number=1, name="District One")
+    district_2 = District.objects.create(number=2, name="District Two")
+    provider = Provider.objects.create(name="Provider Filters")
+
+    Facility.objects.create(
+        provider=provider,
+        name="Matches Filters",
+        address="10 Match St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_1,
+        tier=Facility.Tier.TIER_1,
+        accepts_male=True,
+        accepts_female=False,
+        accepts_sex_offender=True,
+    )
+
+    Facility.objects.create(
+        provider=provider,
+        name="Wrong District",
+        address="20 District Ave",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_2,
+        tier=Facility.Tier.TIER_1,
+        accepts_male=True,
+        accepts_female=False,
+        accepts_sex_offender=True,
+    )
+
+    Facility.objects.create(
+        provider=provider,
+        name="No Sex Offender",
+        address="30 Rules Rd",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_1,
+        tier=Facility.Tier.TIER_2,
+        accepts_male=True,
+        accepts_female=False,
+        accepts_sex_offender=False,
+    )
+
+    resp = client.get("/api/facilities/availability/?district=1&gender=male&sex_offender=true")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["facility_name"] == "Matches Filters"

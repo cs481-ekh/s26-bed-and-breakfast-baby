@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import './main_dash.css';
 
-export default function MainDash() {
+export default function MainDash({ readOnly = false }) {
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [districtFilter, setDistrictFilter] = useState('');
+    const [genderFilter, setGenderFilter] = useState('');
+    const [sexOffenderFilter, setSexOffenderFilter] = useState('');
+
+    const districtOptions = [1, 2, 3, 4, 5, 6, 7];
 
     // Assign-bed modal state
     const [assignTarget, setAssignTarget] = useState(null);
@@ -21,7 +26,22 @@ export default function MainDash() {
     const fetchAvailability = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/facilities/availability/');
+            const query = new URLSearchParams();
+
+            if (districtFilter) {
+                query.set('district', districtFilter);
+            }
+
+            if (genderFilter) {
+                query.set('gender', genderFilter);
+            }
+
+            if (sexOffenderFilter) {
+                query.set('sex_offender', sexOffenderFilter);
+            }
+
+            const queryString = query.toString();
+            const response = await fetch(`/api/facilities/availability/${queryString ? `?${queryString}` : ''}`);
             const payload = await response.json();
             if (!response.ok) throw new Error('Could not load bed availability.');
             setFacilities(Array.isArray(payload) ? payload : []);
@@ -32,7 +52,7 @@ export default function MainDash() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [districtFilter, genderFilter, sexOffenderFilter]);
 
     useEffect(() => {
         fetchAvailability();
@@ -157,14 +177,59 @@ export default function MainDash() {
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Live view of available beds by housing facility.</p>
-                <button
-                    type="button"
-                    className="unassign-all-btn"
-                    onClick={handleUnassignAllBeds}
-                    disabled={resetting}
-                >
-                    {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
-                </button>
+                {!readOnly && (
+                    <button
+                        type="button"
+                        className="unassign-all-btn"
+                        onClick={handleUnassignAllBeds}
+                        disabled={resetting}
+                    >
+                        {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
+                    </button>
+                )}
+            </div>
+
+            <div className="main-dash-filters" style={{ marginBottom: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <label>
+                    District
+                    <select
+                        value={districtFilter}
+                        onChange={(e) => setDistrictFilter(e.target.value)}
+                        style={{ marginLeft: '0.5rem' }}
+                    >
+                        <option value="">All</option>
+                        {districtOptions.map((districtNumber) => (
+                            <option key={districtNumber} value={districtNumber}>
+                                District {districtNumber}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                <label>
+                    Gender
+                    <select
+                        value={genderFilter}
+                        onChange={(e) => setGenderFilter(e.target.value)}
+                        style={{ marginLeft: '0.5rem' }}
+                    >
+                        <option value="">All</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </label>
+
+                <label>
+                    Sex Offender
+                    <select
+                        value={sexOffenderFilter}
+                        onChange={(e) => setSexOffenderFilter(e.target.value)}
+                        style={{ marginLeft: '0.5rem' }}
+                    >
+                        <option value="">All</option>
+                        <option value="true">Allowed</option>
+                    </select>
+                </label>
             </div>
 
             {loading && <p className="main-dash-status">Loading facilities...</p>}
@@ -189,7 +254,7 @@ export default function MainDash() {
                                 <th>Total Beds</th>
                                 <th>Assigned Beds</th>
                                 <th>Available Beds</th>
-                                <th>Actions</th>
+                                {!readOnly && <th>Actions</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -204,15 +269,17 @@ export default function MainDash() {
                                     <td>{facility.total_beds}</td>
                                     <td>{facility.assigned_beds}</td>
                                     <td>{facility.available_beds}</td>
-                                    <td>
-                                        <button
-                                            className="assign-bed-btn"
-                                            disabled={facility.available_beds === 0}
-                                            onClick={() => openAssignModal(facility)}
-                                        >
-                                            Assign Bed
-                                        </button>
-                                    </td>
+                                    {!readOnly && (
+                                        <td>
+                                            <button
+                                                className="assign-bed-btn"
+                                                disabled={facility.available_beds === 0}
+                                                onClick={() => openAssignModal(facility)}
+                                            >
+                                                Assign Bed
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
@@ -220,7 +287,7 @@ export default function MainDash() {
                 </div>
             )}
 
-            {assignTarget && (
+            {!readOnly && assignTarget && (
                 <div className="modal-backdrop" role="presentation" onClick={closeModal}>
                     <div
                         className="modal"

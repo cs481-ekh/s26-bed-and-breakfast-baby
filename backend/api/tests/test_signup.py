@@ -97,3 +97,25 @@ def test_signup_returns_required_field_errors(client):
     assert "email" in errors
     assert "password" in errors
     assert "confirm_password" in errors
+
+
+@pytest.mark.django_db
+def test_signup_accepts_parole_officer_role(client):
+    payload = {
+        "first_name": "Taylor",
+        "last_name": "Morgan",
+        "employee_id": "E90001",
+        "email": "taylor.morgan@example.com",
+        "role": "parole_officer",
+        "password": "StrongPassword123!",
+        "confirm_password": "StrongPassword123!",
+    }
+
+    resp = client.post("/api/signup/", data=payload, content_type="application/json")
+
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["role"] == "parole_officer"
+
+    user = User.objects.get(username="taylor.morgan@example.com")
+    assert user.role == "parole_officer"

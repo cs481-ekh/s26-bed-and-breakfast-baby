@@ -18,6 +18,12 @@ export default function LoginPage() {
         <a href="/">Admin Dashboard</a>
         <span style={{ margin: "0 0.5rem" }}>|</span>
         <a href="/main-dashboard.html">Main Bed Dashboard</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/case-manager.html">Case Manager Page</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/parole-officer.html">Parole Officer Page</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/provider-dashboard.html">Provider Page</a>
       </nav>
       <section className="login-card" aria-labelledby="login-title">
         <h1 id="login-title">Log In</h1>
