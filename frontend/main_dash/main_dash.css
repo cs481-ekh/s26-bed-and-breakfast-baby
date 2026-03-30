@@ -136,6 +136,40 @@
   justify-content: space-between;
 }
 
+.bed-notes-text {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+.bed-notes-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.bed-notes-item {
+  background: #eef3f9;
+  border: 1px solid #d8e1ec;
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+}
+
+.bed-note-timestamp {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.bed-note-message {
+  display: block;
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+
 .bed-notes-editor textarea {
   width: 100%;
   min-width: 220px;
@@ -151,6 +185,37 @@
   margin-top: 0.45rem;
   display: flex;
   gap: 0.5rem;
+}
+
+.note-history-controls {
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.note-history-meta {
+  font-size: 0.74rem;
+  color: #475569;
+}
+
+.note-history-toggle-btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.76rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #c8d0da;
+  background: #fff;
+}
+
+.note-history-toggle-btn:hover:not(:disabled) {
+  background: #f0f4f8;
+}
+
+.note-history-toggle-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .note-edit-btn,

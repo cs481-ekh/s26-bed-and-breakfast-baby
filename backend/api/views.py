@@ -309,9 +309,15 @@ class BedAssignView(APIView):
             return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
 
         request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+        assignment_note = (
+            f"[{event_time}] Assigned to {parolee.last_name}, {parolee.first_name} "
+            f"({parolee.idoc_id})."
+        )
+        bed.notes = f"{bed.notes}\n{assignment_note}".strip() if bed.notes else assignment_note
         bed.status = Bed.Status.OCCUPIED
         bed.updated_by = request_user
-        bed.save(update_fields=["status", "updated_by"])
+        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
 
         parolee.assigned_bed = bed
         parolee.housing_start_date = timezone.now().date()
@@ -344,9 +350,15 @@ class BedUnassignView(APIView):
             parolee.save(update_fields=["assigned_bed", "housing_start_date", "housing_end_date"])
 
             request_user = request.user if request.user.is_authenticated else None
+            event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+            unassignment_note = (
+                f"[{event_time}] Unassigned {parolee.last_name}, {parolee.first_name} "
+                f"({parolee.idoc_id})."
+            )
+            bed.notes = f"{bed.notes}\n{unassignment_note}".strip() if bed.notes else unassignment_note
             bed.status = Bed.Status.AVAILABLE
             bed.updated_by = request_user
-            bed.save(update_fields=["status", "updated_by"])
+            bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
 
         return Response(
             {
@@ -403,10 +415,11 @@ class BedUnassignAllView(APIView):
                 housing_end_date=None,
             )
             request_user = request.user if request.user.is_authenticated else None
+            reset_timestamp = timezone.now()
             reset_bed_count = Bed.objects.filter(
                 id__in=assigned_bed_ids,
                 status=Bed.Status.OCCUPIED,
-            ).update(status=Bed.Status.AVAILABLE, updated_by=request_user)
+            ).update(status=Bed.Status.AVAILABLE, updated_by=request_user, updated_at=reset_timestamp)
 
         return Response(
             {

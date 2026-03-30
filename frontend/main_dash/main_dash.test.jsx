@@ -98,7 +98,9 @@ describe("MainDash", () => {
 
     expect(await screen.findByText("Bed 101")).toBeInTheDocument();
     expect(screen.getByText("Available")).toBeInTheDocument();
-    expect(screen.getByText("Near the nurse station")).toBeInTheDocument();
+    const notesText = screen.getByText("Near the nurse station");
+    expect(notesText).toBeInTheDocument();
+    expect(screen.getByTitle(/Last updated by Admin User on/i)).toBeInTheDocument();
     expect(screen.getByText("Admin User")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/facilities/1/beds/");
   });
@@ -231,5 +233,133 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
 
     expect(await screen.findByRole("button", { name: "Edit" })).toBeInTheDocument();
+  });
+
+  test("admins can expand and collapse full note history", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      if (url === "/api/facilities/1/beds/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 22,
+              label: "Bed 101",
+              status: "available",
+              notes: "[2026-03-30 07:00:00 UTC] oldest change\n[2026-03-30 08:00:00 UTC] second change\n[2026-03-30 09:00:00 UTC] third change\n[2026-03-30 10:00:00 UTC] newest change",
+              updated_at: "2026-03-30T10:15:00Z",
+              updated_by: "Admin User",
+              can_edit_notes: true,
+            },
+          ],
+        };
+      }
+
+      return {
+        ok: false,
+        json: async () => ({ error: "Unknown endpoint" }),
+      };
+    });
+
+    render(<MainDash />);
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    expect(await screen.findByText("newest change")).toBeInTheDocument();
+    expect(screen.queryByText("oldest change")).not.toBeInTheDocument();
+    expect(screen.getByText("Showing 3 of 4 changes")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show full history" }));
+    expect(await screen.findByText("oldest change")).toBeInTheDocument();
+    expect(screen.getByText("Showing 4 of 4 changes")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show less" }));
+    expect(screen.queryByText("oldest change")).not.toBeInTheDocument();
+  });
+
+  test("shows only the last 3 note changes", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      if (url === "/api/facilities/1/beds/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: 22,
+              label: "Bed 101",
+              status: "available",
+              notes: "[2026-03-30 07:00:00 UTC] oldest change\n[2026-03-30 08:00:00 UTC] second change\n[2026-03-30 09:00:00 UTC] third change\n[2026-03-30 10:00:00 UTC] newest change",
+              updated_at: "2026-03-30T10:15:00Z",
+              updated_by: "Admin User",
+              can_edit_notes: false,
+            },
+          ],
+        };
+      }
+
+      return {
+        ok: false,
+        json: async () => ({ error: "Unknown endpoint" }),
+      };
+    });
+
+    render(<MainDash />);
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    expect(await screen.findByText("newest change")).toBeInTheDocument();
+    expect(screen.getByText("third change")).toBeInTheDocument();
+    expect(screen.getByText("second change")).toBeInTheDocument();
+    expect(screen.queryByText("oldest change")).not.toBeInTheDocument();
   });
 });

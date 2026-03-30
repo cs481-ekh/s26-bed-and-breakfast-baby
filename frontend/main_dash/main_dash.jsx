@@ -13,6 +13,7 @@ export default function MainDash() {
     const [bedsLoadingByFacility, setBedsLoadingByFacility] = useState({});
     const [bedsErrorByFacility, setBedsErrorByFacility] = useState({});
     const [selectedParoleeByBed, setSelectedParoleeByBed] = useState({});
+    const [expandedNotesByBed, setExpandedNotesByBed] = useState({});
     const [editingBedId, setEditingBedId] = useState(null);
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
@@ -179,6 +180,32 @@ export default function MainDash() {
         return date.toLocaleString();
     }, []);
 
+    const getNoteEntries = useCallback((notes) => {
+        if (!notes) return [];
+        return notes
+            .split('\n')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+            .reverse();
+    }, []);
+
+    const parseNoteEntry = useCallback((entry) => {
+        const match = entry.match(/^\[(.+?)\]\s*(.*)$/);
+        if (!match) {
+            return { timestamp: null, message: entry };
+        }
+        return {
+            timestamp: match[1],
+            message: match[2] || '',
+        };
+    }, []);
+
+    const buildNotesTooltip = useCallback((bed) => {
+        const updatedBy = bed.updated_by || 'System';
+        const updatedAt = renderTimestamp(bed.updated_at);
+        return `Last updated by ${updatedBy} on ${updatedAt}`;
+    }, [renderTimestamp]);
+
     const handleStartEditNotes = useCallback((bed) => {
         setEditingBedId(bed.id);
         setNoteDraft(bed.notes || '');
@@ -187,6 +214,13 @@ export default function MainDash() {
     const handleCancelEditNotes = useCallback(() => {
         setEditingBedId(null);
         setNoteDraft('');
+    }, []);
+
+    const handleToggleNoteHistory = useCallback((bedId) => {
+        setExpandedNotesByBed((prev) => ({
+            ...prev,
+            [bedId]: !prev[bedId],
+        }));
     }, []);
 
     const handleSaveNotes = useCallback(async (bed, facility) => {
@@ -210,6 +244,7 @@ export default function MainDash() {
             setSuccessMessage(`Updated notes for ${bedLabel} at ${facilityName}.`);
             setEditingBedId(null);
             setNoteDraft('');
+            setExpandedNotesByBed((prev) => ({ ...prev, [bed.id]: false }));
 
             await fetchFacilityBeds(facility.facility_id);
         } catch (requestError) {
@@ -356,6 +391,12 @@ export default function MainDash() {
                                                                     const isEditingNotes = editingBedId === bed.id;
                                                                     const canEditNotes = Boolean(bed.can_edit_notes);
                                                                     const selectedParolee = selectedParoleeByBed[bed.id] || '';
+                                                                    const allNoteEntries = getNoteEntries(bed.notes);
+                                                                    const isHistoryExpanded = Boolean(expandedNotesByBed[bed.id]);
+                                                                    const visibleNoteEntries = isHistoryExpanded
+                                                                        ? allNoteEntries
+                                                                        : allNoteEntries.slice(0, 3);
+                                                                    const hasMoreHistory = allNoteEntries.length > 3;
 
                                                                     return (
                                                                         <tr key={bed.id}>
@@ -368,7 +409,46 @@ export default function MainDash() {
                                                                             <td>
                                                                                 {!isEditingNotes && (
                                                                                     <div className="bed-notes-view">
-                                                                                        <span>{bed.notes || 'None'}</span>
+                                                                                        {allNoteEntries.length === 0 && (
+                                                                                            <span className="bed-notes-text" title={buildNotesTooltip(bed)}>
+                                                                                                None
+                                                                                            </span>
+                                                                                        )}
+
+                                                                                        {allNoteEntries.length > 0 && (
+                                                                                            <ul className="bed-notes-list" title={buildNotesTooltip(bed)}>
+                                                                                                {visibleNoteEntries.map((entry, index) => {
+                                                                                                    const parsed = parseNoteEntry(entry);
+                                                                                                    return (
+                                                                                                        <li key={`${bed.id}-${index}`} className="bed-notes-item">
+                                                                                                            {parsed.timestamp && (
+                                                                                                                <span className="bed-note-timestamp">{parsed.timestamp}</span>
+                                                                                                            )}
+                                                                                                            <span className="bed-note-message">
+                                                                                                                {parsed.message || entry}
+                                                                                                            </span>
+                                                                                                        </li>
+                                                                                                    );
+                                                                                                })}
+                                                                                            </ul>
+                                                                                        )}
+
+                                                                                        {canEditNotes && hasMoreHistory && (
+                                                                                            <div className="note-history-controls">
+                                                                                                <span className="note-history-meta">
+                                                                                                    {`Showing ${visibleNoteEntries.length} of ${allNoteEntries.length} changes`}
+                                                                                                </span>
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    className="note-history-toggle-btn"
+                                                                                                    onClick={() => handleToggleNoteHistory(bed.id)}
+                                                                                                    disabled={isProcessing}
+                                                                                                >
+                                                                                                    {isHistoryExpanded ? 'Show less' : 'Show full history'}
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        )}
+
                                                                                         {canEditNotes && (
                                                                                             <button
                                                                                                 type="button"
