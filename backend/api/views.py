@@ -264,7 +264,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class FacilityBedsView(APIView):
-    """Return available beds for a given facility."""
+    """Return all beds for a given facility."""
 
     def get(self, request, facility_id):
         try:
@@ -272,8 +272,8 @@ class FacilityBedsView(APIView):
         except Facility.DoesNotExist:
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        beds = Bed.objects.filter(facility=facility, status=Bed.Status.AVAILABLE).order_by("label")
-        return Response(BedSerializer(beds, many=True).data)
+        beds = Bed.objects.filter(facility=facility).order_by("label")
+        return Response(BedSerializer(beds, many=True, context={"request": request}).data)
 
 
 class ParoleeListView(APIView):
@@ -308,8 +308,16 @@ class BedAssignView(APIView):
         if parolee.assigned_bed is not None:
             return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
 
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+        assignment_note = (
+            f"[{event_time}] Assigned to {parolee.last_name}, {parolee.first_name} "
+            f"({parolee.idoc_id})."
+        )
+        bed.notes = f"{bed.notes}\n{assignment_note}".strip() if bed.notes else assignment_note
         bed.status = Bed.Status.OCCUPIED
-        bed.save(update_fields=["status"])
+        bed.updated_by = request_user
+        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
 
         parolee.assigned_bed = bed
         parolee.housing_start_date = timezone.now().date()
@@ -317,6 +325,77 @@ class BedAssignView(APIView):
 
         return Response(
             {"message": f"Bed '{bed.label}' assigned to {parolee.last_name}, {parolee.first_name}."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class BedUnassignView(APIView):
+    """Clear assignment for a single bed and mark it available."""
+
+    def post(self, request, bed_id):
+        try:
+            bed = Bed.objects.get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            parolee = Parolee.objects.get(assigned_bed=bed)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Bed has no current assignment."}, status=status.HTTP_409_CONFLICT)
+
+        with transaction.atomic():
+            parolee.assigned_bed = None
+            parolee.housing_start_date = None
+            parolee.housing_end_date = None
+            parolee.save(update_fields=["assigned_bed", "housing_start_date", "housing_end_date"])
+
+            request_user = request.user if request.user.is_authenticated else None
+            event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+            unassignment_note = (
+                f"[{event_time}] Unassigned {parolee.last_name}, {parolee.first_name} "
+                f"({parolee.idoc_id})."
+            )
+            bed.notes = f"{bed.notes}\n{unassignment_note}".strip() if bed.notes else unassignment_note
+            bed.status = Bed.Status.AVAILABLE
+            bed.updated_by = request_user
+            bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+        return Response(
+            {
+                "message": f"Unassigned {parolee.last_name}, {parolee.first_name} from bed '{bed.label}'."
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class BedNotesUpdateView(APIView):
+    """Create or update notes for a bed (admin only)."""
+
+    def patch(self, request, bed_id):
+        request_user = request.user if request.user.is_authenticated else None
+        if request_user is None or getattr(request_user, "role", None) != User.Role.ADMIN:
+            return Response({"error": "Only admins can edit bed notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            bed = Bed.objects.get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        notes = request.data.get("notes")
+        if notes is None:
+            return Response({"error": "notes is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(notes, str):
+            return Response({"error": "notes must be a string."}, status=status.HTTP_400_BAD_REQUEST)
+
+        bed.notes = notes.strip()
+        bed.updated_by = request_user
+        bed.save(update_fields=["notes", "updated_by", "updated_at"])
+
+        return Response(
+            {
+                "message": f"Notes updated for bed '{bed.label}'.",
+                "bed": BedSerializer(bed, context={"request": request}).data,
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -335,10 +414,12 @@ class BedUnassignAllView(APIView):
                 housing_start_date=None,
                 housing_end_date=None,
             )
+            request_user = request.user if request.user.is_authenticated else None
+            reset_timestamp = timezone.now()
             reset_bed_count = Bed.objects.filter(
                 id__in=assigned_bed_ids,
                 status=Bed.Status.OCCUPIED,
-            ).update(status=Bed.Status.AVAILABLE)
+            ).update(status=Bed.Status.AVAILABLE, updated_by=request_user, updated_at=reset_timestamp)
 
         return Response(
             {

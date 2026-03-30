@@ -41,6 +41,10 @@
   margin-top: 1rem;
 }
 
+.main-dash-status.error {
+  color: #b42318;
+}
+
 .main-dash-status.success {
   color: #166534;
   background: #ecfdf3;
@@ -76,6 +80,191 @@
   background: #fafcff;
 }
 
+.facility-row.expanded {
+  background: #eef4ff;
+}
+
+.facility-bed-row td {
+  background: #f8fbff;
+  padding: 0.8rem;
+}
+
+.facility-bed-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.facility-bed-table th,
+.facility-bed-table td {
+  border-bottom: 1px solid #dde5ef;
+  padding: 0.55rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.facility-bed-table td {
+  word-break: break-word;
+}
+
+.facility-bed-table th {
+  background: #edf2f8;
+  font-weight: 600;
+}
+
+.bed-status {
+  display: inline-block;
+  padding: 0.24rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.bed-status.available {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.bed-status.occupied {
+  background: #fee2e2;
+  color: #b42318;
+  border-color: #fecaca;
+}
+
+.bed-notes-view {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bed-notes-text {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+.bed-notes-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.bed-notes-item {
+  background: #eef3f9;
+  border: 1px solid #d8e1ec;
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+}
+
+.bed-note-timestamp {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.bed-note-message {
+  display: block;
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+
+.bed-notes-editor textarea {
+  width: 100%;
+  min-width: 220px;
+  border: 1px solid #c8d0da;
+  border-radius: 4px;
+  padding: 0.45rem;
+  resize: vertical;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.bed-notes-actions {
+  margin-top: 0.45rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.note-history-controls {
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.note-history-meta {
+  font-size: 0.74rem;
+  color: #475569;
+}
+
+.note-history-toggle-btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.76rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #c8d0da;
+  background: #fff;
+}
+
+.note-history-toggle-btn:hover:not(:disabled) {
+  background: #f0f4f8;
+}
+
+.note-history-toggle-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.note-edit-btn,
+.note-cancel-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #c8d0da;
+  background: #fff;
+}
+
+.note-edit-btn:hover:not(:disabled),
+.note-cancel-btn:hover:not(:disabled) {
+  background: #f0f4f8;
+}
+
+.note-edit-btn:disabled,
+.note-cancel-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bed-assign-controls {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bed-assign-controls select {
+  min-width: 260px;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #c8d0da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.bed-assign-controls select:disabled {
+  background: #f3f5f8;
+  color: #8a97a6;
+}
+
 /* ── Assign Bed button ─────────────────────────────────────── */
 .assign-bed-btn {
   padding: 0.35rem 0.75rem;
@@ -97,76 +286,34 @@
   cursor: not-allowed;
 }
 
-/* ── Modal ─────────────────────────────────────────────────── */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem 2rem;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-}
-
-.modal h3 {
-  margin: 0 0 1rem;
-  font-size: 1.15rem;
-}
-
-.modal label {
-  display: block;
-  font-weight: 600;
-  margin: 0.75rem 0 0.3rem;
-  font-size: 0.9rem;
-}
-
-.modal select {
-  width: 100%;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid #c8d0da;
+.unassign-bed-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  background: #b42318;
+  color: #fff;
+  border: none;
   border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.modal select:disabled {
-  background: #f3f5f8;
-  color: #8a97a6;
-}
-
-.modal-actions {
-  margin-top: 1.25rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.65rem;
-}
-
-.modal-cancel-btn {
-  padding: 0.35rem 0.85rem;
-  border: 1px solid #c8d0da;
-  border-radius: 4px;
-  background: #fff;
   cursor: pointer;
-  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
-.modal-cancel-btn:hover {
-  background: #f0f4f8;
+.unassign-bed-btn:hover:not(:disabled) {
+  background: #912018;
 }
 
-.modal-status {
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
+.unassign-bed-btn:disabled {
+  background: #d8a5a1;
+  cursor: not-allowed;
 }
 
-.modal-status.error {
-  color: #c0392b;
+@media (max-width: 700px) {
+  .bed-assign-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bed-assign-controls select {
+    min-width: 0;
+    width: 100%;
+  }
 }
