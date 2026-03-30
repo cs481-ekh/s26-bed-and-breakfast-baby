@@ -113,20 +113,25 @@
 
 .bed-status {
   display: inline-block;
-  padding: 0.2rem 0.5rem;
+  padding: 0.24rem 0.62rem;
   border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .bed-status.available {
   background: #dcfce7;
   color: #166534;
+  border-color: #86efac;
 }
 
 .bed-status.occupied {
   background: #fee2e2;
   color: #b42318;
+  border-color: #fecaca;
 }
 
 .bed-notes-view {
