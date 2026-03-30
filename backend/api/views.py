@@ -264,7 +264,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class FacilityBedsView(APIView):
-    """Return available beds for a given facility."""
+    """Return all beds for a given facility."""
 
     def get(self, request, facility_id):
         try:
@@ -272,7 +272,7 @@ class FacilityBedsView(APIView):
         except Facility.DoesNotExist:
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        beds = Bed.objects.filter(facility=facility, status=Bed.Status.AVAILABLE).order_by("label")
+        beds = Bed.objects.filter(facility=facility).order_by("label")
         return Response(BedSerializer(beds, many=True).data)
 
 
@@ -317,6 +317,37 @@ class BedAssignView(APIView):
 
         return Response(
             {"message": f"Bed '{bed.label}' assigned to {parolee.last_name}, {parolee.first_name}."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class BedUnassignView(APIView):
+    """Clear assignment for a single bed and mark it available."""
+
+    def post(self, request, bed_id):
+        try:
+            bed = Bed.objects.get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            parolee = Parolee.objects.get(assigned_bed=bed)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Bed has no current assignment."}, status=status.HTTP_409_CONFLICT)
+
+        with transaction.atomic():
+            parolee.assigned_bed = None
+            parolee.housing_start_date = None
+            parolee.housing_end_date = None
+            parolee.save(update_fields=["assigned_bed", "housing_start_date", "housing_end_date"])
+
+            bed.status = Bed.Status.AVAILABLE
+            bed.save(update_fields=["status"])
+
+        return Response(
+            {
+                "message": f"Unassigned {parolee.last_name}, {parolee.first_name} from bed '{bed.label}'."
+            },
             status=status.HTTP_200_OK,
         )
 
