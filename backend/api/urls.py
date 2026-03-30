@@ -9,6 +9,7 @@ from .views import (
     ParoleeListView,
     BedAssignView,
     BedUnassignView,
+    BedNotesUpdateView,
     BedUnassignAllView,
 )
 
@@ -22,6 +23,7 @@ urlpatterns = [
     path("parolees/", ParoleeListView.as_view()),
     path("beds/<int:bed_id>/assign/", BedAssignView.as_view()),
     path("beds/<int:bed_id>/unassign/", BedUnassignView.as_view()),
+    path("beds/<int:bed_id>/notes/", BedNotesUpdateView.as_view()),
     path("beds/unassign-all/", BedUnassignAllView.as_view()),
     path("signup/", SignUpView.as_view()),
     path("", include(router.urls)),

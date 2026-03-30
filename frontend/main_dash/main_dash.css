@@ -99,6 +99,11 @@
   border-bottom: 1px solid #dde5ef;
   padding: 0.55rem;
   text-align: left;
+  vertical-align: top;
+}
+
+.facility-bed-table td {
+  word-break: break-word;
 }
 
 .facility-bed-table th {
@@ -122,6 +127,51 @@
 .bed-status.occupied {
   background: #fee2e2;
   color: #b42318;
+}
+
+.bed-notes-view {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bed-notes-editor textarea {
+  width: 100%;
+  min-width: 220px;
+  border: 1px solid #c8d0da;
+  border-radius: 4px;
+  padding: 0.45rem;
+  resize: vertical;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.bed-notes-actions {
+  margin-top: 0.45rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.note-edit-btn,
+.note-cancel-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #c8d0da;
+  background: #fff;
+}
+
+.note-edit-btn:hover:not(:disabled),
+.note-cancel-btn:hover:not(:disabled) {
+  background: #f0f4f8;
+}
+
+.note-edit-btn:disabled,
+.note-cancel-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .bed-assign-controls {

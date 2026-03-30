@@ -13,6 +13,8 @@ export default function MainDash() {
     const [bedsLoadingByFacility, setBedsLoadingByFacility] = useState({});
     const [bedsErrorByFacility, setBedsErrorByFacility] = useState({});
     const [selectedParoleeByBed, setSelectedParoleeByBed] = useState({});
+    const [editingBedId, setEditingBedId] = useState(null);
+    const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
     const [resetting, setResetting] = useState(false);
 
@@ -170,6 +172,53 @@ export default function MainDash() {
         return status.replace('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
     }, []);
 
+    const renderTimestamp = useCallback((isoTimestamp) => {
+        if (!isoTimestamp) return 'Unknown';
+        const date = new Date(isoTimestamp);
+        if (Number.isNaN(date.getTime())) return 'Unknown';
+        return date.toLocaleString();
+    }, []);
+
+    const handleStartEditNotes = useCallback((bed) => {
+        setEditingBedId(bed.id);
+        setNoteDraft(bed.notes || '');
+    }, []);
+
+    const handleCancelEditNotes = useCallback(() => {
+        setEditingBedId(null);
+        setNoteDraft('');
+    }, []);
+
+    const handleSaveNotes = useCallback(async (bed, facility) => {
+        setProcessingBedId(bed.id);
+        setError('');
+        setSuccessMessage('');
+
+        try {
+            const response = await fetch(`/api/beds/${bed.id}/notes/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: noteDraft }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to update notes.');
+            }
+
+            const bedLabel = bed.label || `Bed ${bed.id}`;
+            const facilityName = facility.facility_name || 'Unknown facility';
+            setSuccessMessage(`Updated notes for ${bedLabel} at ${facilityName}.`);
+            setEditingBedId(null);
+            setNoteDraft('');
+
+            await fetchFacilityBeds(facility.facility_id);
+        } catch (requestError) {
+            setError(requestError.message || 'Failed to update notes.');
+        } finally {
+            setProcessingBedId(null);
+        }
+    }, [noteDraft, fetchFacilityBeds]);
+
     const handleUnassignAllBeds = useCallback(async () => {
         const confirmed = window.confirm(
             'This will unassign every currently assigned bed. Continue?'
@@ -293,6 +342,9 @@ export default function MainDash() {
                                                                 <tr>
                                                                     <th>Bed Number</th>
                                                                     <th>Current Status</th>
+                                                                    <th>Notes</th>
+                                                                    <th>Last Updated</th>
+                                                                    <th>Last Updated By</th>
                                                                     <th>Assignment</th>
                                                                 </tr>
                                                             </thead>
@@ -301,6 +353,8 @@ export default function MainDash() {
                                                                     const isAssignable = bed.status === 'available';
                                                                     const isOccupied = bed.status === 'occupied';
                                                                     const isProcessing = processingBedId === bed.id;
+                                                                    const isEditingNotes = editingBedId === bed.id;
+                                                                    const canEditNotes = Boolean(bed.can_edit_notes);
                                                                     const selectedParolee = selectedParoleeByBed[bed.id] || '';
 
                                                                     return (
@@ -311,6 +365,54 @@ export default function MainDash() {
                                                                                     {renderBedStatus(bed.status)}
                                                                                 </span>
                                                                             </td>
+                                                                            <td>
+                                                                                {!isEditingNotes && (
+                                                                                    <div className="bed-notes-view">
+                                                                                        <span>{bed.notes || 'None'}</span>
+                                                                                        {canEditNotes && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="note-edit-btn"
+                                                                                                onClick={() => handleStartEditNotes(bed)}
+                                                                                                disabled={isProcessing}
+                                                                                            >
+                                                                                                Edit
+                                                                                            </button>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {isEditingNotes && (
+                                                                                    <div className="bed-notes-editor">
+                                                                                        <textarea
+                                                                                            value={noteDraft}
+                                                                                            onChange={(e) => setNoteDraft(e.target.value)}
+                                                                                            rows={3}
+                                                                                            disabled={isProcessing}
+                                                                                        />
+                                                                                        <div className="bed-notes-actions">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="assign-bed-btn"
+                                                                                                onClick={() => handleSaveNotes(bed, facility)}
+                                                                                                disabled={isProcessing}
+                                                                                            >
+                                                                                                {isProcessing ? 'Saving...' : 'Save'}
+                                                                                            </button>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="note-cancel-btn"
+                                                                                                onClick={handleCancelEditNotes}
+                                                                                                disabled={isProcessing}
+                                                                                            >
+                                                                                                Cancel
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </td>
+                                                                            <td>{renderTimestamp(bed.updated_at)}</td>
+                                                                            <td>{bed.updated_by || 'System'}</td>
                                                                             <td>
                                                                                 <div className="bed-assign-controls">
                                                                                     <select
