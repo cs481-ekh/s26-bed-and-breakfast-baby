@@ -7,6 +7,10 @@ export default function MainDash() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDistricts, setSelectedDistricts] = useState([]);
+    const [selectedGenderTargets, setSelectedGenderTargets] = useState([]);
+    const [filtersOpen, setFiltersOpen] = useState(false);
 
     // Bed-level interaction state for expanded rows and in-row actions.
     const [parolees, setParolees] = useState([]);
@@ -81,6 +85,101 @@ export default function MainDash() {
         fetchAvailability();
         fetchParolees();
     }, [fetchAvailability, fetchParolees]);
+
+    // Build district filter options from the currently loaded facilities.
+    const districtOptions = facilities
+        .reduce((acc, facility) => {
+            const key = `${facility.district_number}|${facility.district_name}`;
+            if (!acc.some((option) => option.key === key)) {
+                acc.push({
+                    key,
+                    district_number: facility.district_number,
+                    district_name: facility.district_name,
+                });
+            }
+            return acc;
+        }, [])
+        .sort((a, b) => Number(a.district_number) - Number(b.district_number));
+
+    const filteredFacilities = selectedDistricts.length === 0
+        ? facilities
+        : facilities.filter((facility) => {
+            const facilityDistrictKey = `${facility.district_number}|${facility.district_name}`;
+            return selectedDistricts.includes(facilityDistrictKey);
+        });
+
+    // Search currently filters the visible list by facility or provider name.
+    const searchedFacilities = searchTerm.trim() === ''
+        ? filteredFacilities
+        : filteredFacilities.filter((facility) => {
+            const normalizedSearch = searchTerm.trim().toLowerCase();
+            const facilityName = (facility.facility_name || '').toLowerCase();
+            const providerName = (facility.provider_name || '').toLowerCase();
+            return facilityName.includes(normalizedSearch) || providerName.includes(normalizedSearch);
+        });
+
+    const toggleDistrictFilter = useCallback((districtKey) => {
+        setSelectedDistricts((prev) => (
+            prev.includes(districtKey)
+                ? prev.filter((key) => key !== districtKey)
+                : [...prev, districtKey]
+        ));
+    }, []);
+
+    const clearAllFilters = useCallback(() => {
+        setSearchTerm('');
+        setSelectedDistricts([]);
+        setSelectedGenderTargets([]);
+    }, []);
+
+    const toggleFiltersMenu = useCallback(() => {
+        setFiltersOpen((prev) => !prev);
+    }, []);
+
+    const genderTargetOptions = [
+        { value: 'male_centered', label: 'Male-only' },
+        { value: 'female_centered', label: 'Female-only' },
+        { value: 'either', label: 'Gender neutral' },
+    ];
+
+    const toggleGenderTargetFilter = useCallback((targetValue) => {
+        setSelectedGenderTargets((prev) => (
+            prev.includes(targetValue)
+                ? prev.filter((value) => value !== targetValue)
+                : [...prev, targetValue]
+        ));
+    }, []);
+
+    const hasActiveFilters = searchTerm.trim() !== ''
+        || selectedDistricts.length > 0
+        || selectedGenderTargets.length > 0;
+
+    const escapeRegex = useCallback((value) => (
+        value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    ), []);
+
+    const renderSearchMatch = useCallback((text) => {
+        const rawText = text || '';
+        const query = searchTerm.trim();
+        if (!query) return rawText;
+
+        const escapedQuery = escapeRegex(query);
+        const splitRegex = new RegExp(`(${escapedQuery})`, 'ig');
+        const exactRegex = new RegExp(`^${escapedQuery}$`, 'i');
+        const parts = rawText.split(splitRegex);
+
+        return parts.map((part, index) => {
+            if (!part) return null;
+            if (exactRegex.test(part)) {
+                return (
+                    <mark key={`${rawText}-${index}`} className="search-match">
+                        {part}
+                    </mark>
+                );
+            }
+            return <React.Fragment key={`${rawText}-${index}`}>{part}</React.Fragment>;
+        });
+    }, [searchTerm, escapeRegex]);
 
     // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
@@ -343,6 +442,83 @@ export default function MainDash() {
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>
+
+                <div className="main-dash-controls">
+                    <label htmlFor="facility-search" className="main-dash-search-label">Search</label>
+                    <input
+                        id="facility-search"
+                        type="search"
+                        className="main-dash-search-input"
+                        placeholder="Search facilities or providers"
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        aria-label="Search facilities or providers"
+                    />
+
+                    <button
+                        type="button"
+                        className="filters-toggle-btn"
+                        onClick={toggleFiltersMenu}
+                        aria-expanded={filtersOpen}
+                        aria-controls="facility-filters-panel"
+                    >
+                        {filtersOpen ? 'Hide Filters' : 'Filters'}
+                    </button>
+
+                    <button
+                        type="button"
+                        className="clear-all-filters-btn"
+                        onClick={clearAllFilters}
+                        disabled={!hasActiveFilters}
+                    >
+                        Clear All Filters
+                    </button>
+                </div>
+
+                {filtersOpen && (
+                    <div id="facility-filters-panel" className="filters-menu" aria-label="Facility filters menu">
+                        <div className="filters-menu-header">
+                            <p className="filters-menu-title">Filters</p>
+                        </div>
+
+                        {districtOptions.length > 0 && (
+                            <div className="district-filter" aria-label="Facility district filters">
+                                <p className="district-filter-title">Districts</p>
+                                <div className="district-filter-options">
+                                    {districtOptions.map((option) => (
+                                        <label key={option.key} className="district-filter-option">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedDistricts.includes(option.key)}
+                                                onChange={() => toggleDistrictFilter(option.key)}
+                                            />
+                                            <span>{option.district_number} - {option.district_name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="gender-filter" aria-label="Facility gender target filters">
+                            <p className="gender-filter-title">
+                                Gender Targets <span className="filter-in-progress-note">(in progress)</span>
+                            </p>
+                            <div className="gender-filter-options">
+                                {genderTargetOptions.map((option) => (
+                                    <label key={option.value} className="gender-filter-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedGenderTargets.includes(option.value)}
+                                            onChange={() => toggleGenderTargetFilter(option.value)}
+                                        />
+                                        <span>{option.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <button
                     type="button"
                     className="unassign-all-btn"
@@ -359,11 +535,11 @@ export default function MainDash() {
                 <p className="main-dash-status success">{successMessage}</p>
             )}
 
-            {!loading && !error && facilities.length === 0 && (
+            {!loading && !error && searchedFacilities.length === 0 && (
                 <p className="main-dash-status">No facilities found.</p>
             )}
 
-            {!loading && !error && facilities.length > 0 && (
+            {!loading && !error && searchedFacilities.length > 0 && (
                 <div className="main-dash-table-wrap">
                     <table className="main-dash-table">
                         <thead>
@@ -379,7 +555,7 @@ export default function MainDash() {
                             </tr>
                         </thead>
                         <tbody>
-                            {facilities.map((facility) => {
+                            {searchedFacilities.map((facility) => {
                                 const facilityBeds = bedsByFacility[facility.facility_id] || [];
                                 const isExpanded = expandedFacilityId === facility.facility_id;
                                 const isBedsLoading = Boolean(bedsLoadingByFacility[facility.facility_id]);
@@ -388,8 +564,8 @@ export default function MainDash() {
                                 return (
                                     <React.Fragment key={facility.facility_id}>
                                         <tr className={isExpanded ? 'facility-row expanded' : 'facility-row'}>
-                                            <td>{facility.facility_name}</td>
-                                            <td>{facility.provider_name}</td>
+                                            <td>{renderSearchMatch(facility.facility_name)}</td>
+                                            <td>{renderSearchMatch(facility.provider_name)}</td>
                                             <td>
                                                 {facility.district_number} - {facility.district_name}
                                             </td>
