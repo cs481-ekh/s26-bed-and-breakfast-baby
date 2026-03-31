@@ -20,6 +20,10 @@ export default function MainDash() {
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
     const [resetting, setResetting] = useState(false);
+    
+    // Notes modal state for viewing notes in a popup.
+    const [notesModalOpen, setNotesModalOpen] = useState(false);
+    const [selectedBedForNotesModal, setSelectedBedForNotesModal] = useState(null);
 
     // Facility summary fetch powers the top-level facility table.
     const fetchAvailability = useCallback(async () => {
@@ -273,6 +277,17 @@ export default function MainDash() {
         }));
     }, []);
 
+    // Notes modal handlers.
+    const handleOpenNotesModal = useCallback((bed) => {
+        setSelectedBedForNotesModal(bed);
+        setNotesModalOpen(true);
+    }, []);
+
+    const handleCloseNotesModal = useCallback(() => {
+        setNotesModalOpen(false);
+        setSelectedBedForNotesModal(null);
+    }, []);
+
     // Save an admin note edit and refresh only the currently expanded facility.
     const handleSaveNotes = useCallback(async (bed, facility) => {
         setProcessingBedId(bed.id);
@@ -464,43 +479,18 @@ export default function MainDash() {
                                                                                 {!isEditingNotes && (
                                                                                     <div className="bed-notes-view">
                                                                                         {allNoteEntries.length === 0 && (
-                                                                                            <span className="bed-notes-text" title={buildNotesTooltip(bed)}>
-                                                                                                None
-                                                                                            </span>
+                                                                                            <span className="bed-notes-text">None</span>
                                                                                         )}
 
                                                                                         {allNoteEntries.length > 0 && (
-                                                                                            <ul className="bed-notes-list" title={buildNotesTooltip(bed)}>
-                                                                                                {visibleNoteEntries.map((entry, index) => {
-                                                                                                    const parsed = parseNoteEntry(entry);
-                                                                                                    return (
-                                                                                                        <li key={`${bed.id}-${index}`} className="bed-notes-item">
-                                                                                                            {parsed.timestamp && (
-                                                                                                                <span className="bed-note-timestamp">{parsed.timestamp}</span>
-                                                                                                            )}
-                                                                                                            <span className="bed-note-message">
-                                                                                                                {parsed.message || entry}
-                                                                                                            </span>
-                                                                                                        </li>
-                                                                                                    );
-                                                                                                })}
-                                                                                            </ul>
-                                                                                        )}
-
-                                                                                        {canEditNotes && hasMoreHistory && (
-                                                                                            <div className="note-history-controls">
-                                                                                                <span className="note-history-meta">
-                                                                                                    {`Showing ${visibleNoteEntries.length} of ${allNoteEntries.length} changes`}
-                                                                                                </span>
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    className="note-history-toggle-btn"
-                                                                                                    onClick={() => handleToggleNoteHistory(bed.id)}
-                                                                                                    disabled={isProcessing}
-                                                                                                >
-                                                                                                    {isHistoryExpanded ? 'Show less' : 'Show full history'}
-                                                                                                </button>
-                                                                                            </div>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="view-notes-btn"
+                                                                                                onClick={() => handleOpenNotesModal(bed)}
+                                                                                                disabled={isProcessing}
+                                                                                            >
+                                                                                                Notes ({allNoteEntries.length})
+                                                                                            </button>
                                                                                         )}
 
                                                                                         {canEditNotes && (
@@ -613,6 +603,57 @@ export default function MainDash() {
                             })}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Notes Modal */}
+            {notesModalOpen && selectedBedForNotesModal && (
+                <div className="notes-modal-overlay" onClick={handleCloseNotesModal}>
+                    <div className="notes-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="notes-modal-header">
+                            <h3>Notes for Bed {selectedBedForNotesModal.label}</h3>
+                            <button
+                                type="button"
+                                className="notes-modal-close-btn"
+                                onClick={handleCloseNotesModal}
+                                aria-label="Close notes modal"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="notes-modal-body">
+                            {(() => {
+                                const noteEntries = getNoteEntries(selectedBedForNotesModal.notes);
+                                if (noteEntries.length === 0) {
+                                    return <p className="notes-modal-empty">No notes</p>;
+                                }
+                                return (
+                                    <ul className="notes-modal-list">
+                                        {noteEntries.map((entry, index) => {
+                                            const parsed = parseNoteEntry(entry);
+                                            return (
+                                                <li key={index} className="notes-modal-item">
+                                                    {parsed.timestamp && (
+                                                        <span className="notes-modal-timestamp">{parsed.timestamp}</span>
+                                                    )}
+                                                    <span className="notes-modal-message">{parsed.message || entry}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                );
+                            })()}
+                        </div>
+                        <div className="notes-modal-footer">
+                            <button
+                                type="button"
+                                className="notes-modal-close-btn-footer"
+                                onClick={handleCloseNotesModal}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </section>
