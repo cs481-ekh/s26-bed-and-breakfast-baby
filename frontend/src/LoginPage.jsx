@@ -14,45 +14,57 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      <nav aria-label="Global navigation" style={{ marginBottom: "1rem" }}>
-        <a href="/admin">Admin Dashboard</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/main-dashboard">Main Bed Dashboard</a>
-      </nav>
-      <section className="login-card" aria-labelledby="login-title">
-        <h1 id="login-title">Log In</h1>
-        <p className="login-subtitle">Enter your email and password.</p>
+      <div className="login-container">
+        <section className="login-card" aria-labelledby="login-title">
+          <div className="logo-container">
+            <img src="/logo1.png" alt="Idaho Department of Correction" className="logo" />
+          </div>
+          
+          <h1 id="login-title">Welcome</h1>
+          <p className="login-subtitle">Sign in to manage bed assignments</p>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
+          <form className="login-form" onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </div>
 
-          <button type="submit">Log In</button>
-        </form>
+            <button type="submit" className="login-button">Sign In</button>
+          </form>
 
-        {submitted && <p className="status-message">Login submitted for {email}.</p>}
-      </section>
+          {submitted && <p className="status-message">Login submitted for {email}.</p>}
+
+          <nav className="footer-nav" aria-label="Quick navigation">
+            <a href="/admin">Admin Dashboard</a>
+            <span className="divider">•</span>
+            <a href="/main-dashboard">Bed Dashboard</a>
+            <span className="nav-note">(Testing Links)</span>
+          </nav>
+        </section>
+      </div>
     </main>
   );
 }
