@@ -2,7 +2,13 @@
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .login-page {
+    padding: 1.5rem;
+  }
 }
 
 .login-card {
@@ -10,9 +16,15 @@
   max-width: 420px;
   border: 1px solid #e1e4e8;
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   background: #ffffff;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 640px) {
+  .login-card {
+    padding: 1.5rem;
+  }
 }
 
 .login-card h1 {
@@ -34,6 +46,8 @@
   font-size: 0.95rem;
   font-weight: 600;
 }
+  width: 100%;
+  box-sizing: border-box;
 
 .login-form input {
   border: 1px solid #c7ced6;
@@ -50,6 +64,8 @@
   font-size: 1rem;
   font-weight: 600;
   color: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
   background-color: #0f4c81;
   cursor: pointer;
 }
