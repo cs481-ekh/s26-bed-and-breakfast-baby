@@ -92,12 +92,20 @@
   font-size: 0.78rem;
   border-radius: 4px;
   border: 1px solid #c8d0da;
-  background: #f3f5f8;
-  color: #8a97a6;
-  cursor: not-allowed;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.add-filter-btn:hover {
+  background: #f0f4f8;
 }
 
 .district-filter {
+  margin-top: 0.65rem;
+}
+
+.gender-filter {
   margin-top: 0.65rem;
 }
 
@@ -108,6 +116,19 @@
   color: #334155;
 }
 
+.gender-filter-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.filter-in-progress-note {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
 .district-filter-options {
   margin-top: 0.5rem;
   display: flex;
@@ -116,6 +137,21 @@
 }
 
 .district-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  color: #334155;
+}
+
+.gender-filter-options {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gender-filter-option {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;

@@ -155,11 +155,92 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
+    // Facility list should not change until filters are explicitly applied.
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
+
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear District Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
 
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+  });
+
+  test("allows selecting gender target filters without changing displayed facilities", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+            {
+              facility_id: 2,
+              facility_name: "Cedar Home",
+              provider_name: "Provider B",
+              district_number: 2,
+              district_name: "South",
+              tier: "tier_2",
+              total_beds: 6,
+              assigned_beds: 2,
+              available_beds: 4,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+
+    expect(screen.getByText(/Gender Targets/i)).toBeInTheDocument();
+    expect(screen.getByText("(in progress)")).toBeInTheDocument();
+
+    const maleCenteredCheckbox = screen.getByLabelText("Male-only");
+    const eitherCheckbox = screen.getByLabelText("Gender neutral");
+
+    expect(maleCenteredCheckbox).not.toBeChecked();
+    expect(eitherCheckbox).not.toBeChecked();
+
+    fireEvent.click(maleCenteredCheckbox);
+    fireEvent.click(eitherCheckbox);
+
+    expect(maleCenteredCheckbox).toBeChecked();
+    expect(eitherCheckbox).toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
+
+    // Gender-target filters are intentionally UI-only until backend support is added.
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
   });

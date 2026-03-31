@@ -8,6 +8,8 @@ export default function MainDash() {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [selectedDistricts, setSelectedDistricts] = useState([]);
+    const [pendingDistricts, setPendingDistricts] = useState([]);
+    const [pendingGenderTargets, setPendingGenderTargets] = useState([]);
     const [filtersOpen, setFiltersOpen] = useState(false);
 
     // Bed-level interaction state for expanded rows and in-row actions.
@@ -104,7 +106,7 @@ export default function MainDash() {
         });
 
     const toggleDistrictFilter = useCallback((districtKey) => {
-        setSelectedDistricts((prev) => (
+        setPendingDistricts((prev) => (
             prev.includes(districtKey)
                 ? prev.filter((key) => key !== districtKey)
                 : [...prev, districtKey]
@@ -112,12 +114,30 @@ export default function MainDash() {
     }, []);
 
     const clearDistrictFilters = useCallback(() => {
-        setSelectedDistricts([]);
+        setPendingDistricts([]);
     }, []);
 
     const toggleFiltersMenu = useCallback(() => {
         setFiltersOpen((prev) => !prev);
     }, []);
+
+    const genderTargetOptions = [
+        { value: 'male_centered', label: 'Male-only' },
+        { value: 'female_centered', label: 'Female-only' },
+        { value: 'either', label: 'Gender neutral' },
+    ];
+
+    const toggleGenderTargetFilter = useCallback((targetValue) => {
+        setPendingGenderTargets((prev) => (
+            prev.includes(targetValue)
+                ? prev.filter((value) => value !== targetValue)
+                : [...prev, targetValue]
+        ));
+    }, []);
+
+    const handleApplyFilters = useCallback(() => {
+        setSelectedDistricts(pendingDistricts);
+    }, [pendingDistricts]);
 
     // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
@@ -410,9 +430,6 @@ export default function MainDash() {
                     <div id="facility-filters-panel" className="filters-menu" aria-label="Facility filters menu">
                         <div className="filters-menu-header">
                             <p className="filters-menu-title">Filters</p>
-                            <button type="button" className="add-filter-btn" disabled>
-                                Add Filter (coming soon)
-                            </button>
                         </div>
 
                         {districtOptions.length > 0 && (
@@ -423,7 +440,7 @@ export default function MainDash() {
                                         <label key={option.key} className="district-filter-option">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedDistricts.includes(option.key)}
+                                                checked={pendingDistricts.includes(option.key)}
                                                 onChange={() => toggleDistrictFilter(option.key)}
                                             />
                                             <span>{option.district_number} - {option.district_name}</span>
@@ -435,12 +452,38 @@ export default function MainDash() {
                                     type="button"
                                     className="district-filter-clear-btn"
                                     onClick={clearDistrictFilters}
-                                    disabled={selectedDistricts.length === 0}
+                                    disabled={pendingDistricts.length === 0}
                                 >
                                     Clear District Filters
                                 </button>
                             </div>
                         )}
+
+                        <div className="gender-filter" aria-label="Facility gender target filters">
+                            <p className="gender-filter-title">
+                                Gender Targets <span className="filter-in-progress-note">(in progress)</span>
+                            </p>
+                            <div className="gender-filter-options">
+                                {genderTargetOptions.map((option) => (
+                                    <label key={option.value} className="gender-filter-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={pendingGenderTargets.includes(option.value)}
+                                            onChange={() => toggleGenderTargetFilter(option.value)}
+                                        />
+                                        <span>{option.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="add-filter-btn"
+                            onClick={handleApplyFilters}
+                        >
+                            Add Filters
+                        </button>
                     </div>
                 )}
 
