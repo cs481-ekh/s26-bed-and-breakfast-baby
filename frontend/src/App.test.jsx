@@ -6,6 +6,9 @@ describe("App", () => {
   let fetchMock;
 
   beforeEach(() => {
+    // Navigate to the admin page so App renders AdminPage at the default route.
+    window.history.pushState({}, '', '/admin');
+
     // Create ONE fetch spy per test, and give it a safe default:
     // any unexpected fetch (like /api/users/) returns an empty list.
     fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
@@ -16,7 +19,8 @@ describe("App", () => {
   });
 
   afterEach(() => {
-    // Clean up any spies/mocks (including fetchMock) and any stubbed globals (like location).
+    // Reset URL and clean up any spies/mocks (including fetchMock) and any stubbed globals (like location).
+    window.history.pushState({}, '', '/');
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
