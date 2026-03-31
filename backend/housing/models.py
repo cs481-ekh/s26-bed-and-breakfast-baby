@@ -184,6 +184,14 @@ class Bed(models.Model):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
+    notes = models.TextField(blank=True)
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_beds",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
