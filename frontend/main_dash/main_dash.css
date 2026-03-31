@@ -1,10 +1,16 @@
 .main-dash {
   margin: 1.5rem 0;
-  padding: 1.25rem;
+  padding: 1rem;
   border: 1px solid #d5dbe3;
   border-radius: 8px;
   background: #ffffff;
   text-align: left;
+}
+
+@media (min-width: 768px) {
+  .main-dash {
+    padding: 1.25rem;
+  }
 }
 
 .main-dash-header h2 {
@@ -61,7 +67,13 @@
 .main-dash-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 360px;
+}
+
+@media (min-width: 1024px) {
+  .main-dash-table {
+    min-width: 760px;
+  }
 }
 
 .main-dash-table th,
