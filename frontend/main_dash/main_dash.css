@@ -146,6 +146,12 @@
   border-color: #fecaca;
 }
 
+.bed-status.held {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
 .bed-notes-view {
   display: flex;
   gap: 0.5rem;
@@ -315,6 +321,26 @@
 
 .unassign-bed-btn:disabled {
   background: #d8a5a1;
+  cursor: not-allowed;
+}
+
+.hold-bed-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hold-bed-btn:hover:not(:disabled) {
+  background: #0f5f58;
+}
+
+.hold-bed-btn:disabled {
+  background: #95b8b3;
   cursor: not-allowed;
 }
 

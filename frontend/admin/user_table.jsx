@@ -6,12 +6,14 @@ import React, {
   useCallback,
 } from "react";
 
+// ForwardRef lets parent views trigger a table refresh after admin mutations.
 const UserTable = forwardRef((props, ref) => {
   // Always initialize as an array
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch + normalize user payload shape from DRF list endpoints.
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -54,6 +56,7 @@ const UserTable = forwardRef((props, ref) => {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Expose an imperative refresh API to parent dashboard components.
   useImperativeHandle(ref, () => ({
     fetchUsers,
   }));

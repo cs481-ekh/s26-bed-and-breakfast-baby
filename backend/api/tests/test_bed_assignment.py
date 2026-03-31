@@ -1,6 +1,7 @@
 import pytest
+from django.utils import timezone
 
-from housing.models import Bed, District, Facility, Parolee, Provider
+from housing.models import Bed, District, Facility, Hold, Parolee, Provider
 
 
 @pytest.mark.django_db
@@ -57,3 +58,98 @@ def test_unassign_single_bed_without_assignment_conflict(client):
 
     assert resp.status_code == 409
     assert "no current assignment" in resp.json()["error"].lower()
+
+
+@pytest.mark.django_db
+def test_request_hold_on_available_bed(client):
+    district = District.objects.create(number=10, name="Hold District")
+    provider = Provider.objects.create(name="Provider Hold")
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Hold House",
+        address="400 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed Hold", status=Bed.Status.AVAILABLE)
+    parolee = Parolee.objects.create(
+        idoc_id="IDOC-601",
+        first_name="Taylor",
+        last_name="Young",
+        district=district,
+    )
+
+    resp = client.post(
+        f"/api/beds/{bed.id}/hold/",
+        data={"parolee_id": parolee.id},
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 200
+    bed.refresh_from_db()
+    assert bed.status == Bed.Status.HELD
+    assert "hold requested" in bed.notes.lower()
+    assert Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists()
+
+
+@pytest.mark.django_db
+def test_request_hold_requires_parolee(client):
+    district = District.objects.create(number=12, name="Hold Required District")
+    provider = Provider.objects.create(name="Provider Hold Required")
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Hold Required House",
+        address="410 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
+
+    resp = client.post(f"/api/beds/{bed.id}/hold/", data={}, content_type="application/json")
+
+    assert resp.status_code == 400
+    assert "parolee_id is required" in resp.json()["error"].lower()
+
+
+@pytest.mark.django_db
+def test_unassign_releases_held_bed(client):
+    district = District.objects.create(number=11, name="Release District")
+    provider = Provider.objects.create(name="Provider Release")
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Release House",
+        address="500 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_2,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed Held", status=Bed.Status.HELD)
+    parolee = Parolee.objects.create(
+        idoc_id="IDOC-701",
+        first_name="Jordan",
+        last_name="West",
+        district=district,
+    )
+    hold = Hold.objects.create(
+        bed=bed,
+        parolee=parolee,
+        reason="Test hold",
+        expires_at=timezone.now(),
+    )
+
+    resp = client.post(f"/api/beds/{bed.id}/unassign/", data={}, content_type="application/json")
+
+    assert resp.status_code == 200
+    bed.refresh_from_db()
+    hold.refresh_from_db()
+    assert bed.status == Bed.Status.AVAILABLE
+    assert "hold removed" in bed.notes.lower()
+    assert hold.status == Hold.Status.CANCELLED

@@ -63,6 +63,15 @@ describe("MainDash", () => {
               updated_by: null,
               can_edit_notes: false,
             },
+            {
+              id: 24,
+              label: "Bed 103",
+              status: "held",
+              notes: "[2026-03-30 09:30:00 UTC] Hold requested for testing.",
+              updated_at: "2026-03-30T09:30:00Z",
+              updated_by: "Admin User",
+              can_edit_notes: false,
+            },
           ],
         };
       }
@@ -100,8 +109,10 @@ describe("MainDash", () => {
     expect(screen.getByText("Available")).toBeInTheDocument();
     const notesText = screen.getByText("Near the nurse station");
     expect(notesText).toBeInTheDocument();
-    expect(screen.getByTitle(/Last updated by Admin User on/i)).toBeInTheDocument();
-    expect(screen.getByText("Admin User")).toBeInTheDocument();
+    const bed101Row = screen.getByText("Bed 101").closest("tr");
+    expect(bed101Row).not.toBeNull();
+    expect(within(bed101Row).getByTitle(/Last updated by Admin User on/i)).toBeInTheDocument();
+    expect(within(bed101Row).getByText("Admin User")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/facilities/1/beds/");
   });
 
@@ -113,7 +124,34 @@ describe("MainDash", () => {
 
     expect(await screen.findByText("Bed 102")).toBeInTheDocument();
     expect(screen.getByText("Occupied")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Unassign" })).toBeInTheDocument();
+    const occupiedRow = screen.getByText("Bed 102").closest("tr");
+    expect(occupiedRow).not.toBeNull();
+    expect(within(occupiedRow).getByRole("button", { name: "Unassign" })).toBeInTheDocument();
+  });
+
+  test("shows hold request action for available beds", async () => {
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    expect(await screen.findByText("Bed 101")).toBeInTheDocument();
+    const availableRow = screen.getByText("Bed 101").closest("tr");
+    expect(availableRow).not.toBeNull();
+    expect(within(availableRow).getByRole("button", { name: "Request Hold" })).toBeInTheDocument();
+  });
+
+  test("shows release hold action for held beds", async () => {
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    expect(await screen.findByText("Bed 103")).toBeInTheDocument();
+    expect(screen.getByText("Held")).toBeInTheDocument();
+    const heldRow = screen.getByText("Bed 103").closest("tr");
+    expect(heldRow).not.toBeNull();
+    expect(within(heldRow).getByRole("button", { name: "Release Hold" })).toBeInTheDocument();
   });
 
   test("shows notes column to all users", async () => {
