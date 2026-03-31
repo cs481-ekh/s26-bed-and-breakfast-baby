@@ -2,11 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import './main_dash.css';
 
 export default function MainDash() {
+    // Top-level dashboard data and global status messaging.
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
+    // Bed-level interaction state for expanded rows and in-row actions.
     const [parolees, setParolees] = useState([]);
     const [expandedFacilityId, setExpandedFacilityId] = useState(null);
     const [bedsByFacility, setBedsByFacility] = useState({});
@@ -19,6 +21,7 @@ export default function MainDash() {
     const [processingBedId, setProcessingBedId] = useState(null);
     const [resetting, setResetting] = useState(false);
 
+    // Facility summary fetch powers the top-level facility table.
     const fetchAvailability = useCallback(async () => {
         try {
             setLoading(true);
@@ -70,11 +73,13 @@ export default function MainDash() {
         }
     }, []);
 
+    // Initial load keeps facility totals and parolee choices in sync.
     useEffect(() => {
         fetchAvailability();
         fetchParolees();
     }, [fetchAvailability, fetchParolees]);
 
+    // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
         if (expandedFacilityId === facilityId) {
             setExpandedFacilityId(null);
@@ -87,6 +92,7 @@ export default function MainDash() {
         }
     }, [expandedFacilityId, bedsByFacility, fetchFacilityBeds]);
 
+    // Assign selected parolee to one specific bed row.
     const handleAssignBed = useCallback(async (bed, facility) => {
         const selectedParolee = selectedParoleeByBed[bed.id];
         if (!selectedParolee) {
@@ -138,6 +144,7 @@ export default function MainDash() {
         fetchFacilityBeds,
     ]);
 
+    // Shared release action for both occupied beds and held beds.
     const handleUnassignBed = useCallback(async (bed, facility) => {
         setProcessingBedId(bed.id);
         setError('');
@@ -168,6 +175,7 @@ export default function MainDash() {
         }
     }, [fetchAvailability, fetchParolees, fetchFacilityBeds]);
 
+    // Request a hold reservation for a selected parolee on an available bed.
     const handleHoldBed = useCallback(async (bed, facility) => {
         const selectedParolee = selectedParoleeByBed[bed.id];
         if (!selectedParolee) {
@@ -219,6 +227,7 @@ export default function MainDash() {
         return date.toLocaleString();
     }, []);
 
+    // Notes are stored as newline-delimited history entries; newest shown first.
     const getNoteEntries = useCallback((notes) => {
         if (!notes) return [];
         return notes
@@ -228,6 +237,7 @@ export default function MainDash() {
             .reverse();
     }, []);
 
+    // Parse optional "[timestamp] message" note format for structured rendering.
     const parseNoteEntry = useCallback((entry) => {
         const match = entry.match(/^\[(.+?)\]\s*(.*)$/);
         if (!match) {
@@ -245,6 +255,7 @@ export default function MainDash() {
         return `Last updated by ${updatedBy} on ${updatedAt}`;
     }, [renderTimestamp]);
 
+    // Admin inline editor entry point for a single bed note history.
     const handleStartEditNotes = useCallback((bed) => {
         setEditingBedId(bed.id);
         setNoteDraft(bed.notes || '');
@@ -262,6 +273,7 @@ export default function MainDash() {
         }));
     }, []);
 
+    // Save an admin note edit and refresh only the currently expanded facility.
     const handleSaveNotes = useCallback(async (bed, facility) => {
         setProcessingBedId(bed.id);
         setError('');
@@ -293,6 +305,7 @@ export default function MainDash() {
         }
     }, [noteDraft, fetchFacilityBeds]);
 
+    // Demo/testing reset to clear all assignments and refresh dashboard counts.
     const handleUnassignAllBeds = useCallback(async () => {
         const confirmed = window.confirm(
             'This will unassign every currently assigned bed. Continue?'
@@ -396,6 +409,7 @@ export default function MainDash() {
                                         </tr>
 
                                         {isExpanded && (
+                                            // Expanded facility details: per-bed status, notes, and actions.
                                             <tr className="facility-bed-row">
                                                 <td colSpan={8}>
                                                     {isBedsLoading && (

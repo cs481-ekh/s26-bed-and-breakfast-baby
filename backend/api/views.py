@@ -16,11 +16,14 @@ from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 User = get_user_model()
 
+
+# Lightweight health check used by containers and uptime monitors.
 class HealthView(APIView):
     def get(self, request):
         return Response({"status": "ok"})
 
 
+# Facility rollup endpoint for dashboard table totals.
 class FacilityAvailabilityView(APIView):
     def get(self, request):
         include_inactive = str(
@@ -29,6 +32,7 @@ class FacilityAvailabilityView(APIView):
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
 
+        # Aggregate on related beds so frontend does not need to compute totals.
         facilities = (
             facility_queryset.select_related("provider", "district")
             .annotate(
@@ -73,6 +77,7 @@ class SignUpView(APIView):
         password = request.data.get("password") or ""
         confirm_password = request.data.get("confirm_password") or ""
 
+        # Collect all validation errors in one response for better form UX.
         errors = {}
         if not first_name:
             errors["first_name"] = "First name is required."
@@ -273,6 +278,7 @@ class FacilityBedsView(APIView):
         except Facility.DoesNotExist:
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        # Pass request context so serializer can expose role-specific fields.
         beds = Bed.objects.filter(facility=facility).order_by("label")
         return Response(BedSerializer(beds, many=True, context={"request": request}).data)
 
@@ -309,6 +315,7 @@ class BedAssignView(APIView):
         if parolee.assigned_bed is not None:
             return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
 
+        # Append a note history line for auditing assignment activity.
         request_user = request.user if request.user.is_authenticated else None
         event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
         assignment_note = (
@@ -354,6 +361,7 @@ class BedHoldRequestView(APIView):
         if parolee.assigned_bed is not None:
             return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
 
+        # Prevent duplicate active holds for the same bed/parolee pair.
         if Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists():
             return Response({"error": "This bed already has an active hold for the selected parolee."}, status=status.HTTP_409_CONFLICT)
 
@@ -364,6 +372,7 @@ class BedHoldRequestView(APIView):
             f"({parolee.idoc_id}) pending facility approval."
         )
 
+        # Create hold record first, then sync bed status for dashboard visibility.
         Hold.objects.create(
             bed=bed,
             parolee=parolee,
@@ -397,6 +406,7 @@ class BedUnassignView(APIView):
             event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
             release_note = f"[{event_time}] Hold removed."
 
+            # Releasing a hold should retire active hold records for that bed.
             Hold.objects.filter(bed=bed, status=Hold.Status.ACTIVE).update(status=Hold.Status.CANCELLED)
 
             bed.notes = f"{bed.notes}\n{release_note}".strip() if bed.notes else release_note
@@ -414,6 +424,7 @@ class BedUnassignView(APIView):
         except Parolee.DoesNotExist:
             return Response({"error": "Bed has no current assignment or hold."}, status=status.HTTP_409_CONFLICT)
 
+        # Keep parolee and bed updates atomic so they cannot drift apart.
         with transaction.atomic():
             parolee.assigned_bed = None
             parolee.housing_start_date = None
@@ -479,6 +490,7 @@ class BedUnassignAllView(APIView):
             Bed.objects.filter(assigned_parolee__isnull=False).values_list("id", flat=True)
         )
 
+        # Bulk reset is wrapped in a transaction to keep counts and state consistent.
         with transaction.atomic():
             unassigned_count = Parolee.objects.filter(assigned_bed__isnull=False).update(
                 assigned_bed=None,
