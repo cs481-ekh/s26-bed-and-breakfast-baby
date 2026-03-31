@@ -87,18 +87,24 @@
   color: #334155;
 }
 
-.add-filter-btn {
-  padding: 0.3rem 0.65rem;
-  font-size: 0.78rem;
-  border-radius: 4px;
+.clear-all-filters-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  border-radius: 6px;
   border: 1px solid #c8d0da;
   background: #fff;
   color: #334155;
   cursor: pointer;
 }
 
-.add-filter-btn:hover {
+.clear-all-filters-btn:hover:not(:disabled) {
   background: #f0f4f8;
+}
+
+.clear-all-filters-btn:disabled {
+  color: #8a97a6;
+  background: #f3f5f8;
+  cursor: not-allowed;
 }
 
 .district-filter {
@@ -157,26 +163,6 @@
   gap: 0.35rem;
   font-size: 0.84rem;
   color: #334155;
-}
-
-.district-filter-clear-btn {
-  margin-top: 0.55rem;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-  border-radius: 4px;
-  border: 1px solid #c8d0da;
-  background: #fff;
-  cursor: pointer;
-}
-
-.district-filter-clear-btn:hover:not(:disabled) {
-  background: #f0f4f8;
-}
-
-.district-filter-clear-btn:disabled {
-  color: #8a97a6;
-  background: #f3f5f8;
-  cursor: not-allowed;
 }
 
 .unassign-all-btn {
@@ -246,6 +232,13 @@
 
 .main-dash-table tbody tr:hover {
   background: #fafcff;
+}
+
+.search-match {
+  background: #fde68a;
+  color: #1f2937;
+  padding: 0 0.08rem;
+  border-radius: 2px;
 }
 
 .facility-row.expanded {

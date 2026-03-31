@@ -91,7 +91,7 @@ describe("MainDash", () => {
     render(<MainDash />);
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByLabelText("Search facilities (coming soon)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search facilities or providers")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
     const facilityRow = screen.getByText("Sunrise House").closest("tr");
     expect(facilityRow).not.toBeNull();
@@ -100,6 +100,76 @@ describe("MainDash", () => {
     expect(screen.getByText("tier 1")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/facilities/availability/");
+  });
+
+  test("searches facilities by facility or provider name", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+            {
+              facility_id: 2,
+              facility_name: "Cedar Home",
+              provider_name: "Beacon Housing",
+              district_number: 2,
+              district_name: "South",
+              tier: "tier_2",
+              total_beds: 6,
+              assigned_beds: 2,
+              available_beds: 4,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    const searchInput = screen.getByLabelText("Search facilities or providers");
+
+    fireEvent.change(searchInput, { target: { value: "sun" } });
+    expect(screen.getByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
+    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    expect(screen.getByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "beacon" } });
+    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(screen.getByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "nomatch" } });
+    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "" } });
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("filters facilities by selected districts", async () => {
@@ -155,17 +225,10 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
-    // Facility list should not change until filters are explicitly applied.
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
-
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear District Filters" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear All Filters" }));
 
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
@@ -238,9 +301,80 @@ describe("MainDash", () => {
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).toBeChecked();
 
-    fireEvent.click(screen.getByRole("button", { name: "Add Filters" }));
-
     // Gender-target filters are intentionally UI-only until backend support is added.
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+  });
+
+  test("clear all filters resets search and filter selections", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+            {
+              facility_id: 2,
+              facility_name: "Cedar Home",
+              provider_name: "Beacon Housing",
+              district_number: 2,
+              district_name: "South",
+              tier: "tier_2",
+              total_beds: 6,
+              assigned_beds: 2,
+              available_beds: 4,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    const searchInput = screen.getByLabelText("Search facilities or providers");
+    fireEvent.change(searchInput, { target: { value: "beacon" } });
+    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    const districtCheckbox = screen.getByLabelText("1 - North");
+    const genderCheckbox = screen.getByLabelText("Gender neutral");
+    fireEvent.click(districtCheckbox);
+    fireEvent.click(genderCheckbox);
+
+    expect(districtCheckbox).toBeChecked();
+    expect(genderCheckbox).toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear All Filters" }));
+
+    expect(searchInput).toHaveValue("");
+    expect(districtCheckbox).not.toBeChecked();
+    expect(genderCheckbox).not.toBeChecked();
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
   });
