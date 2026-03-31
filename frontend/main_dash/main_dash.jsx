@@ -168,6 +168,45 @@ export default function MainDash() {
         }
     }, [fetchAvailability, fetchParolees, fetchFacilityBeds]);
 
+    const handleHoldBed = useCallback(async (bed, facility) => {
+        const selectedParolee = selectedParoleeByBed[bed.id];
+        if (!selectedParolee) {
+            setError('Please select a parolee before requesting a hold.');
+            return;
+        }
+
+        setProcessingBedId(bed.id);
+        setError('');
+        setSuccessMessage('');
+
+        try {
+            const response = await fetch(`/api/beds/${bed.id}/hold/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parolee_id: selectedParolee }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error || 'Hold request failed.');
+            }
+
+            const bedLabel = bed.label || `Bed ${bed.id}`;
+            const facilityName = facility.facility_name || 'Unknown facility';
+            setSuccessMessage(`Placed hold on ${bedLabel} at ${facilityName}.`);
+            setSelectedParoleeByBed((prev) => ({ ...prev, [bed.id]: '' }));
+
+            await Promise.all([
+                fetchAvailability(),
+                fetchParolees(),
+                fetchFacilityBeds(facility.facility_id),
+            ]);
+        } catch (requestError) {
+            setError(requestError.message || 'Hold request failed.');
+        } finally {
+            setProcessingBedId(null);
+        }
+    }, [selectedParoleeByBed, fetchAvailability, fetchParolees, fetchFacilityBeds]);
+
     const renderBedStatus = useCallback((status) => {
         if (!status) return 'Unknown';
         return status.replace('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
@@ -387,6 +426,7 @@ export default function MainDash() {
                                                                 {facilityBeds.map((bed) => {
                                                                     const isAssignable = bed.status === 'available';
                                                                     const isOccupied = bed.status === 'occupied';
+                                                                    const isHeld = bed.status === 'held';
                                                                     const isProcessing = processingBedId === bed.id;
                                                                     const isEditingNotes = editingBedId === bed.id;
                                                                     const canEditNotes = Boolean(bed.can_edit_notes);
@@ -522,14 +562,25 @@ export default function MainDash() {
                                                                                         {isProcessing && isAssignable ? 'Assigning...' : 'Assign'}
                                                                                     </button>
 
-                                                                                    {isOccupied && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="hold-bed-btn"
+                                                                                        disabled={!isAssignable || !selectedParolee || isProcessing}
+                                                                                        onClick={() => handleHoldBed(bed, facility)}
+                                                                                    >
+                                                                                        {isProcessing && isAssignable ? 'Requesting...' : 'Request Hold'}
+                                                                                    </button>
+
+                                                                                    {(isOccupied || isHeld) && (
                                                                                         <button
                                                                                             type="button"
                                                                                             className="unassign-bed-btn"
                                                                                             disabled={isProcessing}
                                                                                             onClick={() => handleUnassignBed(bed, facility)}
                                                                                         >
-                                                                                            {isProcessing ? 'Unassigning...' : 'Unassign'}
+                                                                                            {isProcessing
+                                                                                                ? (isHeld ? 'Releasing...' : 'Unassigning...')
+                                                                                                : (isHeld ? 'Release Hold' : 'Unassign')}
                                                                                         </button>
                                                                                     )}
                                                                                 </div>

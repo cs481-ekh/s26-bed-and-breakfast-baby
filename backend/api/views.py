@@ -4,12 +4,13 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from housing.models import Facility, User, Bed, Parolee
+from housing.models import Facility, User, Bed, Parolee, Hold
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
@@ -329,6 +330,59 @@ class BedAssignView(APIView):
         )
 
 
+class BedHoldRequestView(APIView):
+    """Place a temporary hold on an available bed for testing workflows."""
+
+    def post(self, request, bed_id):
+        parolee_id = request.data.get("parolee_id")
+        if not parolee_id:
+            return Response({"error": "parolee_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bed = Bed.objects.get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if bed.status != Bed.Status.AVAILABLE:
+            return Response({"error": "Only available beds can be held."}, status=status.HTTP_409_CONFLICT)
+
+        try:
+            parolee = Parolee.objects.get(pk=parolee_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Parolee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parolee.assigned_bed is not None:
+            return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
+
+        if Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists():
+            return Response({"error": "This bed already has an active hold for the selected parolee."}, status=status.HTTP_409_CONFLICT)
+
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+        hold_note = (
+            f"[{event_time}] Hold requested for {parolee.last_name}, {parolee.first_name} "
+            f"({parolee.idoc_id}) pending facility approval."
+        )
+
+        Hold.objects.create(
+            bed=bed,
+            parolee=parolee,
+            placed_by=request_user,
+            reason="Testing hold request from main dashboard",
+            expires_at=timezone.now() + timedelta(hours=48),
+        )
+
+        bed.notes = f"{bed.notes}\n{hold_note}".strip() if bed.notes else hold_note
+        bed.status = Bed.Status.HELD
+        bed.updated_by = request_user
+        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+        return Response(
+            {"message": f"Hold requested on bed '{bed.label}'."},
+            status=status.HTTP_200_OK,
+        )
+
+
 class BedUnassignView(APIView):
     """Clear assignment for a single bed and mark it available."""
 
@@ -338,10 +392,27 @@ class BedUnassignView(APIView):
         except Bed.DoesNotExist:
             return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        if bed.status == Bed.Status.HELD:
+            request_user = request.user if request.user.is_authenticated else None
+            event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+            release_note = f"[{event_time}] Hold removed."
+
+            Hold.objects.filter(bed=bed, status=Hold.Status.ACTIVE).update(status=Hold.Status.CANCELLED)
+
+            bed.notes = f"{bed.notes}\n{release_note}".strip() if bed.notes else release_note
+            bed.status = Bed.Status.AVAILABLE
+            bed.updated_by = request_user
+            bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+            return Response(
+                {"message": f"Released hold on bed '{bed.label}'."},
+                status=status.HTTP_200_OK,
+            )
+
         try:
             parolee = Parolee.objects.get(assigned_bed=bed)
         except Parolee.DoesNotExist:
-            return Response({"error": "Bed has no current assignment."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": "Bed has no current assignment or hold."}, status=status.HTTP_409_CONFLICT)
 
         with transaction.atomic():
             parolee.assigned_bed = None
