@@ -91,6 +91,8 @@ describe("MainDash", () => {
     render(<MainDash />);
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search facilities (coming soon)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
     const facilityRow = screen.getByText("Sunrise House").closest("tr");
     expect(facilityRow).not.toBeNull();
     expect(screen.getByText("Provider A")).toBeInTheDocument();
@@ -150,6 +152,7 @@ describe("MainDash", () => {
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();

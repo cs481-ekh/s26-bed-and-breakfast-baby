@@ -8,6 +8,7 @@ export default function MainDash() {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [selectedDistricts, setSelectedDistricts] = useState([]);
+    const [filtersOpen, setFiltersOpen] = useState(false);
 
     // Bed-level interaction state for expanded rows and in-row actions.
     const [parolees, setParolees] = useState([]);
@@ -112,6 +113,10 @@ export default function MainDash() {
 
     const clearDistrictFilters = useCallback(() => {
         setSelectedDistricts([]);
+    }, []);
+
+    const toggleFiltersMenu = useCallback(() => {
+        setFiltersOpen((prev) => !prev);
     }, []);
 
     // Expand/collapse a single facility row and lazily load its beds.
@@ -379,30 +384,63 @@ export default function MainDash() {
                 <h2>Facility Bed Availability</h2>
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>
 
-                {districtOptions.length > 0 && (
-                    <div className="district-filter" aria-label="Facility district filters">
-                        <p className="district-filter-title">Filter by District</p>
-                        <div className="district-filter-options">
-                            {districtOptions.map((option) => (
-                                <label key={option.key} className="district-filter-option">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedDistricts.includes(option.key)}
-                                        onChange={() => toggleDistrictFilter(option.key)}
-                                    />
-                                    <span>{option.district_number} - {option.district_name}</span>
-                                </label>
-                            ))}
+                <div className="main-dash-controls">
+                    <label htmlFor="facility-search" className="main-dash-search-label">Search</label>
+                    <input
+                        id="facility-search"
+                        type="search"
+                        className="main-dash-search-input"
+                        placeholder="Search facilities (coming soon)"
+                        disabled
+                        aria-label="Search facilities (coming soon)"
+                    />
+
+                    <button
+                        type="button"
+                        className="filters-toggle-btn"
+                        onClick={toggleFiltersMenu}
+                        aria-expanded={filtersOpen}
+                        aria-controls="facility-filters-panel"
+                    >
+                        {filtersOpen ? 'Hide Filters' : 'Filters'}
+                    </button>
+                </div>
+
+                {filtersOpen && (
+                    <div id="facility-filters-panel" className="filters-menu" aria-label="Facility filters menu">
+                        <div className="filters-menu-header">
+                            <p className="filters-menu-title">Filters</p>
+                            <button type="button" className="add-filter-btn" disabled>
+                                Add Filter (coming soon)
+                            </button>
                         </div>
 
-                        <button
-                            type="button"
-                            className="district-filter-clear-btn"
-                            onClick={clearDistrictFilters}
-                            disabled={selectedDistricts.length === 0}
-                        >
-                            Clear District Filters
-                        </button>
+                        {districtOptions.length > 0 && (
+                            <div className="district-filter" aria-label="Facility district filters">
+                                <p className="district-filter-title">Districts</p>
+                                <div className="district-filter-options">
+                                    {districtOptions.map((option) => (
+                                        <label key={option.key} className="district-filter-option">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedDistricts.includes(option.key)}
+                                                onChange={() => toggleDistrictFilter(option.key)}
+                                            />
+                                            <span>{option.district_number} - {option.district_name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="district-filter-clear-btn"
+                                    onClick={clearDistrictFilters}
+                                    disabled={selectedDistricts.length === 0}
+                                >
+                                    Clear District Filters
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
