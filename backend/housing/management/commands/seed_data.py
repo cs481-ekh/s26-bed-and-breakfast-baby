@@ -1,6 +1,8 @@
 """
 Seed the database with sample data for development and demonstration.
-Run with: python manage.py seed_data
+Run with:
+    python manage.py seed_data
+    python manage.py seed_data --size large
 """
 
 from django.core.management.base import BaseCommand
@@ -15,8 +17,17 @@ from housing.models import (
 class Command(BaseCommand):
     help = "Populate the database with sample IDOC housing data"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--size",
+            choices=["small", "large"],
+            default="small",
+            help="Dataset size to seed (default: small)",
+        )
+
     def handle(self, *args, **options):
-        self.stdout.write("Seeding database...")
+        size = options["size"]
+        self.stdout.write(f"Seeding database (size={size})...")
 
         # ---------------------------------------------------------------
         # Districts — Idaho's 7 judicial districts
@@ -221,6 +232,144 @@ class Command(BaseCommand):
                 "notes": "Needs placement near Idaho Falls for family support",
             },
         )
+
+        if size == "large":
+            self.stdout.write("\nApplying large dataset expansion...")
+
+            # -----------------------------------------------------------
+            # Additional providers and facilities
+            # -----------------------------------------------------------
+            extra_providers = []
+            for idx in range(1, 6):
+                provider, _ = Provider.objects.get_or_create(
+                    name=f"Large Seed Provider {idx}",
+                    defaults={
+                        "contact_name": f"Provider Contact {idx}",
+                        "contact_email": f"large.provider{idx}@idoc.example.com",
+                        "contact_phone": f"208-555-{2000 + idx}",
+                    },
+                )
+                extra_providers.append(provider)
+
+            extra_facilities = []
+            tiers = [Facility.Tier.TIER_1, Facility.Tier.TIER_2, Facility.Tier.TIER_3]
+            for idx in range(1, 16):
+                provider = extra_providers[(idx - 1) % len(extra_providers)]
+                district_num = ((idx - 1) % 7) + 1
+                tier = tiers[(idx - 1) % len(tiers)]
+                facility, _ = Facility.objects.get_or_create(
+                    name=f"Large Seed Facility {idx}",
+                    provider=provider,
+                    defaults={
+                        "address": f"{1000 + idx} Expansion Ave",
+                        "city": "Boise" if idx % 2 == 0 else "Idaho Falls",
+                        "zip_code": f"83{200 + idx}",
+                        "district": districts[district_num],
+                        "tier": tier,
+                    },
+                )
+                # Ensure these facilities have programs linked.
+                facility.programs.add(*programs)
+                extra_facilities.append(facility)
+
+            facilities.extend(extra_facilities)
+            self.stdout.write(f"  Added {len(extra_providers)} providers and {len(extra_facilities)} facilities")
+
+            # -----------------------------------------------------------
+            # Additional beds (20 per extra facility)
+            # -----------------------------------------------------------
+            created_extra_beds = 0
+            for facility in extra_facilities:
+                for i in range(1, 21):
+                    bed, created = Bed.objects.get_or_create(
+                        facility=facility,
+                        label=f"Expansion Bed {i}",
+                    )
+                    all_beds.append(bed)
+                    if created:
+                        created_extra_beds += 1
+            self.stdout.write(f"  Added {created_extra_beds} beds")
+
+            # -----------------------------------------------------------
+            # Additional users
+            # -----------------------------------------------------------
+            for idx in range(1, 11):
+                username = f"cm_large_{idx}"
+                if not User.objects.filter(username=username).exists():
+                    User.objects.create_user(
+                        username=username,
+                        password="testpass123",
+                        first_name=f"LargeCM{idx}",
+                        last_name="User",
+                        role=User.Role.CASE_MANAGER,
+                        district=districts[((idx - 1) % 7) + 1],
+                    )
+
+            for idx in range(1, 6):
+                username = f"prov_large_{idx}"
+                if not User.objects.filter(username=username).exists():
+                    User.objects.create_user(
+                        username=username,
+                        password="testpass123",
+                        first_name=f"LargeProv{idx}",
+                        last_name="User",
+                        role=User.Role.PROVIDER,
+                        provider=extra_providers[(idx - 1) % len(extra_providers)],
+                    )
+            self.stdout.write("  Added extra provider/case-manager users")
+
+            # -----------------------------------------------------------
+            # Additional parolees and placements
+            # -----------------------------------------------------------
+            created_parolees = 0
+            for idx in range(20000, 20200):
+                district_num = ((idx - 20000) % 7) + 1
+                _, created = Parolee.objects.get_or_create(
+                    idoc_id=f"IDOC-{idx}",
+                    defaults={
+                        "first_name": f"Parolee{idx}",
+                        "last_name": "LargeSeed",
+                        "district": districts[district_num],
+                    },
+                )
+                if created:
+                    created_parolees += 1
+            self.stdout.write(f"  Added {created_parolees} parolees")
+
+            # Assign up to 80 unassigned parolees to available beds.
+            unassigned = list(Parolee.objects.filter(assigned_bed__isnull=True).order_by("id")[:80])
+            available = list(Bed.objects.filter(status=Bed.Status.AVAILABLE).order_by("id")[:80])
+            placed_count = 0
+            for parolee, bed in zip(unassigned, available):
+                bed.status = Bed.Status.OCCUPIED
+                bed.save(update_fields=["status", "updated_at"])
+                parolee.assigned_bed = bed
+                parolee.housing_start_date = timezone.now().date() - timedelta(days=7)
+                parolee.housing_end_date = timezone.now().date() + timedelta(days=53)
+                parolee.save(update_fields=["assigned_bed", "housing_start_date", "housing_end_date", "updated_at"])
+                placed_count += 1
+
+            # Create extra waitlist entries to make larger list views useful.
+            active_cm = User.objects.filter(role=User.Role.CASE_MANAGER).first()
+            waitlist_created = 0
+            waitlist_pool = list(Parolee.objects.order_by("id")[:120])
+            for idx, parolee in enumerate(waitlist_pool, start=1):
+                facility = facilities[idx % len(facilities)]
+                _, created = WaitlistEntry.objects.get_or_create(
+                    parolee=parolee,
+                    facility=facility,
+                    defaults={
+                        "added_by": active_cm,
+                        "priority": WaitlistEntry.Priority.MEDIUM,
+                        "notes": "Large seed waitlist entry",
+                    },
+                )
+                if created:
+                    waitlist_created += 1
+
+            self.stdout.write(
+                f"  Added large assignments: {placed_count} placements, {waitlist_created} waitlist entries"
+            )
 
         self.stdout.write(self.style.SUCCESS("\nDatabase seeded successfully!"))
         self.stdout.write("\nSample login credentials:")
