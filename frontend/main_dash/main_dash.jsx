@@ -19,7 +19,6 @@ export default function MainDash() {
     const [bedsLoadingByFacility, setBedsLoadingByFacility] = useState({});
     const [bedsErrorByFacility, setBedsErrorByFacility] = useState({});
     const [selectedParoleeByBed, setSelectedParoleeByBed] = useState({});
-    const [expandedNotesByBed, setExpandedNotesByBed] = useState({});
     const [editingBedId, setEditingBedId] = useState(null);
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
@@ -352,12 +351,6 @@ export default function MainDash() {
         };
     }, []);
 
-    const buildNotesTooltip = useCallback((bed) => {
-        const updatedBy = bed.updated_by || 'System';
-        const updatedAt = renderTimestamp(bed.updated_at);
-        return `Last updated by ${updatedBy} on ${updatedAt}`;
-    }, [renderTimestamp]);
-
     // Admin inline editor entry point for a single bed note history.
     const handleStartEditNotes = useCallback((bed) => {
         setEditingBedId(bed.id);
@@ -367,13 +360,6 @@ export default function MainDash() {
     const handleCancelEditNotes = useCallback(() => {
         setEditingBedId(null);
         setNoteDraft('');
-    }, []);
-
-    const handleToggleNoteHistory = useCallback((bedId) => {
-        setExpandedNotesByBed((prev) => ({
-            ...prev,
-            [bedId]: !prev[bedId],
-        }));
     }, []);
 
     // Notes modal handlers.
@@ -409,7 +395,6 @@ export default function MainDash() {
             setSuccessMessage(`Updated notes for ${bedLabel} at ${facilityName}.`);
             setEditingBedId(null);
             setNoteDraft('');
-            setExpandedNotesByBed((prev) => ({ ...prev, [bed.id]: false }));
 
             await fetchFacilityBeds(facility.facility_id);
         } catch (requestError) {
@@ -637,11 +622,6 @@ export default function MainDash() {
                                                                     const canEditNotes = Boolean(bed.can_edit_notes);
                                                                     const selectedParolee = selectedParoleeByBed[bed.id] || '';
                                                                     const allNoteEntries = getNoteEntries(bed.notes);
-                                                                    const isHistoryExpanded = Boolean(expandedNotesByBed[bed.id]);
-                                                                    const visibleNoteEntries = isHistoryExpanded
-                                                                        ? allNoteEntries
-                                                                        : allNoteEntries.slice(0, 3);
-                                                                    const hasMoreHistory = allNoteEntries.length > 3;
 
                                                                     return (
                                                                         <tr key={bed.id}>
