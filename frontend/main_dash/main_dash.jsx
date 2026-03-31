@@ -7,6 +7,7 @@ export default function MainDash() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [selectedDistricts, setSelectedDistricts] = useState([]);
 
     // Bed-level interaction state for expanded rows and in-row actions.
     const [parolees, setParolees] = useState([]);
@@ -78,6 +79,40 @@ export default function MainDash() {
         fetchAvailability();
         fetchParolees();
     }, [fetchAvailability, fetchParolees]);
+
+    // Build district filter options from the currently loaded facilities.
+    const districtOptions = facilities
+        .reduce((acc, facility) => {
+            const key = `${facility.district_number}|${facility.district_name}`;
+            if (!acc.some((option) => option.key === key)) {
+                acc.push({
+                    key,
+                    district_number: facility.district_number,
+                    district_name: facility.district_name,
+                });
+            }
+            return acc;
+        }, [])
+        .sort((a, b) => Number(a.district_number) - Number(b.district_number));
+
+    const filteredFacilities = selectedDistricts.length === 0
+        ? facilities
+        : facilities.filter((facility) => {
+            const facilityDistrictKey = `${facility.district_number}|${facility.district_name}`;
+            return selectedDistricts.includes(facilityDistrictKey);
+        });
+
+    const toggleDistrictFilter = useCallback((districtKey) => {
+        setSelectedDistricts((prev) => (
+            prev.includes(districtKey)
+                ? prev.filter((key) => key !== districtKey)
+                : [...prev, districtKey]
+        ));
+    }, []);
+
+    const clearDistrictFilters = useCallback(() => {
+        setSelectedDistricts([]);
+    }, []);
 
     // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
@@ -343,6 +378,34 @@ export default function MainDash() {
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>
+
+                {districtOptions.length > 0 && (
+                    <div className="district-filter" aria-label="Facility district filters">
+                        <p className="district-filter-title">Filter by District</p>
+                        <div className="district-filter-options">
+                            {districtOptions.map((option) => (
+                                <label key={option.key} className="district-filter-option">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedDistricts.includes(option.key)}
+                                        onChange={() => toggleDistrictFilter(option.key)}
+                                    />
+                                    <span>{option.district_number} - {option.district_name}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        <button
+                            type="button"
+                            className="district-filter-clear-btn"
+                            onClick={clearDistrictFilters}
+                            disabled={selectedDistricts.length === 0}
+                        >
+                            Clear District Filters
+                        </button>
+                    </div>
+                )}
+
                 <button
                     type="button"
                     className="unassign-all-btn"
@@ -359,11 +422,11 @@ export default function MainDash() {
                 <p className="main-dash-status success">{successMessage}</p>
             )}
 
-            {!loading && !error && facilities.length === 0 && (
+            {!loading && !error && filteredFacilities.length === 0 && (
                 <p className="main-dash-status">No facilities found.</p>
             )}
 
-            {!loading && !error && facilities.length > 0 && (
+            {!loading && !error && filteredFacilities.length > 0 && (
                 <div className="main-dash-table-wrap">
                     <table className="main-dash-table">
                         <thead>
@@ -379,7 +442,7 @@ export default function MainDash() {
                             </tr>
                         </thead>
                         <tbody>
-                            {facilities.map((facility) => {
+                            {filteredFacilities.map((facility) => {
                                 const facilityBeds = bedsByFacility[facility.facility_id] || [];
                                 const isExpanded = expandedFacilityId === facility.facility_id;
                                 const isBedsLoading = Boolean(bedsLoadingByFacility[facility.facility_id]);

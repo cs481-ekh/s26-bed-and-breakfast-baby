@@ -91,11 +91,74 @@ describe("MainDash", () => {
     render(<MainDash />);
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    const facilityRow = screen.getByText("Sunrise House").closest("tr");
+    expect(facilityRow).not.toBeNull();
     expect(screen.getByText("Provider A")).toBeInTheDocument();
-    expect(screen.getByText("1 - North")).toBeInTheDocument();
+    expect(within(facilityRow).getByText("1 - North")).toBeInTheDocument();
     expect(screen.getByText("tier 1")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/facilities/availability/");
+  });
+
+  test("filters facilities by selected districts", async () => {
+    fetchMock.mockImplementation(async (url) => {
+      if (url === "/api/facilities/availability/") {
+        return {
+          ok: true,
+          json: async () => [
+            {
+              facility_id: 1,
+              facility_name: "Sunrise House",
+              provider_name: "Provider A",
+              district_number: 1,
+              district_name: "North",
+              tier: "tier_1",
+              total_beds: 8,
+              assigned_beds: 5,
+              available_beds: 3,
+            },
+            {
+              facility_id: 2,
+              facility_name: "Cedar Home",
+              provider_name: "Provider B",
+              district_number: 2,
+              district_name: "South",
+              tier: "tier_2",
+              total_beds: 6,
+              assigned_beds: 2,
+              available_beds: 4,
+            },
+          ],
+        };
+      }
+
+      if (url === "/api/parolees/") {
+        return {
+          ok: true,
+          json: async () => [],
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => [],
+      };
+    });
+
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("1 - North"));
+
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear District Filters" }));
+
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("shows facility bed rows when the facility is expanded", async () => {
