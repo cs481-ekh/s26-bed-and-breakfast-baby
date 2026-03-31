@@ -23,7 +23,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        'main-dashboard': resolve(__dirname, 'main-dashboard.html'),
       },
     },
   },

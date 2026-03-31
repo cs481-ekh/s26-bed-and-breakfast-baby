@@ -23,7 +23,8 @@ export default function MainDash() {
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
     const [resetting, setResetting] = useState(false);
-    
+    const [expandedNotesBedIds, setExpandedNotesBedIds] = useState(new Set());
+
     // Notes modal state for viewing notes in a popup.
     const [notesModalOpen, setNotesModalOpen] = useState(false);
     const [selectedBedForNotesModal, setSelectedBedForNotesModal] = useState(null);
@@ -363,14 +364,21 @@ export default function MainDash() {
     }, []);
 
     // Notes modal handlers.
-    const handleOpenNotesModal = useCallback((bed) => {
-        setSelectedBedForNotesModal(bed);
-        setNotesModalOpen(true);
-    }, []);
-
     const handleCloseNotesModal = useCallback(() => {
         setNotesModalOpen(false);
         setSelectedBedForNotesModal(null);
+    }, []);
+
+    const handleToggleNoteHistory = useCallback((bedId) => {
+        setExpandedNotesBedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(bedId)) {
+                next.delete(bedId);
+            } else {
+                next.add(bedId);
+            }
+            return next;
+        });
     }, []);
 
     // Save an admin note edit and refresh only the currently expanded facility.
@@ -638,16 +646,39 @@ export default function MainDash() {
                                                                                             <span className="bed-notes-text">None</span>
                                                                                         )}
 
-                                                                                        {allNoteEntries.length > 0 && (
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className="view-notes-btn"
-                                                                                                onClick={() => handleOpenNotesModal(bed)}
-                                                                                                disabled={isProcessing}
-                                                                                            >
-                                                                                                Notes ({allNoteEntries.length})
-                                                                                            </button>
-                                                                                        )}
+                                                                                        {allNoteEntries.length > 0 && (() => {
+                                                                                            const isNotesExpanded = expandedNotesBedIds.has(bed.id);
+                                                                                            const displayEntries = isNotesExpanded
+                                                                                                ? allNoteEntries
+                                                                                                : allNoteEntries.slice(0, 3);
+                                                                                            return (
+                                                                                                <>
+                                                                                                    <ul className="bed-notes-list">
+                                                                                                        {displayEntries.map((entry, idx) => {
+                                                                                                            const parsed = parseNoteEntry(entry);
+                                                                                                            return (
+                                                                                                                <li key={idx} className="bed-notes-item">
+                                                                                                                    <span className="bed-notes-message">{parsed.message || entry}</span>
+                                                                                                                </li>
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </ul>
+                                                                                                    {allNoteEntries.length > 3 && (
+                                                                                                        <>
+                                                                                                            <span className="bed-notes-count">{`Showing ${displayEntries.length} of ${allNoteEntries.length} changes`}</span>
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                className="notes-history-toggle-btn"
+                                                                                                                onClick={() => handleToggleNoteHistory(bed.id)}
+                                                                                                                disabled={isProcessing}
+                                                                                                            >
+                                                                                                                {isNotesExpanded ? 'Show less' : 'Show full history'}
+                                                                                                            </button>
+                                                                                                        </>
+                                                                                                    )}
+                                                                                                </>
+                                                                                            );
+                                                                                        })()}
 
                                                                                         {canEditNotes && (
                                                                                             <button
@@ -691,7 +722,7 @@ export default function MainDash() {
                                                                                     </div>
                                                                                 )}
                                                                             </td>
-                                                                            <td>{renderTimestamp(bed.updated_at)}</td>
+                                                                            <td title={`Last updated by ${bed.updated_by || 'System'} on ${renderTimestamp(bed.updated_at)}`}>{renderTimestamp(bed.updated_at)}</td>
                                                                             <td>{bed.updated_by || 'System'}</td>
                                                                             <td>
                                                                                 <div className="bed-assign-controls">

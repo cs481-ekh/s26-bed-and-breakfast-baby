@@ -22,15 +22,29 @@ echo "==> Starting DB for tests ..."
 "${compose_cmd[@]}" up -d db
 
 echo "==> Backend tests (pytest) ..."
-"${compose_cmd[@]}" run --rm backend bash -lc "\
-  python manage.py migrate --noinput && \
-  pytest -q \
-"
+if [[ "${1:-}" == "--errors-only" ]]; then
+  "${compose_cmd[@]}" run --build --rm backend bash -lc "\
+    python manage.py migrate --noinput && \
+    pytest -q 2>&1 \
+  " | grep -E "(FAILED|ERROR|Error|assert|AssertionError)" || true
+else
+  "${compose_cmd[@]}" run --build --rm backend bash -lc "\
+    python manage.py migrate --noinput && \
+    pytest -q \
+  "
+fi
 
 echo "==> Frontend tests ..."
-"${compose_cmd[@]}" run --rm frontend bash -lc "\
-  npm run lint && \
-  npm test \
-"
+if [[ "${1:-}" == "--errors-only" ]]; then
+  "${compose_cmd[@]}" run --build --rm frontend bash -lc "\
+    npm run lint && \
+    npm test -- --reporter=verbose 2>&1 \
+  " | grep -E "(FAIL |FAILED|×| × | ✗|Error:|TestingLibraryElementError|AssertionError)" || true
+else
+  "${compose_cmd[@]}" run --build --rm frontend bash -lc "\
+    npm run lint && \
+    npm test \
+  "
+fi
 
 echo "==> Tests complete."

@@ -20,7 +20,7 @@ export default function LoginPage() {
             <img src="/logo1.png" alt="Idaho Department of Correction" className="logo" />
           </div>
           
-          <h1 id="login-title">Welcome</h1>
+          <h1 id="login-title">Log In</h1>
           <p className="login-subtitle">Sign in to manage bed assignments</p>
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -52,7 +52,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <button type="submit" className="login-button">Sign In</button>
+            <button type="submit" className="login-button">Log In</button>
           </form>
 
           {submitted && <p className="status-message">Login submitted for {email}.</p>}
