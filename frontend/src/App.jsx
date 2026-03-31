@@ -1,9 +1,13 @@
 import { useRef } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminDash from "../admin/admin_dash";
 import UserTable from "../admin/user_table";
+import MainDash from "../main_dash/main_dash";
+import PageTemplate from "./components/PageTemplate";
+import LoginPage from "./LoginPage";
 import "./App.css";
 
-export default function App() {
+function AdminPage() {
   const userTableRef = useRef(null);
 
   const handleAddUser = async (userData) => {
@@ -96,12 +100,7 @@ export default function App() {
   };
 
   return (
-    <>
-      <div style={{ textAlign: "left", marginBottom: "1rem" }}>
-        <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/login.html">Open Login Page</a>
-      </div>
+    <PageTemplate>
       <AdminDash
         onAddUser={handleAddUser}
         onRemoveUser={handleRemoveUser}
@@ -109,6 +108,27 @@ export default function App() {
         onChangeRole={handleChangeRole}
       />
       <UserTable ref={userTableRef} />
-    </>
+    </PageTemplate>
+  );
+}
+
+function MainDashboardPageComponent() {
+  return (
+    <PageTemplate>
+      <MainDash />
+    </PageTemplate>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/main-dashboard" element={<MainDashboardPageComponent />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/" element={<MainDashboardPageComponent />} />
+      </Routes>
+    </Router>
   );
 }
