@@ -15,9 +15,9 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <nav aria-label="Global navigation" style={{ marginBottom: "1rem" }}>
-        <a href="/">Admin Dashboard</a>
+        <a href="/admin">Admin Dashboard</a>
         <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/main-dashboard.html">Main Bed Dashboard</a>
+        <a href="/main-dashboard">Main Bed Dashboard</a>
       </nav>
       <section className="login-card" aria-labelledby="login-title">
         <h1 id="login-title">Log In</h1>
