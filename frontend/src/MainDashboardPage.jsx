@@ -1,7 +1,9 @@
 import MainDash from "../main_dash/main_dash";
+import PageTemplate from "./components/PageTemplate";
 
 export default function MainDashboardPage() {
   return (
+<<<<<<< HEAD
     <>
       <nav aria-label="Global navigation" style={{ textAlign: "left", marginBottom: "1rem" }}>
         <a href="/">Admin Dashboard</a>
@@ -14,7 +16,10 @@ export default function MainDashboardPage() {
         <span style={{ margin: "0 0.5rem" }}>|</span>
         <a href="/provider-dashboard.html">Provider Page</a>
       </nav>
+=======
+    <PageTemplate>
+>>>>>>> 841054c1505d35124a581fe84780369991138e89
       <MainDash />
-    </>
+    </PageTemplate>
   );
 }

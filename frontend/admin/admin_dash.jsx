@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onChangeRole }) {
+    // Create-account form state and field-level validation feedback.
     const [addForm, setAddForm] = useState({
         first_name: '',
         last_name: '',
@@ -13,9 +14,11 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
     const [addErrors, setAddErrors] = useState({});
     const [addMessage, setAddMessage] = useState('');
 
+    // Lightweight forms for account removal/disable and role update actions.
     const [removeForm, setRemoveForm] = useState({ username: '' });
     const [roleForm, setRoleForm] = useState({ username: '', role: 'case_manager' });
 
+    // Local validation mirrors backend requirements so users get immediate feedback.
     const validateAddForm = () => {
         const errors = {};
 
@@ -43,6 +46,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
         return errors;
     };
 
+    // Keep input handling centralized so error and status messages clear predictably.
     const updateAddField = (name, value) => {
         setAddForm({ ...addForm, [name]: value });
         if (addErrors[name]) {
@@ -53,6 +57,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
         }
     };
 
+    // Submit create-account flow; parent callback handles API call and persistence.
     const handleAddSubmit = async (e) => {
         e.preventDefault();
 
@@ -80,6 +85,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
         }
     };
 
+    // Destructive remove action is confirmation-gated before invoking parent callback.
     const handleRemoveSubmit = (e) => {
         e.preventDefault();
         const confirmed = window.confirm(
@@ -100,6 +106,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
         setRemoveForm({ username: '' });
     };
 
+    // Role-change flow updates one user role at a time.
     const handleRoleSubmit = (e) => {
         e.preventDefault();
         if (onChangeRole) onChangeRole(roleForm.username, roleForm.role);
@@ -112,6 +119,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
             <h1>Sign Up</h1>
             <div className="options">
                 <div className="option">
+                    {/* Account creation area for admins/support staff. */}
                     <h2>Create Account</h2>
                     <form onSubmit={handleAddSubmit}>
                         <input
@@ -185,6 +193,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                 </div>
 
                 <div className="option">
+                    {/* Account lifecycle controls: hard remove or soft disable. */}
                     <h2>Remove User</h2>
                     <form onSubmit={handleRemoveSubmit}>
                         <input
@@ -201,6 +210,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                 </div>
 
                 <div className="option">
+                    {/* Permission management section for role reassignment. */}
                     <h2>Change User Role</h2>
                     <form onSubmit={handleRoleSubmit}>
                         <input

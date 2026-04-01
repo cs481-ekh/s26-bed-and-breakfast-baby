@@ -1,65 +1,172 @@
+/* Login Page Container */
 .login-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
 }
 
+.login-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Login Card Styling */
 .login-card {
   width: 100%;
-  max-width: 420px;
-  border: 1px solid #e1e4e8;
-  border-radius: 10px;
-  padding: 1.5rem;
+  max-width: 380px;
   background: #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
 
+/* Logo Container */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Heading */
 .login-card h1 {
-  margin: 0;
-  font-size: 1.8rem;
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
 }
 
 .login-subtitle {
-  margin: 0.5rem 0 1rem;
-  color: #4b5563;
+  margin: 0 0 1.5rem;
+  color: #666666;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
+/* Form Styling */
 .login-form {
-  display: grid;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .login-form label {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  color: #333333;
 }
 
 .login-form input {
-  border: 1px solid #c7ced6;
-  border-radius: 6px;
   padding: 0.65rem 0.75rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background-color: #fafafa;
+  color: #1a1a1a;
 }
 
-.login-form button {
-  margin-top: 0.5rem;
-  border: none;
-  border-radius: 6px;
-  padding: 0.7rem 0.9rem;
-  font-size: 1rem;
+.login-form input:focus {
+  outline: none;
+  border-color: #999999;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(153, 153, 153, 0.08);
+}
+
+.login-form input::placeholder {
+  color: #999999;
+}
+
+/* Button Styling */
+.login-button {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #ffffff;
-  background-color: #0f4c81;
+  background: #333333;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
 }
 
-.login-form button:hover {
-  background-color: #0b3b64;
+.login-button:hover {
+  background: #1a1a1a;
 }
 
+.login-button:active {
+  background: #0a0a0a;
+}
+
+/* Status Message */
 .status-message {
-  margin: 1rem 0 0;
-  color: #0f5132;
+  margin: 0;
+  padding: 0.75rem;
+  color: #276749;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
   font-weight: 500;
+  text-align: center;
+  font-size: 0.85rem;
 }
+
+/* Footer Navigation */
+.footer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eeeeee;
+  font-size: 0.8rem;
+}
+
+.footer-nav a {
+  color: #666666;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.footer-nav a:hover {
+  color: #333333;
+}
+
+.divider {
+  color: #cccccc;
+}
+
+.nav-note {
+  color: #999999;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+
