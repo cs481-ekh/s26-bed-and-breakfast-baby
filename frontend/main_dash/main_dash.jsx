@@ -1,28 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import './main_dash.css';
 
-<<<<<<< HEAD
 export default function MainDash({ readOnly = false }) {
-=======
-export default function MainDash() {
-    // Top-level dashboard data and global status messaging.
->>>>>>> 841054c1505d35124a581fe84780369991138e89
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-<<<<<<< HEAD
-    const [districtFilter, setDistrictFilter] = useState('');
-    const [genderFilter, setGenderFilter] = useState('');
-    const [sexOffenderFilter, setSexOffenderFilter] = useState('');
-
-    const districtOptions = [1, 2, 3, 4, 5, 6, 7];
-=======
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDistricts, setSelectedDistricts] = useState([]);
     const [selectedGenderTargets, setSelectedGenderTargets] = useState([]);
     const [filtersOpen, setFiltersOpen] = useState(false);
->>>>>>> 841054c1505d35124a581fe84780369991138e89
 
     // Bed-level interaction state for expanded rows and in-row actions.
     const [parolees, setParolees] = useState([]);
@@ -45,22 +32,7 @@ export default function MainDash() {
     const fetchAvailability = useCallback(async () => {
         try {
             setLoading(true);
-            const query = new URLSearchParams();
-
-            if (districtFilter) {
-                query.set('district', districtFilter);
-            }
-
-            if (genderFilter) {
-                query.set('gender', genderFilter);
-            }
-
-            if (sexOffenderFilter) {
-                query.set('sex_offender', sexOffenderFilter);
-            }
-
-            const queryString = query.toString();
-            const response = await fetch(`/api/facilities/availability/${queryString ? `?${queryString}` : ''}`);
+            const response = await fetch('/api/facilities/availability/');
             const payload = await response.json();
             if (!response.ok) throw new Error('Could not load bed availability.');
             setFacilities(Array.isArray(payload) ? payload : []);
@@ -71,7 +43,7 @@ export default function MainDash() {
         } finally {
             setLoading(false);
         }
-    }, [districtFilter, genderFilter, sexOffenderFilter]);
+    }, []);
 
     const fetchParolees = useCallback(async () => {
         try {
@@ -474,64 +446,19 @@ export default function MainDash() {
 
     return (
         <section className="main-dash" aria-label="Main bed dashboard">
+            <nav aria-label="Global navigation" style={{ textAlign: 'left', marginBottom: '1rem' }}>
+                <a href="/admin">Admin Dashboard</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/case-manager.html">Case Manager Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/parole-officer.html">Parole Officer Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/provider-dashboard.html">Provider Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/login.html">Login Page</a>
+            </nav>
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
-<<<<<<< HEAD
-                <p>Live view of available beds by housing facility.</p>
-                {!readOnly && (
-                    <button
-                        type="button"
-                        className="unassign-all-btn"
-                        onClick={handleUnassignAllBeds}
-                        disabled={resetting}
-                    >
-                        {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
-                    </button>
-                )}
-            </div>
-
-            <div className="main-dash-filters" style={{ marginBottom: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <label>
-                    District
-                    <select
-                        value={districtFilter}
-                        onChange={(e) => setDistrictFilter(e.target.value)}
-                        style={{ marginLeft: '0.5rem' }}
-                    >
-                        <option value="">All</option>
-                        {districtOptions.map((districtNumber) => (
-                            <option key={districtNumber} value={districtNumber}>
-                                District {districtNumber}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-
-                <label>
-                    Gender
-                    <select
-                        value={genderFilter}
-                        onChange={(e) => setGenderFilter(e.target.value)}
-                        style={{ marginLeft: '0.5rem' }}
-                    >
-                        <option value="">All</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </label>
-
-                <label>
-                    Sex Offender
-                    <select
-                        value={sexOffenderFilter}
-                        onChange={(e) => setSexOffenderFilter(e.target.value)}
-                        style={{ marginLeft: '0.5rem' }}
-                    >
-                        <option value="">All</option>
-                        <option value="true">Allowed</option>
-                    </select>
-                </label>
-=======
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>
 
                 <div className="main-dash-controls">
@@ -618,7 +545,6 @@ export default function MainDash() {
                 >
                     {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
                 </button>
->>>>>>> 841054c1505d35124a581fe84780369991138e89
             </div>
 
             {loading && <p className="main-dash-status">Loading facilities...</p>}
@@ -647,32 +573,6 @@ export default function MainDash() {
                             </tr>
                         </thead>
                         <tbody>
-<<<<<<< HEAD
-                            {facilities.map((facility) => (
-                                <tr key={facility.facility_id}>
-                                    <td>{facility.facility_name}</td>
-                                    <td>{facility.provider_name}</td>
-                                    <td>
-                                        {facility.district_number} - {facility.district_name}
-                                    </td>
-                                    <td>{facility.tier.replace('_', ' ')}</td>
-                                    <td>{facility.total_beds}</td>
-                                    <td>{facility.assigned_beds}</td>
-                                    <td>{facility.available_beds}</td>
-                                    {!readOnly && (
-                                        <td>
-                                            <button
-                                                className="assign-bed-btn"
-                                                disabled={facility.available_beds === 0}
-                                                onClick={() => openAssignModal(facility)}
-                                            >
-                                                Assign Bed
-                                            </button>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-=======
                             {searchedFacilities.map((facility) => {
                                 const facilityBeds = bedsByFacility[facility.facility_id] || [];
                                 const isExpanded = expandedFacilityId === facility.facility_id;
@@ -691,21 +591,23 @@ export default function MainDash() {
                                             <td>{facility.total_beds}</td>
                                             <td>{facility.assigned_beds}</td>
                                             <td>{facility.available_beds}</td>
-                                            <td>
-                                                <button
-                                                    type="button"
-                                                    className="assign-bed-btn"
-                                                    onClick={() => handleToggleBeds(facility.facility_id)}
-                                                >
-                                                    {isExpanded ? 'Hide Beds' : 'View Beds'}
-                                                </button>
-                                            </td>
+                                            {!readOnly && (
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="assign-bed-btn"
+                                                        onClick={() => handleToggleBeds(facility.facility_id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Beds' : 'View Beds'}
+                                                    </button>
+                                                </td>
+                                            )}
                                         </tr>
 
                                         {isExpanded && (
                                             // Expanded facility details: per-bed status, notes, and actions.
                                             <tr className="facility-bed-row">
-                                                <td colSpan={8}>
+                                                <td colSpan={readOnly ? 7 : 8}>
                                                     {isBedsLoading && (
                                                         <p className="main-dash-status">Loading beds...</p>
                                                     )}
@@ -898,76 +800,11 @@ export default function MainDash() {
                                     </React.Fragment>
                                 );
                             })}
->>>>>>> 841054c1505d35124a581fe84780369991138e89
                         </tbody>
                     </table>
                 </div>
             )}
 
-<<<<<<< HEAD
-            {!readOnly && assignTarget && (
-                <div className="modal-backdrop" role="presentation" onClick={closeModal}>
-                    <div
-                        className="modal"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="modal-title"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3 id="modal-title">Assign Bed — {assignTarget.facility_name}</h3>
-
-                        {modalLoading && <p className="modal-status">Loading…</p>}
-                        {modalError && <p className="modal-status error">{modalError}</p>}
-
-                        {!modalLoading && (
-                            <form onSubmit={handleAssign}>
-                                <label htmlFor="bed-select">Available Bed</label>
-                                <select
-                                    id="bed-select"
-                                    value={selectedBed}
-                                    onChange={(e) => setSelectedBed(e.target.value)}
-                                    disabled={availableBeds.length === 0}
-                                >
-                                    <option value="">
-                                        {availableBeds.length === 0 ? 'No beds available' : '— Select a bed —'}
-                                    </option>
-                                    {availableBeds.map((bed) => (
-                                        <option key={bed.id} value={bed.id}>{bed.label}</option>
-                                    ))}
-                                </select>
-
-                                <label htmlFor="parolee-select">Parolee</label>
-                                <select
-                                    id="parolee-select"
-                                    value={selectedParolee}
-                                    onChange={(e) => setSelectedParolee(e.target.value)}
-                                    disabled={parolees.length === 0}
-                                >
-                                    <option value="">
-                                        {parolees.length === 0 ? 'No unassigned parolees' : '— Select a parolee —'}
-                                    </option>
-                                    {parolees.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.idoc_id} — {p.last_name}, {p.first_name}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <div className="modal-actions">
-                                    <button type="button" className="modal-cancel-btn" onClick={closeModal}>
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="assign-bed-btn"
-                                        disabled={assigning || !selectedBed || !selectedParolee}
-                                    >
-                                        {assigning ? 'Assigning…' : 'Confirm Assignment'}
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-=======
             {/* Notes Modal */}
             {notesModalOpen && selectedBedForNotesModal && (
                 <div className="notes-modal-overlay" onClick={handleCloseNotesModal}>
@@ -1015,7 +852,6 @@ export default function MainDash() {
                                 Close
                             </button>
                         </div>
->>>>>>> 841054c1505d35124a581fe84780369991138e89
                     </div>
                 </div>
             )}

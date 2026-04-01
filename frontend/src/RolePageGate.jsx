@@ -22,7 +22,7 @@ export default function RolePageGate({ allowedRoles, children }) {
 
         if (!response.ok) {
           if (!cancelled) {
-            setStatus("unauthenticated");
+            setStatus("demo");
           }
           return;
         }
@@ -42,7 +42,7 @@ export default function RolePageGate({ allowedRoles, children }) {
         }
       } catch {
         if (!cancelled) {
-          setStatus("unauthenticated");
+          setStatus("demo");
         }
       }
     };
@@ -58,12 +58,13 @@ export default function RolePageGate({ allowedRoles, children }) {
     return <p>Checking access...</p>;
   }
 
-  if (status === "unauthenticated") {
+  if (status === "demo") {
     return (
       <section>
-        <h1>Sign in required</h1>
-        <p>Your session is not authenticated. Please sign in and try again.</p>
-        <a href="/login.html">Go to Login</a>
+        <p style={{ marginBottom: "1rem" }}>
+          Demo mode: no authenticated session was found, so this page is shown without role enforcement.
+        </p>
+        {children}
       </section>
     );
   }

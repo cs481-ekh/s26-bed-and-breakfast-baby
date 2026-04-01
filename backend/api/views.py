@@ -10,12 +10,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-<<<<<<< HEAD
 from rest_framework.permissions import IsAuthenticated
 from housing.models import Facility, User, Bed, Parolee
-=======
-from housing.models import Facility, User, Bed, Parolee, Hold
->>>>>>> 841054c1505d35124a581fe84780369991138e89
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
@@ -40,7 +36,6 @@ class FacilityAvailabilityView(APIView):
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
 
-<<<<<<< HEAD
         if district_number:
             facility_queryset = facility_queryset.filter(district__number=district_number)
 
@@ -52,9 +47,7 @@ class FacilityAvailabilityView(APIView):
         if sex_offender in {"1", "true", "yes"}:
             facility_queryset = facility_queryset.filter(accepts_sex_offender=True)
 
-=======
         # Aggregate on related beds so frontend does not need to compute totals.
->>>>>>> 841054c1505d35124a581fe84780369991138e89
         facilities = (
             facility_queryset.select_related("provider", "district")
             .annotate(

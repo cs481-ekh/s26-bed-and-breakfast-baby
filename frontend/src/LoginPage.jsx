@@ -14,31 +14,14 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-<<<<<<< HEAD
-      <nav aria-label="Global navigation" style={{ marginBottom: "1rem" }}>
-        <a href="/">Admin Dashboard</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/main-dashboard.html">Main Bed Dashboard</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/case-manager.html">Case Manager Page</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/parole-officer.html">Parole Officer Page</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/provider-dashboard.html">Provider Page</a>
-      </nav>
-      <section className="login-card" aria-labelledby="login-title">
-        <h1 id="login-title">Log In</h1>
-        <p className="login-subtitle">Enter your email and password.</p>
-=======
       <div className="login-container">
         <section className="login-card" aria-labelledby="login-title">
           <div className="logo-container">
             <img src="/logo1.png" alt="Idaho Department of Correction" className="logo" />
           </div>
-          
+
           <h1 id="login-title">Log In</h1>
           <p className="login-subtitle">Sign in to manage bed assignments</p>
->>>>>>> 841054c1505d35124a581fe84780369991138e89
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
@@ -77,7 +60,7 @@ export default function LoginPage() {
           <nav className="footer-nav" aria-label="Quick navigation">
             <a href="/admin">Admin Dashboard</a>
             <span className="divider">•</span>
-            <a href="/main-dashboard">Bed Dashboard</a>
+            <a href="/main-dashboard.html">Bed Dashboard</a>
             <span className="nav-note">(Testing Links)</span>
           </nav>
         </section>

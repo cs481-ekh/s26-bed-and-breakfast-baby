@@ -100,7 +100,6 @@ function AdminPage() {
   };
 
   return (
-<<<<<<< HEAD
     <>
       <div style={{ textAlign: "left", marginBottom: "1rem" }}>
         <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
@@ -113,17 +112,16 @@ function AdminPage() {
         <span style={{ margin: "0 0.5rem" }}>|</span>
         <a href="/provider-dashboard.html">Provider Page</a>
       </div>
-=======
-    <PageTemplate>
->>>>>>> 841054c1505d35124a581fe84780369991138e89
-      <AdminDash
-        onAddUser={handleAddUser}
-        onRemoveUser={handleRemoveUser}
-        onDisableUser={handleDisableUser}
-        onChangeRole={handleChangeRole}
-      />
-      <UserTable ref={userTableRef} />
-    </PageTemplate>
+      <PageTemplate>
+        <AdminDash
+          onAddUser={handleAddUser}
+          onRemoveUser={handleRemoveUser}
+          onDisableUser={handleDisableUser}
+          onChangeRole={handleChangeRole}
+        />
+        <UserTable ref={userTableRef} />
+      </PageTemplate>
+    </>
   );
 }
 
