@@ -100,15 +100,28 @@ function AdminPage() {
   };
 
   return (
-    <PageTemplate>
-      <AdminDash
-        onAddUser={handleAddUser}
-        onRemoveUser={handleRemoveUser}
-        onDisableUser={handleDisableUser}
-        onChangeRole={handleChangeRole}
-      />
-      <UserTable ref={userTableRef} />
-    </PageTemplate>
+    <>
+      <div style={{ textAlign: "left", marginBottom: "1rem" }}>
+        <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/login.html">Open Login Page</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/case-manager.html">Case Manager Page</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/parole-officer.html">Parole Officer Page</a>
+        <span style={{ margin: "0 0.5rem" }}>|</span>
+        <a href="/provider-dashboard.html">Provider Page</a>
+      </div>
+      <PageTemplate>
+        <AdminDash
+          onAddUser={handleAddUser}
+          onRemoveUser={handleRemoveUser}
+          onDisableUser={handleDisableUser}
+          onChangeRole={handleChangeRole}
+        />
+        <UserTable ref={userTableRef} />
+      </PageTemplate>
+    </>
   );
 }
 

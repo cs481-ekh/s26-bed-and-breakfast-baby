@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from housing.models import Facility, User, Bed, Parolee, Hold
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
@@ -29,8 +30,22 @@ class FacilityAvailabilityView(APIView):
         include_inactive = str(
             request.query_params.get("include_inactive", "false")
         ).lower() in {"1", "true", "yes"}
+        district_number = request.query_params.get("district")
+        gender = (request.query_params.get("gender") or "").strip().lower()
+        sex_offender = (request.query_params.get("sex_offender") or "").strip().lower()
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
+
+        if district_number:
+            facility_queryset = facility_queryset.filter(district__number=district_number)
+
+        if gender == "male":
+            facility_queryset = facility_queryset.filter(accepts_male=True)
+        elif gender == "female":
+            facility_queryset = facility_queryset.filter(accepts_female=True)
+
+        if sex_offender in {"1", "true", "yes"}:
+            facility_queryset = facility_queryset.filter(accepts_sex_offender=True)
 
         # Aggregate on related beds so frontend does not need to compute totals.
         facilities = (
@@ -57,6 +72,9 @@ class FacilityAvailabilityView(APIView):
                     "district_number": facility.district.number,
                     "district_name": facility.district.name,
                     "tier": facility.tier,
+                    "accepts_male": facility.accepts_male,
+                    "accepts_female": facility.accepts_female,
+                    "accepts_sex_offender": facility.accepts_sex_offender,
                     "is_active": facility.is_active,
                     "total_beds": facility.total_beds,
                     "assigned_beds": facility.assigned_beds,
@@ -89,7 +107,7 @@ class SignUpView(APIView):
             errors["email"] = "Email is required."
         valid_roles = {choice[0] for choice in User.Role.choices}
         if role not in valid_roles:
-            errors["role"] = "Role must be admin, case_manager, or provider."
+            errors["role"] = "Role must be admin, case_manager, parole_officer, or provider."
         if not password:
             errors["password"] = "Password is required."
         if not confirm_password:
@@ -131,6 +149,8 @@ class SignUpView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing users.
@@ -145,7 +165,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def update_role(self, request):
         """
         Update a user's role by username.
-        Expects: {"username": "user@example.com", "role": "admin|case_manager|provider"}
+        Expects: {"username": "user@example.com", "role": "admin|case_manager|parole_officer|provider"}
         """
         username = (request.data.get('username') or '').strip()
         role = (request.data.get('role') or '').strip()
@@ -159,7 +179,7 @@ class UserViewSet(viewsets.ModelViewSet):
         valid_roles = {choice[0] for choice in User.Role.choices}
         if role not in valid_roles:
             return Response(
-                {"error": "Invalid role. Use admin, case_manager, or provider."},
+                {"error": "Invalid role. Use admin, case_manager, parole_officer, or provider."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -509,6 +529,113 @@ class BedUnassignAllView(APIView):
                 "message": "All bed assignments have been cleared.",
                 "parolees_unassigned": unassigned_count,
                 "beds_reset": reset_bed_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response(
+            {
+                "id": user.id,
+                "username": user.username,
+                "role": user.role,
+                "provider_id": user.provider_id,
+                "district_id": user.district_id,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ProviderBedsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if getattr(request.user, "role", None) != User.Role.PROVIDER:
+            return Response({"error": "Only housing providers can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not request.user.provider_id:
+            return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
+
+        beds = (
+            Bed.objects.filter(facility__provider_id=request.user.provider_id)
+            .select_related("facility", "facility__district", "assigned_parolee")
+            .order_by("facility__name", "label")
+        )
+
+        data = []
+        for bed in beds:
+            parolee = bed.assigned_parolee
+            data.append(
+                {
+                    "bed_id": bed.id,
+                    "bed_label": bed.label,
+                    "bed_status": bed.status,
+                    "facility_id": bed.facility_id,
+                    "facility_name": bed.facility.name,
+                    "district_number": bed.facility.district.number,
+                    "client_id": parolee.idoc_id if parolee else None,
+                    "client_name": f"{parolee.last_name}, {parolee.first_name}" if parolee else None,
+                }
+            )
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ProviderAssignClientView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request.user, "role", None) != User.Role.PROVIDER:
+            return Response({"error": "Only housing providers can assign clients."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not request.user.provider_id:
+            return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
+
+        bed_id = request.data.get("bed_id")
+        idoc_id = (request.data.get("idoc_id") or "").strip()
+
+        if not bed_id:
+            return Response({"error": "bed_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not idoc_id:
+            return Response({"error": "idoc_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bed = Bed.objects.select_related("facility").get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if bed.facility.provider_id != request.user.provider_id:
+            return Response({"error": "You can only update beds for your own facilities."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            parolee = Parolee.objects.get(idoc_id=idoc_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "No parolee exists with that client ID."}, status=status.HTTP_404_NOT_FOUND)
+
+        if bed.status != Bed.Status.AVAILABLE:
+            return Response({"error": "Selected bed is not available."}, status=status.HTTP_409_CONFLICT)
+
+        if parolee.assigned_bed is not None:
+            return Response({"error": "That client already has an assigned bed."}, status=status.HTTP_409_CONFLICT)
+
+        bed.status = Bed.Status.OCCUPIED
+        bed.save(update_fields=["status"])
+
+        parolee.assigned_bed = bed
+        parolee.housing_start_date = timezone.now().date()
+        parolee.save(update_fields=["assigned_bed", "housing_start_date"])
+
+        return Response(
+            {
+                "message": f"Assigned {parolee.idoc_id} to {bed.label} at {bed.facility.name}.",
+                "bed_id": bed.id,
+                "client_id": parolee.idoc_id,
             },
             status=status.HTTP_200_OK,
         )

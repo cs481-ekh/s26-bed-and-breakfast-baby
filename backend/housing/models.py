@@ -16,6 +16,7 @@ class User(AbstractUser):
     class Role(models.TextChoices):
         ADMIN = "admin", "Administrator"
         CASE_MANAGER = "case_manager", "Case Manager"
+        PAROLE_OFFICER = "parole_officer", "Parole Officer"
         PROVIDER = "provider", "Housing Provider"
 
     role = models.CharField(
@@ -117,6 +118,9 @@ class Facility(models.Model):
         choices=Tier.choices,
         help_text="IDOC three-tiered housing standard",
     )
+    accepts_male = models.BooleanField(default=True)
+    accepts_female = models.BooleanField(default=True)
+    accepts_sex_offender = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

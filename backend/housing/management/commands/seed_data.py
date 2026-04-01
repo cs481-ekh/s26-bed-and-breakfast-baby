@@ -76,17 +76,17 @@ class Command(BaseCommand):
         # Facilities
         # ---------------------------------------------------------------
         facilities_data = [
-            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, "tier_2"),
-            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, "tier_1"),
-            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, "tier_2"),
-            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, "tier_3"),
-            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, "tier_2"),
-            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, "tier_1"),
-            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, "tier_2"),
-            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, "tier_3"),
+            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, "tier_2", True, True, True),
+            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, "tier_1", True, False, False),
+            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, "tier_2", True, True, False),
+            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, "tier_3", False, True, False),
+            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, "tier_2", True, True, True),
+            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, "tier_1", True, False, False),
+            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, "tier_2", False, True, False),
+            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, "tier_3", True, True, True),
         ]
         facilities = []
-        for prov, name, addr, city, zip_code, dist_num, tier in facilities_data:
+        for prov, name, addr, city, zip_code, dist_num, tier, accepts_male, accepts_female, accepts_sex_offender in facilities_data:
             f, _ = Facility.objects.get_or_create(
                 name=name,
                 provider=prov,
@@ -96,6 +96,9 @@ class Command(BaseCommand):
                     "zip_code": zip_code,
                     "district": districts[dist_num],
                     "tier": tier,
+                    "accepts_male": accepts_male,
+                    "accepts_female": accepts_female,
+                    "accepts_sex_offender": accepts_sex_offender,
                 },
             )
             facilities.append(f)
@@ -155,6 +158,7 @@ class Command(BaseCommand):
         sample_users = [
             ("cm_adams", "Chris", "Adams", User.Role.CASE_MANAGER, 4, None),
             ("cm_baker", "Jamie", "Baker", User.Role.CASE_MANAGER, 3, None),
+            ("po_stone", "Alex", "Stone", User.Role.PAROLE_OFFICER, 4, None),
             ("prov_johnson", "Sarah", "Johnson", User.Role.PROVIDER, None, providers[0]),
             ("prov_chen", "Mike", "Chen", User.Role.PROVIDER, None, providers[1]),
         ]
@@ -376,3 +380,4 @@ class Command(BaseCommand):
         self.stdout.write("  Admin:        admin / admin123")
         self.stdout.write("  Case Manager: cm_adams / testpass123")
         self.stdout.write("  Provider:     prov_johnson / testpass123")
+        self.stdout.write("  Parole Off.:  po_stone / testpass123")

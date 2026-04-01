@@ -51,6 +51,8 @@ wait_for_backend_ready() {
 	done
 
 	echo "Error: backend did not become ready in time"
+	echo "Last backend logs:"
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml logs --no-color backend | tail -n 120 || true
 	return 1
 }
 

@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import './main_dash.css';
 
-export default function MainDash() {
-    // Top-level dashboard data and global status messaging.
+export default function MainDash({ readOnly = false }) {
     const [facilities, setFacilities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -447,6 +446,17 @@ export default function MainDash() {
 
     return (
         <section className="main-dash" aria-label="Main bed dashboard">
+            <nav aria-label="Global navigation" style={{ textAlign: 'left', marginBottom: '1rem' }}>
+                <a href="/admin">Admin Dashboard</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/case-manager.html">Case Manager Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/parole-officer.html">Parole Officer Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/provider-dashboard.html">Provider Page</a>
+                <span style={{ margin: '0 0.5rem' }}>|</span>
+                <a href="/login.html">Login Page</a>
+            </nav>
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>
@@ -559,7 +569,7 @@ export default function MainDash() {
                                 <th>Total Beds</th>
                                 <th>Assigned Beds</th>
                                 <th>Available Beds</th>
-                                <th>Actions</th>
+                                {!readOnly && <th>Actions</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -581,21 +591,23 @@ export default function MainDash() {
                                             <td>{facility.total_beds}</td>
                                             <td>{facility.assigned_beds}</td>
                                             <td>{facility.available_beds}</td>
-                                            <td>
-                                                <button
-                                                    type="button"
-                                                    className="assign-bed-btn"
-                                                    onClick={() => handleToggleBeds(facility.facility_id)}
-                                                >
-                                                    {isExpanded ? 'Hide Beds' : 'View Beds'}
-                                                </button>
-                                            </td>
+                                            {!readOnly && (
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="assign-bed-btn"
+                                                        onClick={() => handleToggleBeds(facility.facility_id)}
+                                                    >
+                                                        {isExpanded ? 'Hide Beds' : 'View Beds'}
+                                                    </button>
+                                                </td>
+                                            )}
                                         </tr>
 
                                         {isExpanded && (
                                             // Expanded facility details: per-bed status, notes, and actions.
                                             <tr className="facility-bed-row">
-                                                <td colSpan={8}>
+                                                <td colSpan={readOnly ? 7 : 8}>
                                                     {isBedsLoading && (
                                                         <p className="main-dash-status">Loading beds...</p>
                                                     )}

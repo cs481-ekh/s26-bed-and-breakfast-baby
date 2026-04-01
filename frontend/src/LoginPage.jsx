@@ -19,7 +19,7 @@ export default function LoginPage() {
           <div className="logo-container">
             <img src="/logo1.png" alt="Idaho Department of Correction" className="logo" />
           </div>
-          
+
           <h1 id="login-title">Log In</h1>
           <p className="login-subtitle">Sign in to manage bed assignments</p>
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
           <nav className="footer-nav" aria-label="Quick navigation">
             <a href="/admin">Admin Dashboard</a>
             <span className="divider">•</span>
-            <a href="/main-dashboard">Bed Dashboard</a>
+            <a href="/main-dashboard.html">Bed Dashboard</a>
             <span className="nav-note">(Testing Links)</span>
           </nav>
         </section>

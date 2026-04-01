@@ -165,6 +165,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                         >
                             <option value="admin">Admin</option>
                             <option value="case_manager">Case Manager</option>
+                            <option value="parole_officer">Parole Officer</option>
                             <option value="provider">Housing Provider</option>
                         </select>
                         {addErrors.role && <div>{addErrors.role}</div>}
@@ -227,6 +228,7 @@ export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onCh
                         >
                             <option value="admin">Admin</option>
                             <option value="case_manager">Case Manager</option>
+                            <option value="parole_officer">Parole Officer</option>
                             <option value="provider">Housing Provider</option>
                         </select>
                         <button type="submit">Update Role</button>
