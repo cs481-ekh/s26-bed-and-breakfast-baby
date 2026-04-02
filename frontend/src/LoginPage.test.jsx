@@ -1,10 +1,19 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, test } from "vitest";
 import LoginPage from "./LoginPage";
 
+function renderLoginPage() {
+  render(
+    <MemoryRouter>
+      <LoginPage />
+    </MemoryRouter>
+  );
+}
+
 describe("LoginPage", () => {
   test("renders email and password inputs", () => {
-    render(<LoginPage />);
+    renderLoginPage();
 
     expect(screen.getByRole("heading", { name: /log in/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
@@ -12,7 +21,7 @@ describe("LoginPage", () => {
   });
 
   test("submits and clears password", () => {
-    render(<LoginPage />);
+    renderLoginPage();
 
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
