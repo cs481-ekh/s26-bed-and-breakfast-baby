@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import AdminDash from "../admin/admin_dash";
 import UserTable from "../admin/user_table";
 import MainDash from "../main_dash/main_dash";
@@ -102,9 +102,9 @@ function AdminPage() {
   return (
     <>
       <div style={{ textAlign: "left", marginBottom: "1rem" }}>
-        <a href="/main-dashboard.html">Open Main Bed Dashboard</a>
+        <Link to="/main-dashboard">Open Main Bed Dashboard</Link>
         <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/login.html">Open Login Page</a>
+        <Link to="/login">Open Login Page</Link>
         <span style={{ margin: "0 0.5rem" }}>|</span>
         <a href="/case-manager.html">Case Manager Page</a>
         <span style={{ margin: "0 0.5rem" }}>|</span>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import "./login.css";
 
 export default function LoginPage() {
@@ -58,9 +59,9 @@ export default function LoginPage() {
           {submitted && <p className="status-message">Login submitted for {email}.</p>}
 
           <nav className="footer-nav" aria-label="Quick navigation">
-            <a href="/admin">Admin Dashboard</a>
+            <Link to="/admin">Admin Dashboard</Link>
             <span className="divider">•</span>
-            <a href="/main-dashboard.html">Bed Dashboard</a>
+            <Link to="/main-dashboard">Bed Dashboard</Link>
             <span className="nav-note">(Testing Links)</span>
           </nav>
         </section>
