@@ -8,13 +8,13 @@ export default function ParoleOfficerPage() {
         <nav aria-label="Global navigation" style={{ textAlign: "left", marginBottom: "1rem" }}>
           <a href="/">Admin Dashboard</a>
           <span style={{ margin: "0 0.5rem" }}>|</span>
-          <a href="/main-dashboard.html">Main Bed Dashboard</a>
+          <a href="/main-dashboard">Main Bed Dashboard</a>
           <span style={{ margin: "0 0.5rem" }}>|</span>
           <a href="/case-manager.html">Case Manager View</a>
           <span style={{ margin: "0 0.5rem" }}>|</span>
           <a href="/provider-dashboard.html">Provider Page</a>
           <span style={{ margin: "0 0.5rem" }}>|</span>
-          <a href="/login.html">Login Page</a>
+          <a href="/login">Login Page</a>
         </nav>
         <h1>Parole Officer Bed Availability</h1>
         <p>Read-only availability view with district and placement filters.</p>

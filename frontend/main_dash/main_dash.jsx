@@ -598,7 +598,7 @@ export default function MainDash({ readOnly = false }) {
                 <span style={{ margin: '0 0.5rem' }}>|</span>
                 <a href="/provider-dashboard.html">Provider Page</a>
                 <span style={{ margin: '0 0.5rem' }}>|</span>
-                <a href="/login.html">Login Page</a>
+                <a href="/login">Login Page</a>
             </nav>
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>

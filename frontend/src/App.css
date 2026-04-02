@@ -1,13 +1,14 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0.75rem;
   text-align: center;
 }
 
 @media (min-width: 768px) {
   #root {
-    padding: 2rem;
+    padding: 1rem;
   }
 }
 
@@ -47,9 +48,9 @@
   color: #888;
 }
 .user-table-container {
-  margin-top: 2rem;
+  margin-top: 0.75rem;
   text-align: left;
-  padding: 2rem;
+  padding: 1rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: #f9f9f9;
@@ -57,8 +58,9 @@
 
 .user-table {
   width: 100%;
+  min-width: 980px;
   border-collapse: collapse;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   background-color: white;
 }
 
@@ -68,14 +70,16 @@
 }
 
 .user-table th {
-  padding: 0.75rem;
+  padding: 0.55rem;
   text-align: left;
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .user-table td {
-  padding: 0.75rem;
+  padding: 0.55rem;
   border-bottom: 1px solid #eee;
+  font-size: 0.88rem;
 }
 
 .user-table tbody tr:hover {
@@ -83,13 +87,14 @@
 }
 
 .user-table-container button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.75rem;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.86rem;
 }
 
 .user-table-container button:hover {

@@ -7,7 +7,7 @@ import React, {
 } from "react";
 
 // ForwardRef lets parent views trigger a table refresh after admin mutations.
-const UserTable = forwardRef((props, ref) => {
+const UserTable = forwardRef(({ onSelectUser, selectedUsername }, ref) => {
   // Always initialize as an array
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,7 @@ const UserTable = forwardRef((props, ref) => {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/users/");;
+      const response = await fetch("/api/users/");
 
       // If fetch returned something non-Response-ish, fail gracefully
       if (!response || typeof response.ok !== "boolean") {
@@ -83,8 +83,6 @@ const UserTable = forwardRef((props, ref) => {
 
   return (
     <div className="user-table-container">
-      <h2>Users</h2>
-
       {safeUsers.length === 0 ? (
         <p>No users found.</p>
       ) : (
@@ -103,7 +101,11 @@ const UserTable = forwardRef((props, ref) => {
 
           <tbody>
             {safeUsers.map((user) => (
-              <tr key={user?.id ?? user?.username ?? crypto.randomUUID()}>
+              <tr
+                key={user?.id ?? user?.username ?? crypto.randomUUID()}
+                className={user?.username === selectedUsername ? "user-row selected" : "user-row"}
+                onClick={() => onSelectUser?.(user)}
+              >
                 <td>{user?.username ?? "N/A"}</td>
                 <td>
                   {`${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() ||
@@ -124,7 +126,7 @@ const UserTable = forwardRef((props, ref) => {
         </table>
       )}
 
-      <button onClick={fetchUsers}>Refresh</button>
+      <p className="user-table-hint">Click a row to manage that user.</p>
     </div>
   );
 });
