@@ -1,15 +1,11 @@
-import { useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import AdminDash from "../admin/admin_dash";
-import UserTable from "../admin/user_table";
 import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
 import LoginPage from "./LoginPage";
 import "./App.css";
 
 function AdminPage() {
-  const userTableRef = useRef(null);
-
   const handleAddUser = async (userData) => {
     const response = await fetch("/api/signup/", {
       method: "POST",
@@ -24,9 +20,6 @@ function AdminPage() {
       error.fieldErrors = payload?.errors || {};
       throw error;
     }
-
-    // Optional: refresh user table if UserTable exposes a method on its ref
-    userTableRef.current?.fetchUsers?.();
 
     return payload;
   };
@@ -47,7 +40,6 @@ function AdminPage() {
       }
 
       alert(`User ${username} has been removed successfully.`);
-      userTableRef.current?.fetchUsers?.();
     } catch (error) {
       alert(`Error removing user: ${error.message}`);
     }
@@ -69,9 +61,6 @@ function AdminPage() {
       }
 
       alert(`User ${username} has been disabled successfully.`);
-
-      // Refresh the user table if available
-      userTableRef.current?.fetchUsers?.();
     } catch (error) {
       alert(`Error disabling user: ${error.message}`);
     }
@@ -93,7 +82,6 @@ function AdminPage() {
       }
 
       alert(`User ${username} role updated successfully.`);
-      userTableRef.current?.fetchUsers?.();
     } catch (error) {
       alert(`Error updating role: ${error.message}`);
     }
@@ -119,7 +107,6 @@ function AdminPage() {
           onDisableUser={handleDisableUser}
           onChangeRole={handleChangeRole}
         />
-        <UserTable ref={userTableRef} />
       </PageTemplate>
     </>
   );

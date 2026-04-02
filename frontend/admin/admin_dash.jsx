@@ -1,240 +1,217 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from "react";
+import UserTable from "./user_table";
+import "./admin_dash.css";
 
-export default function AdminDash({ onAddUser, onRemoveUser, onDisableUser, onChangeRole }) {
-    // Create-account form state and field-level validation feedback.
-    const [addForm, setAddForm] = useState({
-        first_name: '',
-        last_name: '',
-        employee_id: '',
-        email: '',
-        role: 'case_manager',
-        password: '',
-        confirm_password: '',
-    });
-    const [addErrors, setAddErrors] = useState({});
-    const [addMessage, setAddMessage] = useState('');
+const ROLES = [
+    { value: "admin", label: "Admin" },
+    { value: "case_manager", label: "Case Manager" },
+    { value: "parole_officer", label: "Parole Officer" },
+    { value: "provider", label: "Housing Provider" },
+];
 
-    // Lightweight forms for account removal/disable and role update actions.
-    const [removeForm, setRemoveForm] = useState({ username: '' });
-    const [roleForm, setRoleForm] = useState({ username: '', role: 'case_manager' });
+export default function AdminDash({ onRemoveUser, onChangeRole }) {
+    const userTableRef = useRef(null);
+    const [activePanel, setActivePanel] = useState("users");
 
-    // Local validation mirrors backend requirements so users get immediate feedback.
-    const validateAddForm = () => {
-        const errors = {};
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedRole, setSelectedRole] = useState("case_manager");
+    const [userActionMessage, setUserActionMessage] = useState("");
 
-        if (!addForm.first_name.trim()) {
-            errors.first_name = 'First name is required.';
-        }
-        if (!addForm.last_name.trim()) {
-            errors.last_name = 'Last name is required.';
-        }
-        if (!addForm.employee_id.trim()) {
-            errors.employee_id = 'Employee ID is required.';
-        }
-        if (!addForm.email.trim()) {
-            errors.email = 'Email is required.';
-        }
-        if (!addForm.password) {
-            errors.password = 'Password is required.';
-        }
-        if (!addForm.confirm_password) {
-            errors.confirm_password = 'Please confirm your password.';
-        } else if (addForm.password !== addForm.confirm_password) {
-            errors.confirm_password = 'Passwords do not match.';
-        }
+    const [inviteEmail, setInviteEmail] = useState("");
+    const [inviteRole, setInviteRole] = useState("case_manager");
+    const [inviteLink, setInviteLink] = useState("");
+    const [inviteMessage, setInviteMessage] = useState("");
 
-        return errors;
+    const refreshUsers = () => {
+        userTableRef.current?.fetchUsers?.();
     };
 
-    // Keep input handling centralized so error and status messages clear predictably.
-    const updateAddField = (name, value) => {
-        setAddForm({ ...addForm, [name]: value });
-        if (addErrors[name]) {
-            setAddErrors({ ...addErrors, [name]: '' });
-        }
-        if (addMessage) {
-            setAddMessage('');
-        }
+    const handleSelectUser = (user) => {
+        setSelectedUser(user);
+        setSelectedRole(user?.role || "case_manager");
+        setUserActionMessage("");
     };
 
-    // Submit create-account flow; parent callback handles API call and persistence.
-    const handleAddSubmit = async (e) => {
-        e.preventDefault();
+    const handleRemoveSelectedUser = async () => {
+        if (!selectedUser?.username) {
+            return;
+        }
 
-        const validationErrors = validateAddForm();
-        if (Object.keys(validationErrors).length > 0) {
-            setAddErrors(validationErrors);
+        const confirmed = window.confirm(
+            `Remove account "${selectedUser.username}"? This action cannot be undone.`
+        );
+
+        if (!confirmed) {
             return;
         }
 
         try {
-            setAddErrors({});
-            if (onAddUser) {
-                const payload = await onAddUser(addForm);
-                setAddMessage('User created successfully. Redirecting...');
-                window.location.assign(payload.redirect_to || '/');
-            } else {
-                console.log('Add user', addForm);
-                setAddMessage('User created successfully. Redirecting...');
-                window.location.assign('/');
+            if (onRemoveUser) {
+                await onRemoveUser(selectedUser.username);
             }
-            setAddForm({ first_name: '', last_name: '', employee_id: '', email: '', role: 'case_manager', password: '', confirm_password: '' });
-        } catch (error) {
-            setAddErrors(error.fieldErrors || {});
-            setAddMessage('Please fix the highlighted fields.');
+            setUserActionMessage(`Removed user ${selectedUser.username}.`);
+            setSelectedUser(null);
+            refreshUsers();
+        } catch {
+            setUserActionMessage("Unable to remove user right now.");
         }
     };
 
-    // Destructive remove action is confirmation-gated before invoking parent callback.
-    const handleRemoveSubmit = (e) => {
-        e.preventDefault();
-        const confirmed = window.confirm(
-            `Are you sure you want to remove account "${removeForm.username}"? This action cannot be undone.`
-        );
-        if (!confirmed) {
+    const handleUpdateSelectedRole = async () => {
+        if (!selectedUser?.username) {
             return;
         }
-        if (onRemoveUser) onRemoveUser(removeForm.username);
-        else console.log('Remove user', removeForm.username);
-        setRemoveForm({ username: '' });
+
+        try {
+            if (onChangeRole) {
+                await onChangeRole(selectedUser.username, selectedRole);
+            }
+            setUserActionMessage(`Updated role for ${selectedUser.username}.`);
+            setSelectedUser({ ...selectedUser, role: selectedRole });
+            refreshUsers();
+        } catch {
+            setUserActionMessage("Unable to update role right now.");
+        }
     };
 
-    const handleDisableSubmit = (e) => {
-        e.preventDefault();
-        if (onDisableUser) onDisableUser(removeForm.username);
-        else console.log('Disable user', removeForm.username);
-        setRemoveForm({ username: '' });
-    };
+    const handleGenerateInvite = (event) => {
+        event.preventDefault();
 
-    // Role-change flow updates one user role at a time.
-    const handleRoleSubmit = (e) => {
-        e.preventDefault();
-        if (onChangeRole) onChangeRole(roleForm.username, roleForm.role);
-        else console.log('Change role', roleForm);
-        setRoleForm({ username: '', role: 'case_manager' });
+        if (!inviteEmail.trim()) {
+            setInviteMessage("Enter an email address first.");
+            return;
+        }
+
+        const token = Math.random().toString(36).slice(2, 12);
+        const link = `${window.location.origin}/register?token=${token}`;
+
+        setInviteLink(link);
+        setInviteMessage(
+            "Stub only: invite link generated locally. Email delivery is not implemented yet."
+        );
     };
 
     return (
-        <div className="container">
-            <h1>Sign Up</h1>
-            <div className="options">
-                <div className="option">
-                    {/* Account creation area for admins/support staff. */}
-                    <h2>Create Account</h2>
-                    <form onSubmit={handleAddSubmit}>
-                        <input
-                            type="text"
-                            name="first_name"
-                            placeholder="First Name"
-                            required
-                            value={addForm.first_name}
-                            onChange={(e) => updateAddField('first_name', e.target.value)}
-                        />
-                        {addErrors.first_name && <div>{addErrors.first_name}</div>}
-                        <input
-                            type="text"
-                            name="last_name"
-                            placeholder="Last Name"
-                            required
-                            value={addForm.last_name}
-                            onChange={(e) => updateAddField('last_name', e.target.value)}
-                        />
-                        {addErrors.last_name && <div>{addErrors.last_name}</div>}
-                        <input
-                            type="text"
-                            name="employee_id"
-                            placeholder="Employee ID"
-                            required
-                            value={addForm.employee_id}
-                            onChange={(e) => updateAddField('employee_id', e.target.value)}
-                        />
-                        {addErrors.employee_id && <div>{addErrors.employee_id}</div>}
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="Email"
-                            required
-                            value={addForm.email}
-                            onChange={(e) => updateAddField('email', e.target.value)}
-                        />
-                        {addErrors.email && <div>{addErrors.email}</div>}
-                        <select
-                            name="role"
-                            value={addForm.role}
-                            onChange={(e) => updateAddField('role', e.target.value)}
-                        >
-                            <option value="admin">Admin</option>
-                            <option value="case_manager">Case Manager</option>
-                            <option value="parole_officer">Parole Officer</option>
-                            <option value="provider">Housing Provider</option>
-                        </select>
-                        {addErrors.role && <div>{addErrors.role}</div>}
-                        <input
-                            type="password"
-                            name="password"
-                            placeholder="Password"
-                            required
-                            value={addForm.password}
-                            onChange={(e) => updateAddField('password', e.target.value)}
-                        />
-                        {addErrors.password && <div>{addErrors.password}</div>}
-                        <input
-                            type="password"
-                            name="confirm_password"
-                            placeholder="Confirm Password"
-                            required
-                            value={addForm.confirm_password}
-                            onChange={(e) => updateAddField('confirm_password', e.target.value)}
-                        />
-                        {addErrors.confirm_password && <div>{addErrors.confirm_password}</div>}
-                        {addMessage && <div>{addMessage}</div>}
-                        <button type="submit">Sign Up</button>
-                    </form>
-                </div>
+        <section className="admin-layout" aria-label="Admin dashboard layout">
+            <aside className="admin-sidebar" aria-label="Admin sections">
+                <h1 className="admin-title">Admin Dashboard</h1>
+                <p className="admin-subtitle">Manage users and account onboarding from one screen.</p>
 
-                <div className="option">
-                    {/* Account lifecycle controls: hard remove or soft disable. */}
-                    <h2>Remove User</h2>
-                    <form onSubmit={handleRemoveSubmit}>
-                        <input
-                            type="text"
-                            name="username"
-                            placeholder="Username"
-                            required
-                            value={removeForm.username}
-                            onChange={(e) => setRemoveForm({ username: e.target.value })}
-                        />
-                        <button type="submit">Remove User</button>
-                        <button type="button" onClick={handleDisableSubmit}>Disable Account</button>
-                    </form>
+                <div className="admin-sidebar-buttons">
+                    <button
+                        type="button"
+                        className={`admin-nav-button ${activePanel === "users" ? "active" : ""}`}
+                        onClick={() => setActivePanel("users")}
+                    >
+                        Users
+                    </button>
+                    <button
+                        type="button"
+                        className={`admin-nav-button ${activePanel === "create-account" ? "active" : ""}`}
+                        onClick={() => setActivePanel("create-account")}
+                    >
+                        Create Account
+                    </button>
                 </div>
+            </aside>
 
-                <div className="option">
-                    {/* Permission management section for role reassignment. */}
-                    <h2>Change User Role</h2>
-                    <form onSubmit={handleRoleSubmit}>
-                        <input
-                            type="text"
-                            name="username"
-                            placeholder="Username"
-                            required
-                            value={roleForm.username}
-                            onChange={(e) => setRoleForm({ ...roleForm, username: e.target.value })}
-                        />
-                        <select
-                            name="role"
-                            value={roleForm.role}
-                            onChange={(e) => setRoleForm({ ...roleForm, role: e.target.value })}
-                        >
-                            <option value="admin">Admin</option>
-                            <option value="case_manager">Case Manager</option>
-                            <option value="parole_officer">Parole Officer</option>
-                            <option value="provider">Housing Provider</option>
-                        </select>
-                        <button type="submit">Update Role</button>
-                    </form>
-                </div>
+            <div className="admin-main-panel">
+                {activePanel === "users" ? (
+                    <div className="admin-users-grid">
+                        <div className="admin-panel-card">
+                            <div className="admin-panel-header">
+                                <h2>Users</h2>
+                                <button type="button" className="admin-secondary-button" onClick={refreshUsers}>
+                                    Refresh Table
+                                </button>
+                            </div>
+                            <UserTable
+                                ref={userTableRef}
+                                onSelectUser={handleSelectUser}
+                                selectedUsername={selectedUser?.username}
+                            />
+                        </div>
+
+                        <div className="admin-action-card">
+                            <h3>User Actions</h3>
+                            {selectedUser ? (
+                                <>
+                                    <p className="admin-selection-label">Selected: <strong>{selectedUser.username}</strong></p>
+                                    <div className="admin-form">
+                                        <label htmlFor="selected-role">Role</label>
+                                        <select
+                                            id="selected-role"
+                                            value={selectedRole}
+                                            onChange={(event) => setSelectedRole(event.target.value)}
+                                        >
+                                            {ROLES.map((role) => (
+                                                <option key={role.value} value={role.value}>
+                                                    {role.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="admin-action-buttons">
+                                        <button type="button" className="admin-primary-button" onClick={handleUpdateSelectedRole}>
+                                            Update User
+                                        </button>
+                                        <button type="button" className="admin-danger-button" onClick={handleRemoveSelectedUser}>
+                                            Remove User
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <p>Click a row in the users table to open actions.</p>
+                            )}
+                            {userActionMessage && <p className="admin-inline-message">{userActionMessage}</p>}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="admin-panel-card admin-create-card">
+                        <h2>Create Account (Stub)</h2>
+                        <p>
+                            Fill out email and role, then generate an invite link. Sending email is intentionally not
+                            implemented yet.
+                        </p>
+
+                        <form onSubmit={handleGenerateInvite} className="admin-form admin-create-form">
+                            <label htmlFor="invite-email">Email</label>
+                            <input
+                                id="invite-email"
+                                type="email"
+                                value={inviteEmail}
+                                onChange={(event) => setInviteEmail(event.target.value)}
+                                placeholder="new.user@agency.gov"
+                                required
+                            />
+
+                            <label htmlFor="invite-role">Role</label>
+                            <select
+                                id="invite-role"
+                                value={inviteRole}
+                                onChange={(event) => setInviteRole(event.target.value)}
+                            >
+                                {ROLES.map((role) => (
+                                    <option key={role.value} value={role.value}>
+                                        {role.label}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button type="submit" className="admin-primary-button">Generate Link</button>
+                        </form>
+
+                        {inviteMessage && <p className="admin-inline-message">{inviteMessage}</p>}
+
+                        {inviteLink && (
+                            <div className="admin-link-preview">
+                                <h3>Generated Link</h3>
+                                <p>{inviteLink}</p>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-        </div>
+        </section>
     );
 }
