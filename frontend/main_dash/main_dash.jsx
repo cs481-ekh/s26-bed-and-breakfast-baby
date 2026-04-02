@@ -18,6 +18,8 @@ export default function MainDash({ readOnly = false }) {
     const [bedsLoadingByFacility, setBedsLoadingByFacility] = useState({});
     const [bedsErrorByFacility, setBedsErrorByFacility] = useState({});
     const [selectedParoleeByBed, setSelectedParoleeByBed] = useState({});
+    const [paroleeSearchByBed, setParoleeSearchByBed] = useState({});
+    const [paroleeDropdownOpenByBed, setParoleeDropdownOpenByBed] = useState({});
     const [editingBedId, setEditingBedId] = useState(null);
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
@@ -238,6 +240,89 @@ export default function MainDash({ readOnly = false }) {
             return <React.Fragment key={`${rawText}-${index}`}>{part}</React.Fragment>;
         });
     }, [parsedSearchExpression, escapeRegex]);
+
+    const filterParolees = useCallback((searchValue) => {
+        const normalizedSearch = (searchValue || '').trim().toLowerCase();
+        if (!normalizedSearch) {
+            return parolees;
+        }
+
+        return parolees.filter((parolee) => {
+            const paroleeNumber = (parolee.idoc_id || '').toLowerCase();
+            const paroleeFirstName = (parolee.first_name || '').toLowerCase();
+            const paroleeLastName = (parolee.last_name || '').toLowerCase();
+            const fullName = `${paroleeFirstName} ${paroleeLastName}`;
+            const reverseFullName = `${paroleeLastName} ${paroleeFirstName}`;
+            return paroleeNumber.includes(normalizedSearch)
+                || fullName.includes(normalizedSearch)
+                || reverseFullName.includes(normalizedSearch);
+        });
+    }, [parolees]);
+
+    const formatParoleeLabel = useCallback((parolee) => (
+        `${parolee.idoc_id} - ${parolee.last_name}, ${parolee.first_name}`
+    ), []);
+
+    const handleParoleeSearchChange = useCallback((bedId, searchValue) => {
+        setParoleeSearchByBed((prev) => ({
+            ...prev,
+            [bedId]: searchValue,
+        }));
+
+        setParoleeDropdownOpenByBed((prev) => ({
+            ...prev,
+            [bedId]: true,
+        }));
+
+        setSelectedParoleeByBed((prev) => {
+            const currentSelected = prev[bedId];
+            if (!currentSelected) {
+                return prev;
+            }
+
+            const nextMatches = filterParolees(searchValue);
+            const stillVisible = nextMatches.some((parolee) => String(parolee.id) === String(currentSelected));
+            if (stillVisible) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+                [bedId]: '',
+            };
+        });
+    }, [filterParolees]);
+
+    const handleOpenParoleeDropdown = useCallback((bedId) => {
+        setParoleeDropdownOpenByBed((prev) => ({
+            ...prev,
+            [bedId]: true,
+        }));
+    }, []);
+
+    const handleCloseParoleeDropdown = useCallback((bedId) => {
+        setTimeout(() => {
+            setParoleeDropdownOpenByBed((prev) => ({
+                ...prev,
+                [bedId]: false,
+            }));
+        }, 120);
+    }, []);
+
+    const handleSelectParolee = useCallback((bedId, parolee) => {
+        setSelectedParoleeByBed((prev) => ({
+            ...prev,
+            [bedId]: String(parolee.id),
+        }));
+        setParoleeSearchByBed((prev) => ({
+            ...prev,
+            [bedId]: formatParoleeLabel(parolee),
+        }));
+        setParoleeDropdownOpenByBed((prev) => ({
+            ...prev,
+            [bedId]: false,
+        }));
+    }, [formatParoleeLabel]);
 
     // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
@@ -699,6 +784,9 @@ export default function MainDash({ readOnly = false }) {
                                                                     const isEditingNotes = editingBedId === bed.id;
                                                                     const canEditNotes = Boolean(bed.can_edit_notes);
                                                                     const selectedParolee = selectedParoleeByBed[bed.id] || '';
+                                                                    const paroleeSearchValue = paroleeSearchByBed[bed.id] || '';
+                                                                    const isParoleeDropdownOpen = Boolean(paroleeDropdownOpenByBed[bed.id]);
+                                                                    const filteredParolees = filterParolees(paroleeSearchValue);
                                                                     const allNoteEntries = getNoteEntries(bed.notes);
 
                                                                     return (
@@ -796,23 +884,58 @@ export default function MainDash({ readOnly = false }) {
                                                                             <td>{bed.updated_by || 'System'}</td>
                                                                             <td>
                                                                                 <div className="bed-assign-controls">
-                                                                                    <select
-                                                                                        value={selectedParolee}
-                                                                                        onChange={(e) => setSelectedParoleeByBed((prev) => ({
-                                                                                            ...prev,
-                                                                                            [bed.id]: e.target.value,
-                                                                                        }))}
-                                                                                        disabled={!isAssignable || parolees.length === 0 || isProcessing}
-                                                                                    >
-                                                                                        <option value="">
-                                                                                            {parolees.length === 0 ? 'No unassigned parolees' : 'Select parolee'}
-                                                                                        </option>
-                                                                                        {parolees.map((p) => (
-                                                                                            <option key={p.id} value={p.id}>
-                                                                                                {p.idoc_id} - {p.last_name}, {p.first_name}
-                                                                                            </option>
-                                                                                        ))}
-                                                                                    </select>
+                                                                                    <div className="parolee-combobox">
+                                                                                        <label
+                                                                                            htmlFor={`parolee-search-${bed.id}`}
+                                                                                            className="parolee-search-label"
+                                                                                        >
+                                                                                            Search parolees for {bed.label}
+                                                                                        </label>
+                                                                                        <input
+                                                                                            id={`parolee-search-${bed.id}`}
+                                                                                            type="search"
+                                                                                            className="parolee-search-input"
+                                                                                            placeholder="Search by number or name"
+                                                                                            value={paroleeSearchValue}
+                                                                                            onFocus={() => handleOpenParoleeDropdown(bed.id)}
+                                                                                            onBlur={() => handleCloseParoleeDropdown(bed.id)}
+                                                                                            onChange={(e) => handleParoleeSearchChange(bed.id, e.target.value)}
+                                                                                            aria-expanded={isParoleeDropdownOpen}
+                                                                                            aria-controls={`parolee-options-${bed.id}`}
+                                                                                            disabled={!isAssignable || parolees.length === 0 || isProcessing}
+                                                                                        />
+
+                                                                                        {isParoleeDropdownOpen && !(!isAssignable || parolees.length === 0 || isProcessing) && (
+                                                                                            <div
+                                                                                                id={`parolee-options-${bed.id}`}
+                                                                                                className="parolee-combobox-list"
+                                                                                                role="listbox"
+                                                                                                aria-label={`Parolee options for ${bed.label}`}
+                                                                                            >
+                                                                                                {filteredParolees.length === 0 ? (
+                                                                                                    <div className="parolee-combobox-empty">
+                                                                                                        No matches found
+                                                                                                    </div>
+                                                                                                ) : filteredParolees.map((parolee) => {
+                                                                                                    const optionLabel = formatParoleeLabel(parolee);
+                                                                                                    const isSelected = String(selectedParolee) === String(parolee.id);
+                                                                                                    return (
+                                                                                                        <button
+                                                                                                            key={parolee.id}
+                                                                                                            type="button"
+                                                                                                            role="option"
+                                                                                                            aria-selected={isSelected}
+                                                                                                            className={isSelected ? 'parolee-combobox-option selected' : 'parolee-combobox-option'}
+                                                                                                            onMouseDown={(event) => event.preventDefault()}
+                                                                                                            onClick={() => handleSelectParolee(bed.id, parolee)}
+                                                                                                        >
+                                                                                                            {optionLabel}
+                                                                                                        </button>
+                                                                                                    );
+                                                                                                })}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
 
                                                                                     <button
                                                                                         type="button"
