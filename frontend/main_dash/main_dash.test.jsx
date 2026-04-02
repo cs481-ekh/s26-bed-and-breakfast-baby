@@ -164,6 +164,17 @@ describe("MainDash", () => {
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
     expect(screen.getByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
 
+    fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Provider A"' } });
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: '"Sunrise House" OR "Beacon Housing"' } });
+    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Beacon Housing"' } });
+    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+
     fireEvent.change(searchInput, { target: { value: "nomatch" } });
     expect(screen.getByText("No facilities found.")).toBeInTheDocument();
 

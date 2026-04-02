@@ -108,15 +108,70 @@ export default function MainDash({ readOnly = false }) {
             return selectedDistricts.includes(facilityDistrictKey);
         });
 
-    // Search currently filters the visible list by facility or provider name.
-    const searchedFacilities = searchTerm.trim() === ''
+    // Supports quoted phrases with AND/OR logic, e.g. "Location A" AND "Location B".
+    const parseSearchExpression = useCallback((rawSearchInput) => {
+        const trimmedInput = rawSearchInput.trim();
+        if (!trimmedInput) {
+            return { terms: [], operators: [] };
+        }
+
+        const tokenRegex = /"([^"]+)"|\b(AND|OR)\b/gi;
+        const parsedTerms = [];
+        const parsedOperators = [];
+        let hasQuotedTerms = false;
+        let tokenMatch;
+
+        while ((tokenMatch = tokenRegex.exec(trimmedInput)) !== null) {
+            const [, quotedTerm, logicalOperator] = tokenMatch;
+            if (quotedTerm) {
+                const cleanedTerm = quotedTerm.trim();
+                if (cleanedTerm) {
+                    parsedTerms.push(cleanedTerm);
+                    hasQuotedTerms = true;
+                }
+                continue;
+            }
+
+            if (logicalOperator && parsedTerms.length > parsedOperators.length) {
+                parsedOperators.push(logicalOperator.toUpperCase());
+            }
+        }
+
+        if (!hasQuotedTerms) {
+            return { terms: [trimmedInput], operators: [] };
+        }
+
+        while (parsedOperators.length > Math.max(parsedTerms.length - 1, 0)) {
+            parsedOperators.pop();
+        }
+
+        return { terms: parsedTerms, operators: parsedOperators };
+    }, []);
+
+    const parsedSearchExpression = parseSearchExpression(searchTerm);
+
+    const matchesSearchExpression = useCallback((facility, parsedExpression) => {
+        if (parsedExpression.terms.length === 0) {
+            return true;
+        }
+
+        const searchableText = `${facility.facility_name || ''} ${facility.provider_name || ''}`.toLowerCase();
+        const termResults = parsedExpression.terms.map((term) => searchableText.includes(term.toLowerCase()));
+
+        let aggregate = termResults[0];
+        for (let index = 1; index < termResults.length; index += 1) {
+            const operator = parsedExpression.operators[index - 1] || 'AND';
+            aggregate = operator === 'OR'
+                ? aggregate || termResults[index]
+                : aggregate && termResults[index];
+        }
+
+        return aggregate;
+    }, []);
+
+    const searchedFacilities = parsedSearchExpression.terms.length === 0
         ? filteredFacilities
-        : filteredFacilities.filter((facility) => {
-            const normalizedSearch = searchTerm.trim().toLowerCase();
-            const facilityName = (facility.facility_name || '').toLowerCase();
-            const providerName = (facility.provider_name || '').toLowerCase();
-            return facilityName.includes(normalizedSearch) || providerName.includes(normalizedSearch);
-        });
+        : filteredFacilities.filter((facility) => matchesSearchExpression(facility, parsedSearchExpression));
 
     const toggleDistrictFilter = useCallback((districtKey) => {
         setSelectedDistricts((prev) => (
@@ -160,12 +215,15 @@ export default function MainDash({ readOnly = false }) {
 
     const renderSearchMatch = useCallback((text) => {
         const rawText = text || '';
-        const query = searchTerm.trim();
-        if (!query) return rawText;
+        if (parsedSearchExpression.terms.length === 0) return rawText;
 
-        const escapedQuery = escapeRegex(query);
-        const splitRegex = new RegExp(`(${escapedQuery})`, 'ig');
-        const exactRegex = new RegExp(`^${escapedQuery}$`, 'i');
+        const uniqueTerms = [...new Set(parsedSearchExpression.terms.map((term) => term.trim()).filter(Boolean))]
+            .sort((left, right) => right.length - left.length);
+        if (uniqueTerms.length === 0) return rawText;
+
+        const escapedPattern = uniqueTerms.map((term) => escapeRegex(term)).join('|');
+        const splitRegex = new RegExp(`(${escapedPattern})`, 'ig');
+        const exactRegex = new RegExp(`^(?:${escapedPattern})$`, 'i');
         const parts = rawText.split(splitRegex);
 
         return parts.map((part, index) => {
@@ -179,7 +237,7 @@ export default function MainDash({ readOnly = false }) {
             }
             return <React.Fragment key={`${rawText}-${index}`}>{part}</React.Fragment>;
         });
-    }, [searchTerm, escapeRegex]);
+    }, [parsedSearchExpression, escapeRegex]);
 
     // Expand/collapse a single facility row and lazily load its beds.
     const handleToggleBeds = useCallback(async (facilityId) => {
