@@ -140,6 +140,17 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+]
+
+# Session expires after 20 minutes of inactivity; timer resets on each request
+SESSION_COOKIE_AGE = 1200
+SESSION_SAVE_EVERY_REQUEST = True
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Use the custom user model provided by the `housing` app

@@ -52,6 +52,19 @@
   white-space: nowrap;
 }
 
+.nav-test-badge {
+  margin-left: 0.45rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #92400e;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+}
+
 .nav-link:hover {
   background-color: #f3f4f6;
   color: #1f2937;
@@ -69,6 +82,19 @@
   gap: 1rem;
   flex-shrink: 0;
   margin-left: 2rem;
+}
+
+.role-indicator {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #0f766e;
+  background-color: #ccfbf1;
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  white-space: nowrap;
 }
 
 .header-button {
@@ -134,9 +160,19 @@
     font-size: 14px;
   }
 
+  .nav-test-badge {
+    margin-left: 0.35rem;
+    font-size: 9px;
+  }
+
   .header-actions {
     gap: 0.5rem;
     margin-left: 1rem;
+  }
+
+  .role-indicator {
+    font-size: 11px;
+    padding: 0.25rem 0.55rem;
   }
 
   .logout-button {
@@ -165,6 +201,10 @@
     font-size: 12px;
   }
 
+  .nav-test-badge {
+    display: none;
+  }
+
   .header-nav {
     gap: 0.2rem;
   }
@@ -172,6 +212,10 @@
   .header-actions {
     gap: 0.4rem;
     margin-left: 0.75rem;
+  }
+
+  .role-indicator {
+    display: none;
   }
 
   .settings-button {

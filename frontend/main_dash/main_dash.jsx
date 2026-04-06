@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { apiJson } from '../src/apiClient';
 import './main_dash.css';
 
 export default function MainDash({ readOnly = false }) {
@@ -351,13 +352,12 @@ export default function MainDash({ readOnly = false }) {
 
         try {
             const selectedParoleeData = parolees.find((p) => String(p.id) === String(selectedParolee));
-            const response = await fetch(`/api/beds/${bed.id}/assign/`, {
+            const { response, payload } = await apiJson(`/api/beds/${bed.id}/assign/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ parolee_id: selectedParolee }),
             });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Assignment failed.');
+            if (!response.ok) throw new Error(payload?.error || 'Assignment failed.');
 
             const bedLabel = bed.label || `Bed ${bed.id}`;
             const facilityName = facility.facility_name || 'Unknown facility';
@@ -396,10 +396,9 @@ export default function MainDash({ readOnly = false }) {
         setSuccessMessage('');
 
         try {
-            const response = await fetch(`/api/beds/${bed.id}/unassign/`, {
+            const { response, payload } = await apiJson(`/api/beds/${bed.id}/unassign/`, {
                 method: 'POST',
             });
-            const payload = await response.json();
             if (!response.ok) {
                 throw new Error(payload.error || 'Unassignment failed.');
             }
@@ -433,12 +432,11 @@ export default function MainDash({ readOnly = false }) {
         setSuccessMessage('');
 
         try {
-            const response = await fetch(`/api/beds/${bed.id}/hold/`, {
+            const { response, payload } = await apiJson(`/api/beds/${bed.id}/hold/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ parolee_id: selectedParolee }),
             });
-            const payload = await response.json();
             if (!response.ok) {
                 throw new Error(payload.error || 'Hold request failed.');
             }
@@ -530,12 +528,11 @@ export default function MainDash({ readOnly = false }) {
         setSuccessMessage('');
 
         try {
-            const response = await fetch(`/api/beds/${bed.id}/notes/`, {
+            const { response, payload } = await apiJson(`/api/beds/${bed.id}/notes/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notes: noteDraft }),
             });
-            const payload = await response.json();
             if (!response.ok) {
                 throw new Error(payload.error || 'Failed to update notes.');
             }
@@ -567,10 +564,9 @@ export default function MainDash({ readOnly = false }) {
         setError('');
         setSuccessMessage('');
         try {
-            const response = await fetch('/api/beds/unassign-all/', {
+            const { response, payload } = await apiJson('/api/beds/unassign-all/', {
                 method: 'POST',
             });
-            const payload = await response.json();
             if (!response.ok) {
                 throw new Error(payload.error || 'Could not unassign all beds.');
             }
@@ -589,17 +585,6 @@ export default function MainDash({ readOnly = false }) {
 
     return (
         <section className="main-dash" aria-label="Main bed dashboard">
-            <nav aria-label="Global navigation" style={{ textAlign: 'left', marginBottom: '1rem' }}>
-                <a href="/admin">Admin Dashboard</a>
-                <span style={{ margin: '0 0.5rem' }}>|</span>
-                <a href="/case-manager.html">Case Manager Page</a>
-                <span style={{ margin: '0 0.5rem' }}>|</span>
-                <a href="/parole-officer.html">Parole Officer Page</a>
-                <span style={{ margin: '0 0.5rem' }}>|</span>
-                <a href="/provider-dashboard.html">Provider Page</a>
-                <span style={{ margin: '0 0.5rem' }}>|</span>
-                <a href="/login">Login Page</a>
-            </nav>
             <div className="main-dash-header">
                 <h2>Facility Bed Availability</h2>
                 <p>Click a facility to view beds and assign parolees one bed at a time.</p>

@@ -1,16 +1,19 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from housing.models import Facility, User, Bed, Parolee, Hold
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
@@ -543,12 +546,79 @@ class CurrentUserView(APIView):
             {
                 "id": user.id,
                 "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "role": user.role,
                 "provider_id": user.provider_id,
                 "district_id": user.district_id,
             },
             status=status.HTTP_200_OK,
         )
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfCookieView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"detail": "CSRF cookie set."}, status=status.HTTP_200_OK)
+
+
+class SessionLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        identifier = (request.data.get("username") or request.data.get("email") or "").strip()
+        password = request.data.get("password") or ""
+
+        if not identifier or not password:
+            return Response(
+                {"error": "username and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        username = identifier
+        if "@" in identifier:
+            matched_user = User.objects.filter(email__iexact=identifier).first()
+            if matched_user is not None:
+                username = matched_user.username
+
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return Response(
+                {"error": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.is_active:
+            return Response(
+                {"error": "This account is disabled."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        login(request, user)
+        return Response(
+            {
+                "message": "Login successful.",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "role": user.role,
+                    "provider_id": user.provider_id,
+                    "district_id": user.district_id,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SessionLogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        logout(request)
+        return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
 
 
 class ProviderBedsView(APIView):
