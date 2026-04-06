@@ -13,6 +13,9 @@ from .views import (
     BedNotesUpdateView,
     BedUnassignAllView,
     CurrentUserView,
+    CsrfCookieView,
+    SessionLoginView,
+    SessionLogoutView,
     ProviderBedsView,
     ProviderAssignClientView,
 )
@@ -22,6 +25,9 @@ router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path("health/", HealthView.as_view()),
+    path("auth/csrf/", CsrfCookieView.as_view()),
+    path("auth/login/", SessionLoginView.as_view()),
+    path("auth/logout/", SessionLogoutView.as_view()),
     path("me/", CurrentUserView.as_view()),
     path("facilities/availability/", FacilityAvailabilityView.as_view()),
     path("facilities/<int:facility_id>/beds/", FacilityBedsView.as_view()),

@@ -1,19 +1,20 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import AdminDash from "../admin/admin_dash";
 import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
 import LoginPage from "./LoginPage";
+import { apiJson } from "./apiClient";
+import RolePageGate from "./RolePageGate";
+import ProviderPage from "./ProviderPage";
 import "./App.css";
 
 function AdminPage() {
   const handleAddUser = async (userData) => {
-    const response = await fetch("/api/signup/", {
+    const { response, payload } = await apiJson("/api/signup/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
     });
-
-    const payload = await response.json();
 
     if (!response.ok) {
       const error = new Error("Sign up failed");
@@ -26,13 +27,11 @@ function AdminPage() {
 
   const handleRemoveUser = async (username) => {
     try {
-      const response = await fetch("/api/users/remove/", {
+      const { response, payload } = await apiJson("/api/users/remove/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
-
-      const payload = await response.json();
 
       if (!response.ok) {
         alert(`Failed to remove user: ${payload.error || "Unknown error"}`);
@@ -47,13 +46,11 @@ function AdminPage() {
 
   const handleDisableUser = async (username) => {
     try {
-      const response = await fetch("/api/users/disable/", {
+      const { response, payload } = await apiJson("/api/users/disable/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
       });
-
-      const payload = await response.json();
 
       if (!response.ok) {
         alert(`Failed to disable user: ${payload.error || "Unknown error"}`);
@@ -68,13 +65,11 @@ function AdminPage() {
 
   const handleChangeRole = async (username, role) => {
     try {
-      const response = await fetch("/api/users/update-role/", {
+      const { response, payload } = await apiJson("/api/users/update-role/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, role }),
       });
-
-      const payload = await response.json();
 
       if (!response.ok) {
         alert(`Failed to update role: ${payload.error || "Unknown error"}`);
@@ -88,18 +83,7 @@ function AdminPage() {
   };
 
   return (
-    <>
-      <div style={{ textAlign: "left", marginBottom: "1rem" }}>
-        <Link to="/main-dashboard">Open Main Bed Dashboard</Link>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <Link to="/login">Open Login Page</Link>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/case-manager.html">Case Manager Page</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/parole-officer.html">Parole Officer Page</a>
-        <span style={{ margin: "0 0.5rem" }}>|</span>
-        <a href="/provider-dashboard.html">Provider Page</a>
-      </div>
+    <RolePageGate allowedRoles={["admin"]}>
       <PageTemplate>
         <AdminDash
           onAddUser={handleAddUser}
@@ -108,15 +92,17 @@ function AdminPage() {
           onChangeRole={handleChangeRole}
         />
       </PageTemplate>
-    </>
+    </RolePageGate>
   );
 }
 
 function MainDashboardPageComponent() {
   return (
-    <PageTemplate>
-      <MainDash />
-    </PageTemplate>
+    <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer"]}>
+      <PageTemplate>
+        <MainDash />
+      </PageTemplate>
+    </RolePageGate>
   );
 }
 
@@ -126,8 +112,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/main-dashboard" element={<MainDashboardPageComponent />} />
+        <Route path="/provider-dashboard" element={<ProviderPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/" element={<MainDashboardPageComponent />} />
+        <Route path="/" element={<Navigate to="/main-dashboard" replace />} />
       </Routes>
     </Router>
   );

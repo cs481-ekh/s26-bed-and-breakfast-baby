@@ -23,10 +23,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        'main-dashboard': resolve(__dirname, 'main-dashboard.html'),
-        'case-manager': resolve(__dirname, 'case-manager.html'),
-        'parole-officer': resolve(__dirname, 'parole-officer.html'),
-        'provider-dashboard': resolve(__dirname, 'provider-dashboard.html'),
       },
     },
   },
