@@ -6,6 +6,7 @@ import LoginPage from "./LoginPage";
 import { apiJson } from "./apiClient";
 import RolePageGate from "./RolePageGate";
 import ProviderPage from "./ProviderPage";
+import SettingsPage from "./SettingsPage";
 import "./App.css";
 
 function AdminPage() {
@@ -106,6 +107,16 @@ function MainDashboardPageComponent() {
   );
 }
 
+function SettingsRoutePage() {
+  return (
+    <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer", "provider"]}>
+      <PageTemplate>
+        <SettingsPage />
+      </PageTemplate>
+    </RolePageGate>
+  );
+}
+
 export default function App() {
   return (
     <Router>
@@ -114,6 +125,7 @@ export default function App() {
         <Route path="/main-dashboard" element={<MainDashboardPageComponent />} />
         <Route path="/provider-dashboard" element={<ProviderPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/settings" element={<SettingsRoutePage />} />
         <Route path="/" element={<Navigate to="/main-dashboard" replace />} />
       </Routes>
     </Router>

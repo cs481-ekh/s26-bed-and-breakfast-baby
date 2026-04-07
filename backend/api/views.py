@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -619,6 +619,49 @@ class SessionLogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        current_password = request.data.get("current_password") or ""
+        new_password = request.data.get("new_password") or ""
+        confirm_new_password = request.data.get("confirm_new_password") or ""
+
+        errors = {}
+        if not current_password:
+            errors["current_password"] = "Current password is required."
+        if not new_password:
+            errors["new_password"] = "New password is required."
+        if not confirm_new_password:
+            errors["confirm_new_password"] = "Please confirm your new password."
+
+        if new_password and confirm_new_password and new_password != confirm_new_password:
+            errors["confirm_new_password"] = "New passwords do not match."
+
+        if current_password and new_password and current_password == new_password:
+            errors["new_password"] = "New password must be different from current password."
+
+        if current_password and not request.user.check_password(current_password):
+            errors["current_password"] = "Current password is incorrect."
+
+        if new_password:
+            try:
+                validate_password(new_password, user=request.user)
+            except ValidationError as exc:
+                errors["new_password"] = " ".join(exc.messages)
+
+        if errors:
+            return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.set_password(new_password)
+        request.user.save(update_fields=["password"])
+
+        # Keep this browser session valid while invalidating sessions tied to the old auth hash.
+        update_session_auth_hash(request, request.user)
+
+        return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
 
 
 class ProviderBedsView(APIView):

@@ -46,8 +46,7 @@ export default function Header() {
   };
 
   const handleSettingsClick = () => {
-    // TODO: Implement user settings menu
-    console.log('Settings menu clicked');
+    window.location.assign('/settings');
   };
 
   // Determine current page to highlight active link

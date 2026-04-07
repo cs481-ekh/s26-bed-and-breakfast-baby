@@ -1,0 +1,122 @@
+.settings-page {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.settings-card {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.settings-card h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #111827;
+}
+
+.settings-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.settings-section h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.section-subtitle {
+  margin: 0.4rem 0 0.85rem;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+.account-readonly-text {
+  display: grid;
+  gap: 0.45rem;
+  text-align: center;
+  margin-top: 0.95rem;
+}
+
+.account-readonly-text p {
+  margin: 0;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-form label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.settings-form input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.notification-options {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.95rem;
+  margin-bottom: 0.8rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.primary-action-button {
+  margin-top: 0.7rem;
+  border: 1px solid #1d4ed8;
+  background-color: #2563eb;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+}
+
+.settings-form input:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+  border-color: #3b82f6;
+}
+
+.primary-action-button:hover:enabled {
+  background-color: #1d4ed8;
+}
+
+.primary-action-button:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.field-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.86rem;
+}
+
+.settings-status {
+  margin: 1rem 0 0;
+  color: #1f2937;
+}
