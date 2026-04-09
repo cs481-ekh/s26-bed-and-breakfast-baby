@@ -186,3 +186,53 @@ def test_facility_availability_filters_district_gender_and_sex_offender(client):
     body = resp.json()
     assert len(body) == 1
     assert body[0]["facility_name"] == "Matches Filters"
+
+
+@pytest.mark.django_db
+def test_facility_availability_supports_multiple_district_and_gender_filters(client):
+    district_1 = District.objects.create(number=1, name="District One")
+    district_2 = District.objects.create(number=2, name="District Two")
+    provider = Provider.objects.create(name="Provider Multi")
+
+    Facility.objects.create(
+        provider=provider,
+        name="Male Only One",
+        address="10 A St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_1,
+        tier=Facility.Tier.TIER_1,
+        accepts_male=True,
+        accepts_female=False,
+    )
+    Facility.objects.create(
+        provider=provider,
+        name="Female Only Two",
+        address="20 B St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_2,
+        tier=Facility.Tier.TIER_1,
+        accepts_male=False,
+        accepts_female=True,
+    )
+    Facility.objects.create(
+        provider=provider,
+        name="Either Three",
+        address="30 C St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district_2,
+        tier=Facility.Tier.TIER_2,
+        accepts_male=True,
+        accepts_female=True,
+    )
+
+    resp = client.get("/api/facilities/availability/?district=1&district=2&gender=male&gender=female")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert {item["facility_name"] for item in body} == {"Male Only One", "Female Only Two"}

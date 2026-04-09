@@ -6,9 +6,13 @@ import MainDash from "./main_dash";
 describe("MainDash", () => {
   let fetchMock;
 
+  const isAvailabilityRequest = (url) => (
+    typeof url === "string" && url.startsWith("/api/facilities/availability/")
+  );
+
   beforeEach(() => {
     fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -99,12 +103,12 @@ describe("MainDash", () => {
     expect(within(facilityRow).getByText("1 - North")).toBeInTheDocument();
     expect(screen.getByText("tier 1")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("/api/facilities/availability/");
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/facilities/availability/"));
   });
 
   test("searches facilities by facility or provider name", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -185,7 +189,7 @@ describe("MainDash", () => {
 
   test("filters facilities by selected districts", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -245,9 +249,9 @@ describe("MainDash", () => {
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
   });
 
-  test("allows selecting gender target filters without changing displayed facilities", async () => {
+  test("filters facilities by gender target selections", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -261,6 +265,8 @@ describe("MainDash", () => {
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
+              accepts_male: true,
+              accepts_female: true,
             },
             {
               facility_id: 2,
@@ -272,6 +278,21 @@ describe("MainDash", () => {
               total_beds: 6,
               assigned_beds: 2,
               available_beds: 4,
+              accepts_male: true,
+              accepts_female: false,
+            },
+            {
+              facility_id: 3,
+              facility_name: "Willow House",
+              provider_name: "Provider C",
+              district_number: 3,
+              district_name: "East",
+              tier: "tier_3",
+              total_beds: 4,
+              assigned_beds: 1,
+              available_beds: 3,
+              accepts_male: false,
+              accepts_female: true,
             },
           ],
         };
@@ -294,11 +315,11 @@ describe("MainDash", () => {
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(screen.getByText("Willow House")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
 
     expect(screen.getByText(/Gender Targets/i)).toBeInTheDocument();
-    expect(screen.getByText("(in progress)")).toBeInTheDocument();
 
     const maleCenteredCheckbox = screen.getByLabelText("Male-only");
     const eitherCheckbox = screen.getByLabelText("Gender neutral");
@@ -307,19 +328,26 @@ describe("MainDash", () => {
     expect(eitherCheckbox).not.toBeChecked();
 
     fireEvent.click(maleCenteredCheckbox);
+
+    expect(maleCenteredCheckbox).toBeChecked();
+    expect(eitherCheckbox).not.toBeChecked();
+
+    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+
     fireEvent.click(eitherCheckbox);
 
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).toBeChecked();
-
-    // Gender-target filters are intentionally UI-only until backend support is added.
     expect(screen.getByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
   });
 
   test("clear all filters resets search and filter selections", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -410,7 +438,7 @@ describe("MainDash", () => {
 
   test("filters parolee options by parolee number or name", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -540,7 +568,7 @@ describe("MainDash", () => {
 
   test("shows notes column to all users", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -601,7 +629,7 @@ describe("MainDash", () => {
 
   test("shows note edit controls when user can edit notes", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -659,7 +687,7 @@ describe("MainDash", () => {
 
   test("admins can expand and collapse full note history", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -726,7 +754,7 @@ describe("MainDash", () => {
 
   test("shows only the last 3 note changes", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
