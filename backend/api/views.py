@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+import re
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.response import Response
@@ -19,6 +20,14 @@ from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
 User = get_user_model()
+
+
+def _bed_sort_key(bed):
+    label = (bed.label or '').strip()
+    is_sex_offender_bed = 0 if getattr(bed, 'is_sex_offender_bed', False) else 1
+    match = re.search(r'(\d+)$', label)
+    bed_number = int(match.group(1)) if match else float('inf')
+    return (is_sex_offender_bed, bed_number, label.lower(), bed.id)
 
 
 # Lightweight health check used by containers and uptime monitors.
@@ -332,7 +341,10 @@ class FacilityBedsView(APIView):
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Pass request context so serializer can expose role-specific fields.
-        beds = Bed.objects.filter(facility=facility).order_by("label")
+        beds = sorted(
+            Bed.objects.filter(facility=facility).select_related("facility"),
+            key=_bed_sort_key,
+        )
         return Response(BedSerializer(beds, many=True, context={"request": request}).data)
 
 
@@ -394,6 +406,13 @@ class BedHoldRequestView(APIView):
     """Place a temporary hold on an available bed for testing workflows."""
 
     def post(self, request, bed_id):
+        request_user = request.user if request.user.is_authenticated else None
+        if request_user is None or getattr(request_user, "role", None) not in {User.Role.ADMIN, User.Role.CASE_MANAGER}:
+            return Response(
+                {"error": "Only case managers and admins can request holds."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         parolee_id = request.data.get("parolee_id")
         if not parolee_id:
             return Response({"error": "parolee_id is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -418,7 +437,6 @@ class BedHoldRequestView(APIView):
         if Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists():
             return Response({"error": "This bed already has an active hold for the selected parolee."}, status=status.HTTP_409_CONFLICT)
 
-        request_user = request.user if request.user.is_authenticated else None
         event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
         hold_note = (
             f"[{event_time}] Hold requested for {parolee.last_name}, {parolee.first_name} "
@@ -675,8 +693,9 @@ class ProviderBedsView(APIView):
         beds = (
             Bed.objects.filter(facility__provider_id=request.user.provider_id)
             .select_related("facility", "facility__district", "assigned_parolee")
-            .order_by("facility__name", "label")
         )
+
+        beds = sorted(beds, key=lambda bed: (bed.facility.name, *_bed_sort_key(bed)))
 
         data = []
         for bed in beds:

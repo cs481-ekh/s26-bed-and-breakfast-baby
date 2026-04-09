@@ -696,6 +696,19 @@ describe("MainDash", () => {
     expect(within(availableRow).getByRole("button", { name: "Request Hold" })).toBeInTheDocument();
   });
 
+  test("shows read-only text for available beds when holds are disabled", async () => {
+    render(<MainDash readOnly />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    expect(await screen.findByText("Bed 101")).toBeInTheDocument();
+    const availableRow = screen.getByText("Bed 101").closest("tr");
+    expect(availableRow).not.toBeNull();
+    expect(within(availableRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
+    expect(within(availableRow).getByText("Hold requests are read-only for this role.")).toBeInTheDocument();
+  });
+
   test("confirms before submitting a hold request", async () => {
     const confirmMock = vi.spyOn(window, "confirm").mockReturnValue(false);
 

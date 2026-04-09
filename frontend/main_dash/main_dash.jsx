@@ -652,7 +652,7 @@ export default function MainDash({ readOnly = false }) {
                                 <th>Total Beds</th>
                                 <th>Assigned Beds</th>
                                 <th>Available Beds</th>
-                                {!readOnly && <th>Actions</th>}
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -684,23 +684,21 @@ export default function MainDash({ readOnly = false }) {
                                             <td>{facility.total_beds}</td>
                                             <td>{facility.assigned_beds}</td>
                                             <td>{facility.available_beds}</td>
-                                            {!readOnly && (
-                                                <td>
-                                                    <button
-                                                        type="button"
-                                                        className="assign-bed-btn"
-                                                        onClick={() => handleToggleBeds(facility.facility_id)}
-                                                    >
-                                                        {isExpanded ? 'Hide Beds' : 'View Beds'}
-                                                    </button>
-                                                </td>
-                                            )}
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="assign-bed-btn"
+                                                    onClick={() => handleToggleBeds(facility.facility_id)}
+                                                >
+                                                    {isExpanded ? 'Hide Beds' : 'View Beds'}
+                                                </button>
+                                            </td>
                                         </tr>
 
                                         {isExpanded && (
                                             // Expanded facility details: per-bed status, notes, and actions.
                                             <tr className="facility-bed-row">
-                                                <td colSpan={readOnly ? 7 : 8}>
+                                                <td colSpan={8}>
                                                     {isBedsLoading && (
                                                         <p className="main-dash-status">Loading beds...</p>
                                                     )}
@@ -830,7 +828,7 @@ export default function MainDash({ readOnly = false }) {
                                                                             <td title={`Last updated by ${bed.updated_by || 'System'} on ${renderTimestamp(bed.updated_at)}`}>{renderTimestamp(bed.updated_at)}</td>
                                                                             <td>{bed.updated_by || 'System'}</td>
                                                                             <td>
-                                                                                {isAssignable ? (
+                                                                                {!readOnly && isAssignable ? (
                                                                                     <div className="bed-hold-controls">
                                                                                         <div className="parolee-combobox">
                                                                                             <label
@@ -902,6 +900,8 @@ export default function MainDash({ readOnly = false }) {
                                                                                             {isProcessing ? 'Requesting...' : 'Request Hold'}
                                                                                         </button>
                                                                                     </div>
+                                                                                ) : isAssignable ? (
+                                                                                    <span className="bed-hold-unavailable">Hold requests are read-only for this role.</span>
                                                                                 ) : (
                                                                                     <span className="bed-hold-unavailable">Hold requests unavailable</span>
                                                                                 )}

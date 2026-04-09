@@ -279,3 +279,38 @@ def test_facility_availability_filters_by_sex_offender_bed_presence(client):
     none_body = none_resp.json()
     assert {item["facility_name"] for item in none_body} == {"Without S/O Beds"}
     assert none_body[0]["has_sex_offender_beds"] is False
+
+
+@pytest.mark.django_db
+def test_facility_beds_are_sorted_with_sex_offender_beds_first(client):
+    district = District.objects.create(number=4, name="District Four")
+    provider = Provider.objects.create(name="Provider Order")
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Ordering House",
+        address="60 F St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+        accepts_sex_offender=True,
+    )
+
+    Bed.objects.create(facility=facility, label="Bed 10")
+    Bed.objects.create(facility=facility, label="S/O Bed 2", is_sex_offender_bed=True)
+    Bed.objects.create(facility=facility, label="Bed 2")
+    Bed.objects.create(facility=facility, label="S/O Bed 1", is_sex_offender_bed=True)
+    Bed.objects.create(facility=facility, label="Bed 1")
+
+    resp = client.get(f"/api/facilities/{facility.id}/beds/")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [bed["label"] for bed in body] == [
+        "S/O Bed 1",
+        "S/O Bed 2",
+        "Bed 1",
+        "Bed 2",
+        "Bed 10",
+    ]
