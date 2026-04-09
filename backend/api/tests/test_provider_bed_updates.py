@@ -209,7 +209,7 @@ def test_provider_can_create_bed_in_own_facility(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
 
     client.force_login(provider_user)
@@ -254,7 +254,7 @@ def test_provider_cannot_create_bed_for_other_provider(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
 
     client.force_login(provider_user)
@@ -321,7 +321,7 @@ def test_provider_hold_can_be_approved(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Approve", status=Bed.Status.HELD)
     parolee = Parolee.objects.create(
@@ -375,7 +375,7 @@ def test_provider_hold_can_be_denied(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Deny", status=Bed.Status.HELD)
     parolee = Parolee.objects.create(
@@ -422,7 +422,7 @@ def test_provider_can_update_end_date_and_release_early(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed End Date", status=Bed.Status.OCCUPIED)
     parolee = Parolee.objects.create(
