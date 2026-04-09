@@ -1,0 +1,22 @@
+ID,Username,First Name,Last Name,Email,Role,District ID,Provider ID
+14,cm_large_8,LargeCM8,User,,case_manager,1,
+7,cm_large_1,LargeCM1,User,,case_manager,1,
+15,cm_large_9,LargeCM9,User,,case_manager,2,
+8,cm_large_2,LargeCM2,User,,case_manager,2,
+16,cm_large_10,LargeCM10,User,,case_manager,3,
+9,cm_large_3,LargeCM3,User,,case_manager,3,
+3,cm_baker,Jamie,Baker,,case_manager,3,
+10,cm_large_4,LargeCM4,User,,case_manager,4,
+4,po_stone,Alex,Stone,,parole_officer,4,
+2,cm_adams,Chris,Adams,,case_manager,4,
+11,cm_large_5,LargeCM5,User,,case_manager,5,
+12,cm_large_6,LargeCM6,User,,case_manager,6,
+13,cm_large_7,LargeCM7,User,,case_manager,7,
+21,prov_large_5,LargeProv5,User,,provider,,10
+20,prov_large_4,LargeProv4,User,,provider,,9
+19,prov_large_3,LargeProv3,User,,provider,,8
+18,prov_large_2,LargeProv2,User,,provider,,7
+17,prov_large_1,LargeProv1,User,,provider,,6
+6,prov_chen,Mike,Chen,,provider,,2
+5,prov_johnson,Sarah,Johnson,,provider,,1
+1,admin,,,admin@idoc.example.com,admin,,

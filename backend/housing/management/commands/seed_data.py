@@ -243,33 +243,57 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional providers and facilities
             # -----------------------------------------------------------
+            extra_providers_data = [
+                ("Gem State Reentry Housing", "Rachel Moore", "rachel@gsrh.example.com", "208-555-0201"),
+                ("Snake River Transitional Services", "Daniel Brooks", "daniel@srts.example.com", "208-555-0202"),
+                ("Panhandle Recovery Network", "Monica Hayes", "monica@prn.example.com", "208-555-0203"),
+                ("Southeast Idaho Housing Partners", "Kevin Lawson", "kevin@sihp.example.com", "208-555-0204"),
+                ("High Desert Community Housing", "Erin Flores", "erin@hdch.example.com", "208-555-0205"),
+            ]
             extra_providers = []
-            for idx in range(1, 6):
+            for name, contact, email, phone in extra_providers_data:
                 provider, _ = Provider.objects.get_or_create(
-                    name=f"Large Seed Provider {idx}",
+                    name=name,
                     defaults={
-                        "contact_name": f"Provider Contact {idx}",
-                        "contact_email": f"large.provider{idx}@idoc.example.com",
-                        "contact_phone": f"208-555-{2000 + idx}",
+                        "contact_name": contact,
+                        "contact_email": email,
+                        "contact_phone": phone,
                     },
                 )
                 extra_providers.append(provider)
 
+            extra_facilities_data = [
+                ("Boise Bridge House", "1101 River St", "Boise", "83703", 4, Facility.Tier.TIER_2, True, False, False),
+                ("Meridian Pathways Home", "2210 Fairview Ave", "Meridian", "83642", 4, Facility.Tier.TIER_1, False, True, False),
+                ("Nampa Renewal Center", "785 Front St", "Nampa", "83651", 3, Facility.Tier.TIER_2, True, True, True),
+                ("Caldwell New Start Residence", "402 Arthur St", "Caldwell", "83605", 3, Facility.Tier.TIER_3, False, True, False),
+                ("Idaho Falls Riverbend House", "1542 Skyline Dr", "Idaho Falls", "83402", 7, Facility.Tier.TIER_2, True, True, False),
+                ("Pocatello Independence Home", "633 Grant Ave", "Pocatello", "83204", 6, Facility.Tier.TIER_1, True, False, False),
+                ("Twin Falls Horizon House", "912 Addison Ave", "Twin Falls", "83301", 5, Facility.Tier.TIER_3, True, True, True),
+                ("Lewiston Gateway Residence", "301 Thain Rd", "Lewiston", "83501", 2, Facility.Tier.TIER_2, True, True, False),
+                ("Moscow Stability House", "111 Main St", "Moscow", "83843", 2, Facility.Tier.TIER_1, False, True, False),
+                ("Coeur d'Alene Harbor Home", "709 Sherman Ave", "Coeur d'Alene", "83814", 1, Facility.Tier.TIER_2, False, True, False),
+                ("Post Falls Community House", "120 Spokane St", "Post Falls", "83854", 1, Facility.Tier.TIER_3, True, False, True),
+                ("Burley Turning Point", "88 Overland Ave", "Burley", "83318", 5, Facility.Tier.TIER_1, True, True, False),
+                ("Rexburg Sunrise Home", "240 College Ave", "Rexburg", "83440", 7, Facility.Tier.TIER_2, True, True, False),
+                ("Mountain Home Transit House", "515 Airbase Rd", "Mountain Home", "83647", 4, Facility.Tier.TIER_1, True, False, False),
+                ("Sandpoint Lakeside Residence", "63 Cedar St", "Sandpoint", "83864", 1, Facility.Tier.TIER_2, True, True, False),
+            ]
             extra_facilities = []
-            tiers = [Facility.Tier.TIER_1, Facility.Tier.TIER_2, Facility.Tier.TIER_3]
-            for idx in range(1, 16):
+            for idx, (name, addr, city, zip_code, district_num, tier, accepts_male, accepts_female, accepts_sex_offender) in enumerate(extra_facilities_data, start=1):
                 provider = extra_providers[(idx - 1) % len(extra_providers)]
-                district_num = ((idx - 1) % 7) + 1
-                tier = tiers[(idx - 1) % len(tiers)]
                 facility, _ = Facility.objects.get_or_create(
-                    name=f"Large Seed Facility {idx}",
+                    name=name,
                     provider=provider,
                     defaults={
-                        "address": f"{1000 + idx} Expansion Ave",
-                        "city": "Boise" if idx % 2 == 0 else "Idaho Falls",
-                        "zip_code": f"83{200 + idx}",
+                        "address": addr,
+                        "city": city,
+                        "zip_code": zip_code,
                         "district": districts[district_num],
                         "tier": tier,
+                        "accepts_male": accepts_male,
+                        "accepts_female": accepts_female,
+                        "accepts_sex_offender": accepts_sex_offender,
                     },
                 )
                 # Ensure these facilities have programs linked.
@@ -287,7 +311,7 @@ class Command(BaseCommand):
                 for i in range(1, 21):
                     bed, created = Bed.objects.get_or_create(
                         facility=facility,
-                        label=f"Expansion Bed {i}",
+                        label=f"Bed {i}",
                     )
                     all_beds.append(bed)
                     if created:
@@ -297,26 +321,43 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional users
             # -----------------------------------------------------------
-            for idx in range(1, 11):
-                username = f"cm_large_{idx}"
+            extra_case_managers = [
+                ("cm_clark", "Jordan", "Clark", 1),
+                ("cm_diaz", "Taylor", "Diaz", 2),
+                ("cm_evans", "Morgan", "Evans", 3),
+                ("cm_foster", "Riley", "Foster", 4),
+                ("cm_grant", "Casey", "Grant", 5),
+                ("cm_hughes", "Avery", "Hughes", 6),
+                ("cm_ivy", "Drew", "Ivy", 7),
+                ("cm_kim", "Parker", "Kim", 4),
+                ("cm_lopez", "Reese", "Lopez", 3),
+                ("cm_morris", "Quinn", "Morris", 5),
+            ]
+            for username, first, last, district_num in extra_case_managers:
                 if not User.objects.filter(username=username).exists():
                     User.objects.create_user(
                         username=username,
                         password="testpass123",
-                        first_name=f"LargeCM{idx}",
-                        last_name="User",
+                        first_name=first,
+                        last_name=last,
                         role=User.Role.CASE_MANAGER,
-                        district=districts[((idx - 1) % 7) + 1],
+                        district=districts[district_num],
                     )
 
-            for idx in range(1, 6):
-                username = f"prov_large_{idx}"
+            extra_provider_users = [
+                ("prov_moore", "Rachel", "Moore"),
+                ("prov_brooks", "Daniel", "Brooks"),
+                ("prov_hayes", "Monica", "Hayes"),
+                ("prov_lawson", "Kevin", "Lawson"),
+                ("prov_flores", "Erin", "Flores"),
+            ]
+            for idx, (username, first, last) in enumerate(extra_provider_users, start=1):
                 if not User.objects.filter(username=username).exists():
                     User.objects.create_user(
                         username=username,
                         password="testpass123",
-                        first_name=f"LargeProv{idx}",
-                        last_name="User",
+                        first_name=first,
+                        last_name=last,
                         role=User.Role.PROVIDER,
                         provider=extra_providers[(idx - 1) % len(extra_providers)],
                     )
@@ -325,14 +366,26 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional parolees and placements
             # -----------------------------------------------------------
+            first_names = [
+                "Anthony", "Brian", "Carlos", "Derrick", "Ethan", "Frank", "George", "Henry", "Isaac", "Jason",
+                "Kevin", "Logan", "Marcus", "Nathan", "Oscar", "Patrick", "Ramon", "Samuel", "Travis", "Victor",
+                "Wesley", "Xavier", "Yuri", "Zane", "Caleb",
+            ]
+            last_names = [
+                "Bennett", "Carter", "Diaz", "Edwards", "Fisher", "Gonzalez", "Harris", "Irwin", "Jackson", "Kelly",
+                "Lawrence", "Mitchell", "Nelson", "Owens", "Perry", "Quintero", "Reed", "Sullivan", "Turner", "Vasquez",
+                "Walker", "Young", "Zimmerman", "Abbott", "Bradley", "Collins", "Donovan", "Ellis", "Fleming", "Griffin",
+                "Henderson",
+            ]
             created_parolees = 0
             for idx in range(20000, 20200):
                 district_num = ((idx - 20000) % 7) + 1
+                offset = idx - 20000
                 _, created = Parolee.objects.get_or_create(
                     idoc_id=f"IDOC-{idx}",
                     defaults={
-                        "first_name": f"Parolee{idx}",
-                        "last_name": "LargeSeed",
+                        "first_name": first_names[offset % len(first_names)],
+                        "last_name": last_names[(offset * 7) % len(last_names)],
                         "district": districts[district_num],
                     },
                 )
@@ -365,7 +418,7 @@ class Command(BaseCommand):
                     defaults={
                         "added_by": active_cm,
                         "priority": WaitlistEntry.Priority.MEDIUM,
-                        "notes": "Large seed waitlist entry",
+                        "notes": "Requested placement near support services and transportation routes",
                     },
                 )
                 if created:
