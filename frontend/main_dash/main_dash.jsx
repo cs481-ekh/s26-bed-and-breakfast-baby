@@ -12,6 +12,7 @@ export default function MainDash({ readOnly = false }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDistricts, setSelectedDistricts] = useState([]);
     const [selectedGenderTargets, setSelectedGenderTargets] = useState([]);
+    const [selectedSOBedTargets, setSelectedSOBedTargets] = useState([]);
     const [filtersOpen, setFiltersOpen] = useState(false);
 
     // Bed-level interaction state for expanded rows and in-row actions.
@@ -33,7 +34,7 @@ export default function MainDash({ readOnly = false }) {
     const [notesModalOpen, setNotesModalOpen] = useState(false);
     const [selectedBedForNotesModal, setSelectedBedForNotesModal] = useState(null);
 
-    const buildAvailabilityUrl = useCallback((districtKeys = [], genderTargets = []) => {
+    const buildAvailabilityUrl = useCallback((districtKeys = [], genderTargets = [], soBedTargets = []) => {
         const params = new URLSearchParams();
 
         districtKeys.forEach((districtKey) => {
@@ -55,15 +56,24 @@ export default function MainDash({ readOnly = false }) {
             }
         });
 
+        soBedTargets.forEach((targetValue) => {
+            if (targetValue === 'has_so_beds') {
+                params.append('so_beds', 'has');
+            }
+            if (targetValue === 'no_so_beds') {
+                params.append('so_beds', 'none');
+            }
+        });
+
         const queryString = params.toString();
         return queryString ? `/api/facilities/availability/?${queryString}` : '/api/facilities/availability/';
     }, []);
 
     // Facility summary fetch powers the top-level facility table.
-    const fetchAvailability = useCallback(async ({ districtKeys = [], genderTargets = [], refreshCatalog = false } = {}) => {
+    const fetchAvailability = useCallback(async ({ districtKeys = [], genderTargets = [], soBedTargets = [], refreshCatalog = false } = {}) => {
         try {
             setLoading(true);
-            const response = await fetch(buildAvailabilityUrl(districtKeys, genderTargets));
+            const response = await fetch(buildAvailabilityUrl(districtKeys, genderTargets, soBedTargets));
             const payload = await response.json();
             if (!response.ok) throw new Error('Could not load bed availability.');
             if (refreshCatalog) {
@@ -121,7 +131,7 @@ export default function MainDash({ readOnly = false }) {
         fetchParolees();
     }, [fetchAvailability, fetchParolees]);
 
-    // Refetch availability when district or gender filters change.
+    // Refetch availability when facility-level filters change.
     useEffect(() => {
         if (!facilityCatalogLoaded) {
             return;
@@ -130,8 +140,9 @@ export default function MainDash({ readOnly = false }) {
         fetchAvailability({
             districtKeys: selectedDistricts,
             genderTargets: selectedGenderTargets,
+            soBedTargets: selectedSOBedTargets,
         });
-    }, [facilityCatalogLoaded, fetchAvailability, selectedDistricts, selectedGenderTargets]);
+    }, [facilityCatalogLoaded, fetchAvailability, selectedDistricts, selectedGenderTargets, selectedSOBedTargets]);
 
     // Build district filter options from the currently loaded facilities.
     const districtOptions = (facilityCatalog.length > 0 ? facilityCatalog : facilities)
@@ -225,6 +236,7 @@ export default function MainDash({ readOnly = false }) {
         setSearchTerm('');
         setSelectedDistricts([]);
         setSelectedGenderTargets([]);
+        setSelectedSOBedTargets([]);
     }, []);
 
     const toggleFiltersMenu = useCallback(() => {
@@ -245,9 +257,23 @@ export default function MainDash({ readOnly = false }) {
         ));
     }, []);
 
+    const soBedFilterOptions = [
+        { value: 'has_so_beds', label: 'Has S/O beds' },
+        { value: 'no_so_beds', label: 'No S/O beds' },
+    ];
+
+    const toggleSOBedFilter = useCallback((targetValue) => {
+        setSelectedSOBedTargets((prev) => (
+            prev.includes(targetValue)
+                ? prev.filter((value) => value !== targetValue)
+                : [...prev, targetValue]
+        ));
+    }, []);
+
     const hasActiveFilters = searchTerm.trim() !== ''
         || selectedDistricts.length > 0
-        || selectedGenderTargets.length > 0;
+        || selectedGenderTargets.length > 0
+        || selectedSOBedTargets.length > 0;
 
     const escapeRegex = useCallback((value) => (
         value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -697,6 +723,22 @@ export default function MainDash({ readOnly = false }) {
                                 ))}
                             </div>
                         </div>
+
+                        <div className="gender-filter" aria-label="Facility sex offender bed filters">
+                            <p className="gender-filter-title">Sex Offender Beds</p>
+                            <div className="gender-filter-options">
+                                {soBedFilterOptions.map((option) => (
+                                    <label key={option.value} className="gender-filter-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedSOBedTargets.includes(option.value)}
+                                            onChange={() => toggleSOBedFilter(option.value)}
+                                        />
+                                        <span>{option.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -745,7 +787,17 @@ export default function MainDash({ readOnly = false }) {
                                 return (
                                     <React.Fragment key={facility.facility_id}>
                                         <tr className={isExpanded ? 'facility-row expanded' : 'facility-row'}>
-                                            <td>{renderSearchMatch(facility.facility_name)}</td>
+                                            <td>
+                                                <div className="facility-name-cell">
+                                                    <span>{renderSearchMatch(facility.facility_name)}</span>
+                                                    <span
+                                                        className={facility.has_sex_offender_beds ? 'so-bed-badge has-so-beds' : 'so-bed-badge no-so-beds'}
+                                                        aria-label={facility.has_sex_offender_beds ? 'Facility has S/O beds' : 'Facility has no S/O beds'}
+                                                    >
+                                                        {facility.has_sex_offender_beds ? 'S/O beds: Yes' : 'S/O beds: No'}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td>{renderSearchMatch(facility.provider_name)}</td>
                                             <td>
                                                 {facility.district_number} - {facility.district_name}

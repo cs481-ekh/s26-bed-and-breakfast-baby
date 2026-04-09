@@ -39,6 +39,11 @@ class FacilityAvailabilityView(APIView):
             for value in request.query_params.getlist("gender")
             if value.strip()
         }
+        so_bed_targets = {
+            value.strip().lower()
+            for value in request.query_params.getlist("so_beds")
+            if value.strip()
+        }
         sex_offender = (request.query_params.get("sex_offender") or "").strip().lower()
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
@@ -57,6 +62,15 @@ class FacilityAvailabilityView(APIView):
         if gender_targets:
             facility_queryset = facility_queryset.filter(gender_query)
 
+        so_bed_query = Q()
+        if "has" in so_bed_targets:
+            so_bed_query |= Q(beds__is_sex_offender_bed=True)
+        if "none" in so_bed_targets:
+            so_bed_query |= ~Q(beds__is_sex_offender_bed=True)
+
+        if so_bed_targets:
+            facility_queryset = facility_queryset.filter(so_bed_query)
+
         if sex_offender in {"1", "true", "yes"}:
             facility_queryset = facility_queryset.filter(accepts_sex_offender=True)
 
@@ -68,6 +82,11 @@ class FacilityAvailabilityView(APIView):
                 assigned_beds=Count(
                     "beds",
                     filter=Q(beds__assigned_parolee__isnull=False),
+                    distinct=True,
+                ),
+                sex_offender_bed_count=Count(
+                    "beds",
+                    filter=Q(beds__is_sex_offender_bed=True),
                     distinct=True,
                 ),
             )
@@ -88,6 +107,7 @@ class FacilityAvailabilityView(APIView):
                     "accepts_male": facility.accepts_male,
                     "accepts_female": facility.accepts_female,
                     "accepts_sex_offender": facility.accepts_sex_offender,
+                    "has_sex_offender_beds": facility.sex_offender_bed_count > 0,
                     "is_active": facility.is_active,
                     "total_beds": facility.total_beds,
                     "assigned_beds": facility.assigned_beds,
