@@ -27,7 +27,6 @@ export default function MainDash({ readOnly = false }) {
     const [editingBedId, setEditingBedId] = useState(null);
     const [noteDraft, setNoteDraft] = useState('');
     const [processingBedId, setProcessingBedId] = useState(null);
-    const [resetting, setResetting] = useState(false);
     const [expandedNotesBedIds, setExpandedNotesBedIds] = useState(new Set());
 
     // Notes modal state for viewing notes in a popup.
@@ -614,38 +613,6 @@ export default function MainDash({ readOnly = false }) {
         }
     }, [noteDraft, fetchFacilityBeds]);
 
-    // Demo/testing reset to clear all assignments and refresh dashboard counts.
-    const handleUnassignAllBeds = useCallback(async () => {
-        const confirmed = window.confirm(
-            'This will unassign every currently assigned bed. Continue?'
-        );
-        if (!confirmed) {
-            return;
-        }
-
-        setResetting(true);
-        setError('');
-        setSuccessMessage('');
-        try {
-            const { response, payload } = await apiJson('/api/beds/unassign-all/', {
-                method: 'POST',
-            });
-            if (!response.ok) {
-                throw new Error(payload.error || 'Could not unassign all beds.');
-            }
-            setSuccessMessage(
-                `Cleared assignments for ${payload.parolees_unassigned ?? 0} parolee(s) and reset ${payload.beds_reset ?? 0} bed(s).`
-            );
-            setBedsByFacility({});
-            setExpandedFacilityId(null);
-            await Promise.all([fetchAvailability(), fetchParolees()]);
-        } catch (requestError) {
-            setError(requestError.message || 'Could not unassign all beds.');
-        } finally {
-            setResetting(false);
-        }
-    }, [fetchAvailability, fetchParolees]);
-
     return (
         <section className="main-dash" aria-label="Main bed dashboard">
             <div className="main-dash-header">
@@ -742,14 +709,6 @@ export default function MainDash({ readOnly = false }) {
                     </div>
                 )}
 
-                <button
-                    type="button"
-                    className="unassign-all-btn"
-                    onClick={handleUnassignAllBeds}
-                    disabled={resetting}
-                >
-                    {resetting ? 'Clearing Assignments...' : 'Unassign All Beds'}
-                </button>
             </div>
 
             {loading && <p className="main-dash-status">Loading facilities...</p>}

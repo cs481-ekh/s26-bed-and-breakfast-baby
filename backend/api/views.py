@@ -535,38 +535,6 @@ class BedNotesUpdateView(APIView):
         )
 
 
-class BedUnassignAllView(APIView):
-    """Clear all bed assignments for test/demo reset flows."""
-
-    def post(self, request):
-        assigned_bed_ids = list(
-            Bed.objects.filter(assigned_parolee__isnull=False).values_list("id", flat=True)
-        )
-
-        # Bulk reset is wrapped in a transaction to keep counts and state consistent.
-        with transaction.atomic():
-            unassigned_count = Parolee.objects.filter(assigned_bed__isnull=False).update(
-                assigned_bed=None,
-                housing_start_date=None,
-                housing_end_date=None,
-            )
-            request_user = request.user if request.user.is_authenticated else None
-            reset_timestamp = timezone.now()
-            reset_bed_count = Bed.objects.filter(
-                id__in=assigned_bed_ids,
-                status=Bed.Status.OCCUPIED,
-            ).update(status=Bed.Status.AVAILABLE, updated_by=request_user, updated_at=reset_timestamp)
-
-        return Response(
-            {
-                "message": "All bed assignments have been cleared.",
-                "parolees_unassigned": unassigned_count,
-                "beds_reset": reset_bed_count,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
