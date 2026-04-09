@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Q
+from django.utils.dateparse import parse_date
 from django.utils import timezone
 from datetime import timedelta
 import re
@@ -28,6 +29,122 @@ def _bed_sort_key(bed):
     match = re.search(r'(\d+)$', label)
     bed_number = int(match.group(1)) if match else float('inf')
     return (is_sex_offender_bed, bed_number, label.lower(), bed.id)
+
+
+PROVIDER_PLACEMENT_DAYS = 30
+
+
+def _person_name(parolee):
+    return f"{parolee.last_name}, {parolee.first_name}"
+
+
+def _placement_dates(start_date=None):
+    housing_start_date = start_date or timezone.now().date()
+    return housing_start_date, housing_start_date + timedelta(days=PROVIDER_PLACEMENT_DAYS)
+
+
+def _append_bed_note(bed, note, request_user=None):
+    bed.notes = f"{bed.notes}\n{note}".strip() if bed.notes else note
+    bed.updated_by = request_user
+
+
+def _provider_bed_payload(bed, hold=None):
+    parolee = getattr(bed, "assigned_parolee", None)
+    if hold is None:
+        hold = getattr(bed, "active_provider_hold", None)
+
+    return {
+        "bed_id": bed.id,
+        "bed_label": bed.label,
+        "bed_status": bed.status,
+        "bed_status_label": bed.get_status_display(),
+        "facility_id": bed.facility_id,
+        "facility_name": bed.facility.name,
+        "district_number": bed.facility.district.number,
+        "client_id": parolee.idoc_id if parolee else None,
+        "parolee_id": parolee.id if parolee else None,
+        "client_name": _person_name(parolee) if parolee else None,
+        "housing_start_date": parolee.housing_start_date if parolee else None,
+        "housing_end_date": parolee.housing_end_date if parolee else None,
+        "assignment_placeholder": None if parolee else "No client assigned",
+        "hold_id": hold.id if hold else None,
+        "hold_status": hold.status if hold else None,
+        "hold_status_label": hold.get_status_display() if hold else None,
+        "hold_parolee_id": hold.parolee.id if hold else None,
+        "hold_client_id": hold.parolee.idoc_id if hold else None,
+        "hold_client_name": _person_name(hold.parolee) if hold else None,
+        "hold_expires_at": hold.expires_at.isoformat() if hold else None,
+    }
+
+
+def _provider_parolee_payload(parolee):
+    assigned_bed = parolee.assigned_bed
+    return {
+        "id": parolee.id,
+        "idoc_id": parolee.idoc_id,
+        "first_name": parolee.first_name,
+        "last_name": parolee.last_name,
+        "full_name": _person_name(parolee),
+        "district_number": parolee.district.number,
+        "assigned_bed_id": assigned_bed.id if assigned_bed else None,
+        "assigned_bed_label": assigned_bed.label if assigned_bed else None,
+        "assigned_facility_name": assigned_bed.facility.name if assigned_bed else None,
+        "housing_start_date": parolee.housing_start_date,
+        "housing_end_date": parolee.housing_end_date,
+    }
+
+
+def _require_provider_user(request):
+    if getattr(request.user, "role", None) != User.Role.PROVIDER:
+        return Response({"error": "Only housing providers can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+    if not request.user.provider_id:
+        return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
+
+    return request.user.provider_id
+
+
+def _release_expired_provider_assignments(provider_id):
+    today = timezone.now().date()
+    expired_parolees = (
+        Parolee.objects.select_related("assigned_bed", "assigned_bed__facility")
+        .filter(assigned_bed__facility__provider_id=provider_id, assigned_bed__isnull=False, housing_end_date__lt=today)
+    )
+
+    if not expired_parolees.exists():
+        return
+
+    event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+    for parolee in expired_parolees:
+        bed = parolee.assigned_bed
+        if bed is None:
+            continue
+
+        _append_bed_note(
+            bed,
+            f"[{event_time}] Placement ended on {parolee.housing_end_date} and the bed was released.",
+        )
+        bed.status = Bed.Status.AVAILABLE
+        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+        parolee.assigned_bed = None
+        parolee.save(update_fields=["assigned_bed"])
+
+
+def _assign_parolee_to_bed(bed, parolee, request_user, note_text, start_date=None, end_date=None):
+    housing_start_date = start_date or timezone.now().date()
+    housing_end_date = end_date or housing_start_date + timedelta(days=PROVIDER_PLACEMENT_DAYS)
+
+    _append_bed_note(bed, note_text, request_user)
+    bed.status = Bed.Status.OCCUPIED
+    bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+    parolee.assigned_bed = bed
+    parolee.housing_start_date = housing_start_date
+    parolee.housing_end_date = housing_end_date
+    parolee.save(update_fields=["assigned_bed", "housing_start_date", "housing_end_date"])
+
+    return housing_start_date, housing_end_date
 
 
 # Lightweight health check used by containers and uptime monitors.
@@ -387,14 +504,8 @@ class BedAssignView(APIView):
             f"[{event_time}] Assigned to {parolee.last_name}, {parolee.first_name} "
             f"({parolee.idoc_id})."
         )
-        bed.notes = f"{bed.notes}\n{assignment_note}".strip() if bed.notes else assignment_note
-        bed.status = Bed.Status.OCCUPIED
-        bed.updated_by = request_user
-        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
 
-        parolee.assigned_bed = bed
-        parolee.housing_start_date = timezone.now().date()
-        parolee.save(update_fields=["assigned_bed", "housing_start_date"])
+        _assign_parolee_to_bed(bed, parolee, request_user, assignment_note)
 
         return Response(
             {"message": f"Bed '{bed.label}' assigned to {parolee.last_name}, {parolee.first_name}."},
@@ -684,47 +795,299 @@ class ProviderBedsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if getattr(request.user, "role", None) != User.Role.PROVIDER:
-            return Response({"error": "Only housing providers can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
 
-        if not request.user.provider_id:
-            return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
+        _release_expired_provider_assignments(provider_id)
 
         beds = (
-            Bed.objects.filter(facility__provider_id=request.user.provider_id)
+            Bed.objects.filter(facility__provider_id=provider_id)
             .select_related("facility", "facility__district", "assigned_parolee")
         )
 
-        beds = sorted(beds, key=lambda bed: (bed.facility.name, *_bed_sort_key(bed)))
+        active_holds = {
+            hold.bed_id: hold
+            for hold in Hold.objects.filter(
+                bed__facility__provider_id=provider_id,
+                status=Hold.Status.ACTIVE,
+            ).select_related("bed", "parolee")
+        }
 
-        data = []
         for bed in beds:
-            parolee = getattr(bed, "assigned_parolee", None)
-            data.append(
+            setattr(bed, "active_provider_hold", active_holds.get(bed.id))
+
+        beds = sorted(beds, key=lambda bed: (bed.facility.name, *_bed_sort_key(bed)))
+        return Response([_provider_bed_payload(bed) for bed in beds], status=status.HTTP_200_OK)
+
+
+class ProviderFacilitiesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        facilities = (
+            Facility.objects.filter(provider_id=provider_id)
+            .select_related("district")
+            .annotate(bed_count=Count("beds", distinct=True))
+            .order_by("name")
+        )
+
+        return Response(
+            [
                 {
-                    "bed_id": bed.id,
-                    "bed_label": bed.label,
-                    "bed_status": bed.status,
-                    "facility_id": bed.facility_id,
-                    "facility_name": bed.facility.name,
-                    "district_number": bed.facility.district.number,
-                    "client_id": parolee.idoc_id if parolee else None,
-                    "client_name": f"{parolee.last_name}, {parolee.first_name}" if parolee else None,
+                    "facility_id": facility.id,
+                    "facility_name": facility.name,
+                    "district_number": facility.district.number,
+                    "district_name": facility.district.name,
+                    "bed_count": facility.bed_count,
+                    "is_active": facility.is_active,
                 }
+                for facility in facilities
+            ],
+            status=status.HTTP_200_OK,
+        )
+
+
+class ProviderClientLookupView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        idoc_id = (request.query_params.get("idoc_id") or "").strip()
+        if not idoc_id:
+            return Response({"error": "idoc_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            parolee = Parolee.objects.select_related("district", "assigned_bed", "assigned_bed__facility").get(idoc_id__iexact=idoc_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "No parolee exists with that client ID."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(_provider_parolee_payload(parolee), status=status.HTTP_200_OK)
+
+
+class ProviderBedCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        facility_id = request.data.get("facility_id")
+        label = (request.data.get("label") or "").strip()
+        notes = (request.data.get("notes") or "").strip()
+        is_sex_offender_bed = str(request.data.get("is_sex_offender_bed") or "").lower() in {"1", "true", "yes", "on"}
+
+        if not facility_id:
+            return Response({"error": "facility_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not label:
+            return Response({"error": "label is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            facility = Facility.objects.get(pk=facility_id, provider_id=provider_id)
+        except Facility.DoesNotExist:
+            return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        bed = Bed.objects.create(
+            facility=facility,
+            label=label,
+            notes=notes,
+            is_sex_offender_bed=is_sex_offender_bed,
+        )
+
+        return Response(_provider_bed_payload(bed), status=status.HTTP_201_CREATED)
+
+
+class ProviderHoldListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        holds = (
+            Hold.objects.filter(bed__facility__provider_id=provider_id)
+            .select_related("bed", "bed__facility", "parolee", "placed_by")
+            .order_by("-created_at")
+        )
+
+        return Response(
+            [
+                {
+                    "hold_id": hold.id,
+                    "bed_id": hold.bed_id,
+                    "bed_label": hold.bed.label,
+                    "facility_name": hold.bed.facility.name,
+                    "parolee_id": hold.parolee_id,
+                    "client_id": hold.parolee.idoc_id,
+                    "client_name": _person_name(hold.parolee),
+                    "status": hold.status,
+                    "status_label": hold.get_status_display(),
+                    "reason": hold.reason,
+                    "created_at": hold.created_at,
+                    "expires_at": hold.expires_at,
+                    "placed_by": hold.placed_by.get_full_name().strip() if hold.placed_by else None,
+                }
+                for hold in holds
+            ],
+            status=status.HTTP_200_OK,
+        )
+
+
+class ProviderHoldDecisionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, hold_id, decision):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        try:
+            hold = Hold.objects.select_related("bed", "bed__facility", "parolee").get(pk=hold_id)
+        except Hold.DoesNotExist:
+            return Response({"error": "Hold not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if hold.bed.facility.provider_id != provider_id:
+            return Response({"error": "You can only manage holds for your own facilities."}, status=status.HTTP_403_FORBIDDEN)
+
+        if hold.status != Hold.Status.ACTIVE:
+            return Response({"error": "Hold is no longer active."}, status=status.HTTP_409_CONFLICT)
+
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+        if decision == "approve":
+            if hold.parolee.assigned_bed is not None:
+                return Response({"error": "That client already has an assigned bed."}, status=status.HTTP_409_CONFLICT)
+
+            if hold.bed.status not in {Bed.Status.AVAILABLE, Bed.Status.HELD}:
+                return Response({"error": "That bed is not available for approval."}, status=status.HTTP_409_CONFLICT)
+
+            note = (
+                f"[{event_time}] Hold approved for {hold.parolee.last_name}, {hold.parolee.first_name} "
+                f"({hold.parolee.idoc_id})."
+            )
+            with transaction.atomic():
+                _assign_parolee_to_bed(hold.bed, hold.parolee, request_user, note)
+                hold.status = Hold.Status.CONVERTED
+                hold.save(update_fields=["status"])
+
+            return Response(
+                {
+                    "message": f"Hold approved for {hold.parolee.idoc_id}.",
+                    "hold_id": hold.id,
+                    "bed": _provider_bed_payload(hold.bed),
+                },
+                status=status.HTTP_200_OK,
             )
 
-        return Response(data, status=status.HTTP_200_OK)
+        if decision == "deny":
+            note = (
+                f"[{event_time}] Hold denied for {hold.parolee.last_name}, {hold.parolee.first_name} "
+                f"({hold.parolee.idoc_id})."
+            )
+            with transaction.atomic():
+                _append_bed_note(hold.bed, note, request_user)
+                hold.status = Hold.Status.CANCELLED
+                hold.save(update_fields=["status"])
+                hold.bed.status = Bed.Status.AVAILABLE
+                hold.bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+
+            return Response(
+                {
+                    "message": f"Hold denied for {hold.parolee.idoc_id}.",
+                    "hold_id": hold.id,
+                    "bed": _provider_bed_payload(hold.bed),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response({"error": "decision must be approve or deny."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProviderPlacementEndDateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, parolee_id):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        try:
+            parolee = Parolee.objects.select_related("assigned_bed", "assigned_bed__facility").get(pk=parolee_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Parolee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parolee.assigned_bed is None:
+            return Response({"error": "That client is not currently assigned to a bed."}, status=status.HTTP_409_CONFLICT)
+
+        if parolee.assigned_bed.facility.provider_id != provider_id:
+            return Response({"error": "You can only update placements for your own facilities."}, status=status.HTTP_403_FORBIDDEN)
+
+        raw_end_date = request.data.get("housing_end_date") or request.data.get("end_date")
+        if not raw_end_date:
+            return Response({"error": "housing_end_date is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        housing_end_date = parse_date(str(raw_end_date))
+        if housing_end_date is None:
+            return Response({"error": "housing_end_date must be a valid date."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if parolee.housing_start_date and housing_end_date < parolee.housing_start_date:
+            return Response({"error": "housing_end_date cannot be earlier than housing_start_date."}, status=status.HTTP_400_BAD_REQUEST)
+
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+        parolee.housing_end_date = housing_end_date
+        parolee.save(update_fields=["housing_end_date"])
+
+        if housing_end_date < timezone.now().date():
+            note = (
+                f"[{event_time}] Placement ended early on {housing_end_date} for "
+                f"{parolee.last_name}, {parolee.first_name} ({parolee.idoc_id})."
+            )
+            with transaction.atomic():
+                _append_bed_note(parolee.assigned_bed, note, request_user)
+                parolee.assigned_bed.status = Bed.Status.AVAILABLE
+                parolee.assigned_bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+                parolee.assigned_bed = None
+                parolee.save(update_fields=["assigned_bed"])
+
+            return Response(
+                {
+                    "message": f"Placement ended early for {parolee.idoc_id}.",
+                    "housing_end_date": housing_end_date,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {
+                "message": f"Updated end date for {parolee.idoc_id}.",
+                "housing_end_date": housing_end_date,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ProviderAssignClientView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if getattr(request.user, "role", None) != User.Role.PROVIDER:
-            return Response({"error": "Only housing providers can assign clients."}, status=status.HTTP_403_FORBIDDEN)
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
 
-        if not request.user.provider_id:
-            return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
+        _release_expired_provider_assignments(provider_id)
 
         bed_id = request.data.get("bed_id")
         idoc_id = (request.data.get("idoc_id") or "").strip()
@@ -740,11 +1103,11 @@ class ProviderAssignClientView(APIView):
         except Bed.DoesNotExist:
             return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if bed.facility.provider_id != request.user.provider_id:
+        if bed.facility.provider_id != provider_id:
             return Response({"error": "You can only update beds for your own facilities."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            parolee = Parolee.objects.get(idoc_id=idoc_id)
+            parolee = Parolee.objects.select_related("district", "assigned_bed", "assigned_bed__facility").get(idoc_id__iexact=idoc_id)
         except Parolee.DoesNotExist:
             return Response({"error": "No parolee exists with that client ID."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -754,18 +1117,21 @@ class ProviderAssignClientView(APIView):
         if parolee.assigned_bed is not None:
             return Response({"error": "That client already has an assigned bed."}, status=status.HTTP_409_CONFLICT)
 
-        bed.status = Bed.Status.OCCUPIED
-        bed.save(update_fields=["status"])
-
-        parolee.assigned_bed = bed
-        parolee.housing_start_date = timezone.now().date()
-        parolee.save(update_fields=["assigned_bed", "housing_start_date"])
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+        assignment_note = (
+            f"[{event_time}] Assigned to {parolee.last_name}, {parolee.first_name} ({parolee.idoc_id})."
+        )
+        housing_start_date, housing_end_date = _assign_parolee_to_bed(bed, parolee, request_user, assignment_note)
 
         return Response(
             {
                 "message": f"Assigned {parolee.idoc_id} to {bed.label} at {bed.facility.name}.",
                 "bed_id": bed.id,
                 "client_id": parolee.idoc_id,
+                "client_name": _person_name(parolee),
+                "housing_start_date": housing_start_date,
+                "housing_end_date": housing_end_date,
             },
             status=status.HTTP_200_OK,
         )
