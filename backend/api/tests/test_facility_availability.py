@@ -252,6 +252,7 @@ def test_facility_availability_filters_by_sex_offender_bed_presence(client):
         zip_code="83701",
         district=district,
         tier=Facility.Tier.TIER_1,
+        accepts_sex_offender=True,
     )
     without_so_beds = Facility.objects.create(
         provider=provider,

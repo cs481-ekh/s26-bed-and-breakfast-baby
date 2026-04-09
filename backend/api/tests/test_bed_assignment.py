@@ -145,6 +145,12 @@ def test_request_hold_requires_case_manager_or_admin(client):
 def test_request_hold_requires_parolee(client):
     district = District.objects.create(number=12, name="Hold Required District")
     provider = Provider.objects.create(name="Provider Hold Required")
+    case_manager = User.objects.create_user(
+        username="case_mgr_hold_required",
+        password="testpass123",
+        role=User.Role.CASE_MANAGER,
+        district=district,
+    )
     facility = Facility.objects.create(
         provider=provider,
         name="Hold Required House",
@@ -157,6 +163,7 @@ def test_request_hold_requires_parolee(client):
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
 
+    client.force_login(case_manager)
     resp = client.post(f"/api/beds/{bed.id}/hold/", data={}, content_type="application/json")
 
     assert resp.status_code == 400

@@ -699,7 +699,7 @@ class ProviderBedsView(APIView):
 
         data = []
         for bed in beds:
-            parolee = bed.assigned_parolee
+            parolee = getattr(bed, "assigned_parolee", None)
             data.append(
                 {
                     "bed_id": bed.id,
