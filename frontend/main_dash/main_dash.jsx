@@ -4,6 +4,8 @@ import './main_dash.css';
 
 export default function MainDash({ readOnly = false }) {
     const [facilities, setFacilities] = useState([]);
+    const [facilityCatalog, setFacilityCatalog] = useState([]);
+    const [facilityCatalogLoaded, setFacilityCatalogLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -31,13 +33,43 @@ export default function MainDash({ readOnly = false }) {
     const [notesModalOpen, setNotesModalOpen] = useState(false);
     const [selectedBedForNotesModal, setSelectedBedForNotesModal] = useState(null);
 
+    const buildAvailabilityUrl = useCallback((districtKeys = [], genderTargets = []) => {
+        const params = new URLSearchParams();
+
+        districtKeys.forEach((districtKey) => {
+            const districtNumber = String(districtKey).split('|')[0];
+            if (districtNumber) {
+                params.append('district', districtNumber);
+            }
+        });
+
+        genderTargets.forEach((targetValue) => {
+            if (targetValue === 'male_centered') {
+                params.append('gender', 'male');
+            }
+            if (targetValue === 'female_centered') {
+                params.append('gender', 'female');
+            }
+            if (targetValue === 'either') {
+                params.append('gender', 'either');
+            }
+        });
+
+        const queryString = params.toString();
+        return queryString ? `/api/facilities/availability/?${queryString}` : '/api/facilities/availability/';
+    }, []);
+
     // Facility summary fetch powers the top-level facility table.
-    const fetchAvailability = useCallback(async () => {
+    const fetchAvailability = useCallback(async ({ districtKeys = [], genderTargets = [], refreshCatalog = false } = {}) => {
         try {
             setLoading(true);
-            const response = await fetch('/api/facilities/availability/');
+            const response = await fetch(buildAvailabilityUrl(districtKeys, genderTargets));
             const payload = await response.json();
             if (!response.ok) throw new Error('Could not load bed availability.');
+            if (refreshCatalog) {
+                setFacilityCatalog(Array.isArray(payload) ? payload : []);
+                setFacilityCatalogLoaded(true);
+            }
             setFacilities(Array.isArray(payload) ? payload : []);
             setError('');
         } catch (fetchError) {
@@ -46,7 +78,7 @@ export default function MainDash({ readOnly = false }) {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [buildAvailabilityUrl]);
 
     const fetchParolees = useCallback(async () => {
         try {
@@ -85,12 +117,24 @@ export default function MainDash({ readOnly = false }) {
 
     // Initial load keeps facility totals and parolee choices in sync.
     useEffect(() => {
-        fetchAvailability();
+        fetchAvailability({ refreshCatalog: true });
         fetchParolees();
     }, [fetchAvailability, fetchParolees]);
 
+    // Refetch availability when district or gender filters change.
+    useEffect(() => {
+        if (!facilityCatalogLoaded) {
+            return;
+        }
+
+        fetchAvailability({
+            districtKeys: selectedDistricts,
+            genderTargets: selectedGenderTargets,
+        });
+    }, [facilityCatalogLoaded, fetchAvailability, selectedDistricts, selectedGenderTargets]);
+
     // Build district filter options from the currently loaded facilities.
-    const districtOptions = facilities
+    const districtOptions = (facilityCatalog.length > 0 ? facilityCatalog : facilities)
         .reduce((acc, facility) => {
             const key = `${facility.district_number}|${facility.district_name}`;
             if (!acc.some((option) => option.key === key)) {
@@ -103,13 +147,6 @@ export default function MainDash({ readOnly = false }) {
             return acc;
         }, [])
         .sort((a, b) => Number(a.district_number) - Number(b.district_number));
-
-    const filteredFacilities = selectedDistricts.length === 0
-        ? facilities
-        : facilities.filter((facility) => {
-            const facilityDistrictKey = `${facility.district_number}|${facility.district_name}`;
-            return selectedDistricts.includes(facilityDistrictKey);
-        });
 
     // Supports quoted phrases with AND/OR logic, e.g. "Location A" AND "Location B".
     const parseSearchExpression = useCallback((rawSearchInput) => {
@@ -173,8 +210,8 @@ export default function MainDash({ readOnly = false }) {
     }, []);
 
     const searchedFacilities = parsedSearchExpression.terms.length === 0
-        ? filteredFacilities
-        : filteredFacilities.filter((facility) => matchesSearchExpression(facility, parsedSearchExpression));
+        ? facilities
+        : facilities.filter((facility) => matchesSearchExpression(facility, parsedSearchExpression));
 
     const toggleDistrictFilter = useCallback((districtKey) => {
         setSelectedDistricts((prev) => (
@@ -646,9 +683,7 @@ export default function MainDash({ readOnly = false }) {
                         )}
 
                         <div className="gender-filter" aria-label="Facility gender target filters">
-                            <p className="gender-filter-title">
-                                Gender Targets <span className="filter-in-progress-note">(in progress)</span>
-                            </p>
+                            <p className="gender-filter-title">Gender Targets</p>
                             <div className="gender-filter-options">
                                 {genderTargetOptions.map((option) => (
                                     <label key={option.value} className="gender-filter-option">

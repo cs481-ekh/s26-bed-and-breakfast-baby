@@ -33,19 +33,29 @@ class FacilityAvailabilityView(APIView):
         include_inactive = str(
             request.query_params.get("include_inactive", "false")
         ).lower() in {"1", "true", "yes"}
-        district_number = request.query_params.get("district")
-        gender = (request.query_params.get("gender") or "").strip().lower()
+        district_numbers = [value.strip() for value in request.query_params.getlist("district") if value.strip()]
+        gender_targets = {
+            value.strip().lower()
+            for value in request.query_params.getlist("gender")
+            if value.strip()
+        }
         sex_offender = (request.query_params.get("sex_offender") or "").strip().lower()
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
 
-        if district_number:
-            facility_queryset = facility_queryset.filter(district__number=district_number)
+        if district_numbers:
+            facility_queryset = facility_queryset.filter(district__number__in=district_numbers)
 
-        if gender == "male":
-            facility_queryset = facility_queryset.filter(accepts_male=True)
-        elif gender == "female":
-            facility_queryset = facility_queryset.filter(accepts_female=True)
+        gender_query = Q()
+        if "male" in gender_targets:
+            gender_query |= Q(accepts_male=True, accepts_female=False)
+        if "female" in gender_targets:
+            gender_query |= Q(accepts_female=True, accepts_male=False)
+        if "either" in gender_targets:
+            gender_query |= Q(accepts_male=True, accepts_female=True)
+
+        if gender_targets:
+            facility_queryset = facility_queryset.filter(gender_query)
 
         if sex_offender in {"1", "true", "yes"}:
             facility_queryset = facility_queryset.filter(accepts_sex_offender=True)

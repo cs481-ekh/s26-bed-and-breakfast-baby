@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import MainDash from "./main_dash";
@@ -6,9 +6,13 @@ import MainDash from "./main_dash";
 describe("MainDash", () => {
   let fetchMock;
 
+  const isAvailabilityRequest = (url) => (
+    typeof url === "string" && url.startsWith("/api/facilities/availability/")
+  );
+
   beforeEach(() => {
     fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -99,12 +103,12 @@ describe("MainDash", () => {
     expect(within(facilityRow).getByText("1 - North")).toBeInTheDocument();
     expect(screen.getByText("tier 1")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("/api/facilities/availability/");
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/facilities/availability/"));
   });
 
   test("searches facilities by facility or provider name", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -155,63 +159,79 @@ describe("MainDash", () => {
     const searchInput = screen.getByLabelText("Search facilities or providers");
 
     fireEvent.change(searchInput, { target: { value: "sun" } });
-    expect(screen.getByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
-    expect(screen.getByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
+    expect(await screen.findByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "beacon" } });
-    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
-    expect(screen.getByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Provider A"' } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" OR "Beacon Housing"' } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Beacon Housing"' } });
-    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "nomatch" } });
-    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "" } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("filters facilities by selected districts", async () => {
+    const facilitiesFixture = [
+      {
+        facility_id: 1,
+        facility_name: "Sunrise House",
+        provider_name: "Provider A",
+        district_number: 1,
+        district_name: "North",
+        tier: "tier_1",
+        total_beds: 8,
+        assigned_beds: 5,
+        available_beds: 3,
+      },
+      {
+        facility_id: 2,
+        facility_name: "Cedar Home",
+        provider_name: "Provider B",
+        district_number: 2,
+        district_name: "South",
+        tier: "tier_2",
+        total_beds: 6,
+        assigned_beds: 2,
+        available_beds: 4,
+      },
+    ];
+
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
+        const parsedUrl = new URL(url, "http://localhost");
+        const selectedDistricts = parsedUrl.searchParams.getAll("district");
+        const filteredFacilities = selectedDistricts.length > 0
+          ? facilitiesFixture.filter((facility) => (
+            selectedDistricts.includes(String(facility.district_number))
+          ))
+          : facilitiesFixture;
+
         return {
           ok: true,
-          json: async () => [
-            {
-              facility_id: 1,
-              facility_name: "Sunrise House",
-              provider_name: "Provider A",
-              district_number: 1,
-              district_name: "North",
-              tier: "tier_1",
-              total_beds: 8,
-              assigned_beds: 5,
-              available_beds: 3,
-            },
-            {
-              facility_id: 2,
-              facility_name: "Cedar Home",
-              provider_name: "Provider B",
-              district_number: 2,
-              district_name: "South",
-              tier: "tier_2",
-              total_beds: 6,
-              assigned_beds: 2,
-              available_beds: 4,
-            },
-          ],
+          json: async () => filteredFacilities,
         };
       }
 
@@ -236,44 +256,80 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Clear All Filters" }));
 
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
-  test("allows selecting gender target filters without changing displayed facilities", async () => {
+  test("filters facilities by gender target selections", async () => {
+    const facilitiesFixture = [
+      {
+        facility_id: 1,
+        facility_name: "Sunrise House",
+        provider_name: "Provider A",
+        district_number: 1,
+        district_name: "North",
+        tier: "tier_1",
+        total_beds: 8,
+        assigned_beds: 5,
+        available_beds: 3,
+        accepts_male: true,
+        accepts_female: true,
+      },
+      {
+        facility_id: 2,
+        facility_name: "Cedar Home",
+        provider_name: "Provider B",
+        district_number: 2,
+        district_name: "South",
+        tier: "tier_2",
+        total_beds: 6,
+        assigned_beds: 2,
+        available_beds: 4,
+        accepts_male: true,
+        accepts_female: false,
+      },
+      {
+        facility_id: 3,
+        facility_name: "Willow House",
+        provider_name: "Provider C",
+        district_number: 3,
+        district_name: "East",
+        tier: "tier_3",
+        total_beds: 4,
+        assigned_beds: 1,
+        available_beds: 3,
+        accepts_male: false,
+        accepts_female: true,
+      },
+    ];
+
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
+        const parsedUrl = new URL(url, "http://localhost");
+        const selectedGenders = parsedUrl.searchParams.getAll("gender");
+        const filteredFacilities = selectedGenders.length > 0
+          ? facilitiesFixture.filter((facility) => {
+            const isMaleOnly = facility.accepts_male && !facility.accepts_female;
+            const isFemaleOnly = facility.accepts_female && !facility.accepts_male;
+            const isEither = facility.accepts_male && facility.accepts_female;
+            return (
+              (selectedGenders.includes("male") && isMaleOnly)
+              || (selectedGenders.includes("female") && isFemaleOnly)
+              || (selectedGenders.includes("either") && isEither)
+            );
+          })
+          : facilitiesFixture;
+
         return {
           ok: true,
-          json: async () => [
-            {
-              facility_id: 1,
-              facility_name: "Sunrise House",
-              provider_name: "Provider A",
-              district_number: 1,
-              district_name: "North",
-              tier: "tier_1",
-              total_beds: 8,
-              assigned_beds: 5,
-              available_beds: 3,
-            },
-            {
-              facility_id: 2,
-              facility_name: "Cedar Home",
-              provider_name: "Provider B",
-              district_number: 2,
-              district_name: "South",
-              tier: "tier_2",
-              total_beds: 6,
-              assigned_beds: 2,
-              available_beds: 4,
-            },
-          ],
+          json: async () => filteredFacilities,
         };
       }
 
@@ -294,11 +350,11 @@ describe("MainDash", () => {
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(screen.getByText("Willow House")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
 
     expect(screen.getByText(/Gender Targets/i)).toBeInTheDocument();
-    expect(screen.getByText("(in progress)")).toBeInTheDocument();
 
     const maleCenteredCheckbox = screen.getByLabelText("Male-only");
     const eitherCheckbox = screen.getByLabelText("Gender neutral");
@@ -307,19 +363,30 @@ describe("MainDash", () => {
     expect(eitherCheckbox).not.toBeChecked();
 
     fireEvent.click(maleCenteredCheckbox);
+
+    expect(maleCenteredCheckbox).toBeChecked();
+    expect(eitherCheckbox).not.toBeChecked();
+
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+      expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    });
+
     fireEvent.click(eitherCheckbox);
 
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).toBeChecked();
-
-    // Gender-target filters are intentionally UI-only until backend support is added.
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    });
   });
 
   test("clear all filters resets search and filter selections", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -386,8 +453,8 @@ describe("MainDash", () => {
     expect(searchInput).toHaveValue("");
     expect(districtCheckbox).not.toBeChecked();
     expect(genderCheckbox).not.toBeChecked();
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("shows facility bed rows when the facility is expanded", async () => {
@@ -410,7 +477,7 @@ describe("MainDash", () => {
 
   test("filters parolee options by parolee number or name", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -540,7 +607,7 @@ describe("MainDash", () => {
 
   test("shows notes column to all users", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -601,7 +668,7 @@ describe("MainDash", () => {
 
   test("shows note edit controls when user can edit notes", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -659,7 +726,7 @@ describe("MainDash", () => {
 
   test("admins can expand and collapse full note history", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [
@@ -726,7 +793,7 @@ describe("MainDash", () => {
 
   test("shows only the last 3 note changes", async () => {
     fetchMock.mockImplementation(async (url) => {
-      if (url === "/api/facilities/availability/") {
+      if (isAvailabilityRequest(url)) {
         return {
           ok: true,
           json: async () => [

@@ -1,0 +1,24 @@
+ID,Name,Provider ID,Provider Name,Address,City,Zip Code,District ID,Tier,Accepts Male,Accepts Female,Accepts Sex Offender
+23,Large Seed Facility 15,10,Large Seed Provider 5,1015 Expansion Ave,Idaho Falls,83215,1,tier_3,True,True,False
+16,Large Seed Facility 8,8,Large Seed Provider 3,1008 Expansion Ave,Boise,83208,1,tier_2,True,True,False
+9,Large Seed Facility 1,6,Large Seed Provider 1,1001 Expansion Ave,Idaho Falls,83201,1,tier_1,True,True,False
+7,Coeur d'Alene Haven,4,North Idaho Housing Alliance,100 Lake Dr,Coeur d'Alene,83814,1,tier_2,False,True,False
+17,Large Seed Facility 9,9,Large Seed Provider 4,1009 Expansion Ave,Idaho Falls,83209,2,tier_3,True,True,False
+10,Large Seed Facility 2,7,Large Seed Provider 2,1002 Expansion Ave,Boise,83202,2,tier_2,True,True,False
+18,Large Seed Facility 10,10,Large Seed Provider 5,1010 Expansion Ave,Boise,83210,3,tier_1,True,True,False
+11,Large Seed Facility 3,8,Large Seed Provider 3,1003 Expansion Ave,Idaho Falls,83203,3,tier_3,True,True,False
+4,Caldwell Transition Home,2,Treasure Valley Transitional,321 Oak Blvd,Caldwell,83605,3,tier_3,False,True,False
+3,Canyon House,2,Treasure Valley Transitional,789 Elm St,Nampa,83651,3,tier_2,True,True,False
+19,Large Seed Facility 11,6,Large Seed Provider 1,1011 Expansion Ave,Idaho Falls,83211,4,tier_2,True,True,False
+12,Large Seed Facility 4,9,Large Seed Provider 4,1004 Expansion Ave,Boise,83204,4,tier_1,True,True,False
+2,Meridian Sober Living,1,Idaho Recovery Housing,456 Pine Ave,Meridian,83642,4,tier_1,True,False,False
+1,Boise Recovery House,1,Idaho Recovery Housing,123 Main St,Boise,83702,4,tier_2,True,True,True
+20,Large Seed Facility 12,7,Large Seed Provider 2,1012 Expansion Ave,Boise,83212,5,tier_3,True,True,False
+13,Large Seed Facility 5,10,Large Seed Provider 5,1005 Expansion Ave,Idaho Falls,83205,5,tier_2,True,True,False
+8,Twin Falls Recovery,5,Magic Valley Recovery Homes,444 Blue Rd,Twin Falls,83301,5,tier_3,True,True,True
+21,Large Seed Facility 13,8,Large Seed Provider 3,1013 Expansion Ave,Idaho Falls,83213,6,tier_1,True,True,False
+14,Large Seed Facility 6,6,Large Seed Provider 1,1006 Expansion Ave,Boise,83206,6,tier_3,True,True,False
+6,Pocatello Reentry House,3,Eastern Idaho Reentry Services,222 Center St,Pocatello,83201,6,tier_1,True,False,False
+22,Large Seed Facility 14,9,Large Seed Provider 4,1014 Expansion Ave,Boise,83214,7,tier_2,True,True,False
+15,Large Seed Facility 7,7,Large Seed Provider 2,1007 Expansion Ave,Idaho Falls,83207,7,tier_1,True,True,False
+5,Idaho Falls Recovery,3,Eastern Idaho Reentry Services,555 River Rd,Idaho Falls,83401,7,tier_2,True,True,True
