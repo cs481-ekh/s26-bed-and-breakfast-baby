@@ -159,32 +159,38 @@ describe("MainDash", () => {
     const searchInput = screen.getByLabelText("Search facilities or providers");
 
     fireEvent.change(searchInput, { target: { value: "sun" } });
-    expect(screen.getByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
-    expect(screen.getByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
+    expect(await screen.findByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "beacon" } });
-    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
-    expect(screen.getByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Provider A"' } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" OR "Beacon Housing"' } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Beacon Housing"' } });
-    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "nomatch" } });
-    expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "" } });
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("filters facilities by selected districts", async () => {
@@ -310,9 +316,9 @@ describe("MainDash", () => {
         const selectedGenders = parsedUrl.searchParams.getAll("gender");
         const filteredFacilities = selectedGenders.length > 0
           ? facilitiesFixture.filter((facility) => {
-            const isMaleOnly = Boolean(facility.accepts_male) && !Boolean(facility.accepts_female);
-            const isFemaleOnly = Boolean(facility.accepts_female) && !Boolean(facility.accepts_male);
-            const isEither = Boolean(facility.accepts_male) && Boolean(facility.accepts_female);
+            const isMaleOnly = facility.accepts_male && !facility.accepts_female;
+            const isFemaleOnly = facility.accepts_female && !facility.accepts_male;
+            const isEither = facility.accepts_male && facility.accepts_female;
             return (
               (selectedGenders.includes("male") && isMaleOnly)
               || (selectedGenders.includes("female") && isFemaleOnly)
