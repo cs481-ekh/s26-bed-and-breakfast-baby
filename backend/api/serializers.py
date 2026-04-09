@@ -44,7 +44,7 @@ class BedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bed
-        fields = ['id', 'label', 'status', 'notes', 'updated_at', 'updated_by', 'can_edit_notes']
+        fields = ['id', 'label', 'status', 'is_sex_offender_bed', 'notes', 'updated_at', 'updated_by', 'can_edit_notes']
 
 
 class ParoleeSerializer(serializers.ModelSerializer):
