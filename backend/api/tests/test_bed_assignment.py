@@ -1,7 +1,7 @@
 import pytest
 from django.utils import timezone
 
-from housing.models import Bed, District, Facility, Hold, Parolee, Provider
+from housing.models import Bed, District, Facility, Hold, Parolee, Provider, User
 
 
 @pytest.mark.django_db
@@ -64,6 +64,12 @@ def test_unassign_single_bed_without_assignment_conflict(client):
 def test_request_hold_on_available_bed(client):
     district = District.objects.create(number=10, name="Hold District")
     provider = Provider.objects.create(name="Provider Hold")
+    case_manager = User.objects.create_user(
+        username="case_mgr_hold",
+        password="testpass123",
+        role=User.Role.CASE_MANAGER,
+        district=district,
+    )
     facility = Facility.objects.create(
         provider=provider,
         name="Hold House",
@@ -82,6 +88,7 @@ def test_request_hold_on_available_bed(client):
         district=district,
     )
 
+    client.force_login(case_manager)
     resp = client.post(
         f"/api/beds/{bed.id}/hold/",
         data={"parolee_id": parolee.id},
@@ -96,9 +103,54 @@ def test_request_hold_on_available_bed(client):
 
 
 @pytest.mark.django_db
+def test_request_hold_requires_case_manager_or_admin(client):
+    district = District.objects.create(number=13, name="Restricted District")
+    provider = Provider.objects.create(name="Provider Restricted")
+    parole_officer = User.objects.create_user(
+        username="po_hold",
+        password="testpass123",
+        role=User.Role.PAROLE_OFFICER,
+        district=district,
+    )
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Restricted House",
+        address="405 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed Restricted", status=Bed.Status.AVAILABLE)
+    parolee = Parolee.objects.create(
+        idoc_id="IDOC-602",
+        first_name="Riley",
+        last_name="Gray",
+        district=district,
+    )
+
+    client.force_login(parole_officer)
+    resp = client.post(
+        f"/api/beds/{bed.id}/hold/",
+        data={"parolee_id": parolee.id},
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 403
+    assert "only case managers and admins" in resp.json()["error"].lower()
+
+
+@pytest.mark.django_db
 def test_request_hold_requires_parolee(client):
     district = District.objects.create(number=12, name="Hold Required District")
     provider = Provider.objects.create(name="Provider Hold Required")
+    case_manager = User.objects.create_user(
+        username="case_mgr_hold_required",
+        password="testpass123",
+        role=User.Role.CASE_MANAGER,
+        district=district,
+    )
     facility = Facility.objects.create(
         provider=provider,
         name="Hold Required House",
@@ -111,6 +163,7 @@ def test_request_hold_requires_parolee(client):
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
 
+    client.force_login(case_manager)
     resp = client.post(f"/api/beds/{bed.id}/hold/", data={}, content_type="application/json")
 
     assert resp.status_code == 400

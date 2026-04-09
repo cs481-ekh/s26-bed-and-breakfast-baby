@@ -1,0 +1,35 @@
+# Dependency and build artifacts
+node_modules/
+dist/
+coverage/
+.vite/
+.cache/
+.parcel-cache/
+.nyc_output/
+storybook-static/
+
+# Test and cache artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+vitest-report/
+playwright-report/
+test-results/
+.eslintcache
+
+# VCS and editor metadata
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*

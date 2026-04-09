@@ -88,3 +88,95 @@ def test_non_provider_cannot_assign_client(client):
     )
 
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_provider_beds_are_sorted_with_sex_offender_beds_first(client):
+    district = District.objects.create(number=3, name="East")
+    provider = Provider.objects.create(name="Provider Sort")
+
+    provider_user = User.objects.create_user(
+        username="provider_sort_user",
+        password="testpass123",
+        role=User.Role.PROVIDER,
+        provider=provider,
+    )
+
+    first_facility = Facility.objects.create(
+        provider=provider,
+        name="Alpha House",
+        address="100 First St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+        accepts_sex_offender=True,
+    )
+    second_facility = Facility.objects.create(
+        provider=provider,
+        name="Beta House",
+        address="200 Second St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_2,
+    )
+
+    Bed.objects.create(facility=second_facility, label="Bed 3")
+    Bed.objects.create(facility=first_facility, label="Bed 10")
+    Bed.objects.create(facility=first_facility, label="S/O Bed 2", is_sex_offender_bed=True)
+    Bed.objects.create(facility=first_facility, label="Bed 2")
+    Bed.objects.create(facility=first_facility, label="S/O Bed 1", is_sex_offender_bed=True)
+    Bed.objects.create(facility=first_facility, label="Bed 1")
+
+    client.force_login(provider_user)
+    resp = client.get("/api/provider/beds/")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [bed["bed_label"] for bed in body] == [
+        "S/O Bed 1",
+        "S/O Bed 2",
+        "Bed 1",
+        "Bed 2",
+        "Bed 10",
+        "Bed 3",
+    ]
+
+
+@pytest.mark.django_db
+def test_provider_beds_returns_null_client_fields_for_unassigned_beds(client):
+    district = District.objects.create(number=4, name="West")
+    provider = Provider.objects.create(name="Provider Null Client")
+
+    provider_user = User.objects.create_user(
+        username="provider_null_client_user",
+        password="testpass123",
+        role=User.Role.PROVIDER,
+        provider=provider,
+    )
+
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Null Client House",
+        address="300 Third St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        tier=Facility.Tier.TIER_1,
+    )
+
+    unassigned_bed = Bed.objects.create(facility=facility, label="Bed 1")
+
+    client.force_login(provider_user)
+    resp = client.get("/api/provider/beds/")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["bed_id"] == unassigned_bed.id
+    assert body[0]["client_id"] is None
+    assert body[0]["client_name"] is None

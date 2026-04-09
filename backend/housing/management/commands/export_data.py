@@ -136,7 +136,7 @@ class Command(BaseCommand):
             writer = csv.writer(f)
             writer.writerow([
                 "ID", "Facility ID", "Facility Name", "Label", "Status", 
-                "Assigned Parolee ID", "Updated At"
+                "Sex Offender Designated", "Assigned Parolee ID", "Updated At"
             ])
             for bed in Bed.objects.select_related("facility"):
                 writer.writerow([
@@ -145,6 +145,7 @@ class Command(BaseCommand):
                     bed.facility.name,
                     bed.label,
                     bed.status,
+                    bed.is_sex_offender_bed,
                     assigned_lookup.get(bed.id, ""),
                     bed.updated_at,
                 ])

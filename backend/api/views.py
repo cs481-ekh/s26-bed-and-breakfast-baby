@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import timedelta
+import re
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.response import Response
@@ -19,6 +20,14 @@ from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
 User = get_user_model()
+
+
+def _bed_sort_key(bed):
+    label = (bed.label or '').strip()
+    is_sex_offender_bed = 0 if getattr(bed, 'is_sex_offender_bed', False) else 1
+    match = re.search(r'(\d+)$', label)
+    bed_number = int(match.group(1)) if match else float('inf')
+    return (is_sex_offender_bed, bed_number, label.lower(), bed.id)
 
 
 # Lightweight health check used by containers and uptime monitors.
@@ -39,6 +48,11 @@ class FacilityAvailabilityView(APIView):
             for value in request.query_params.getlist("gender")
             if value.strip()
         }
+        so_bed_targets = {
+            value.strip().lower()
+            for value in request.query_params.getlist("so_beds")
+            if value.strip()
+        }
         sex_offender = (request.query_params.get("sex_offender") or "").strip().lower()
 
         facility_queryset = Facility.objects.all() if include_inactive else Facility.objects.filter(is_active=True)
@@ -57,6 +71,15 @@ class FacilityAvailabilityView(APIView):
         if gender_targets:
             facility_queryset = facility_queryset.filter(gender_query)
 
+        so_bed_query = Q()
+        if "has" in so_bed_targets:
+            so_bed_query |= Q(beds__is_sex_offender_bed=True)
+        if "none" in so_bed_targets:
+            so_bed_query |= ~Q(beds__is_sex_offender_bed=True)
+
+        if so_bed_targets:
+            facility_queryset = facility_queryset.filter(so_bed_query)
+
         if sex_offender in {"1", "true", "yes"}:
             facility_queryset = facility_queryset.filter(accepts_sex_offender=True)
 
@@ -68,6 +91,11 @@ class FacilityAvailabilityView(APIView):
                 assigned_beds=Count(
                     "beds",
                     filter=Q(beds__assigned_parolee__isnull=False),
+                    distinct=True,
+                ),
+                sex_offender_bed_count=Count(
+                    "beds",
+                    filter=Q(beds__is_sex_offender_bed=True),
                     distinct=True,
                 ),
             )
@@ -88,6 +116,7 @@ class FacilityAvailabilityView(APIView):
                     "accepts_male": facility.accepts_male,
                     "accepts_female": facility.accepts_female,
                     "accepts_sex_offender": facility.accepts_sex_offender,
+                    "has_sex_offender_beds": facility.sex_offender_bed_count > 0,
                     "is_active": facility.is_active,
                     "total_beds": facility.total_beds,
                     "assigned_beds": facility.assigned_beds,
@@ -312,7 +341,10 @@ class FacilityBedsView(APIView):
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Pass request context so serializer can expose role-specific fields.
-        beds = Bed.objects.filter(facility=facility).order_by("label")
+        beds = sorted(
+            Bed.objects.filter(facility=facility).select_related("facility"),
+            key=_bed_sort_key,
+        )
         return Response(BedSerializer(beds, many=True, context={"request": request}).data)
 
 
@@ -374,6 +406,13 @@ class BedHoldRequestView(APIView):
     """Place a temporary hold on an available bed for testing workflows."""
 
     def post(self, request, bed_id):
+        request_user = request.user if request.user.is_authenticated else None
+        if request_user is None or getattr(request_user, "role", None) not in {User.Role.ADMIN, User.Role.CASE_MANAGER}:
+            return Response(
+                {"error": "Only case managers and admins can request holds."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         parolee_id = request.data.get("parolee_id")
         if not parolee_id:
             return Response({"error": "parolee_id is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -398,7 +437,6 @@ class BedHoldRequestView(APIView):
         if Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists():
             return Response({"error": "This bed already has an active hold for the selected parolee."}, status=status.HTTP_409_CONFLICT)
 
-        request_user = request.user if request.user.is_authenticated else None
         event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
         hold_note = (
             f"[{event_time}] Hold requested for {parolee.last_name}, {parolee.first_name} "
@@ -510,38 +548,6 @@ class BedNotesUpdateView(APIView):
             {
                 "message": f"Notes updated for bed '{bed.label}'.",
                 "bed": BedSerializer(bed, context={"request": request}).data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class BedUnassignAllView(APIView):
-    """Clear all bed assignments for test/demo reset flows."""
-
-    def post(self, request):
-        assigned_bed_ids = list(
-            Bed.objects.filter(assigned_parolee__isnull=False).values_list("id", flat=True)
-        )
-
-        # Bulk reset is wrapped in a transaction to keep counts and state consistent.
-        with transaction.atomic():
-            unassigned_count = Parolee.objects.filter(assigned_bed__isnull=False).update(
-                assigned_bed=None,
-                housing_start_date=None,
-                housing_end_date=None,
-            )
-            request_user = request.user if request.user.is_authenticated else None
-            reset_timestamp = timezone.now()
-            reset_bed_count = Bed.objects.filter(
-                id__in=assigned_bed_ids,
-                status=Bed.Status.OCCUPIED,
-            ).update(status=Bed.Status.AVAILABLE, updated_by=request_user, updated_at=reset_timestamp)
-
-        return Response(
-            {
-                "message": "All bed assignments have been cleared.",
-                "parolees_unassigned": unassigned_count,
-                "beds_reset": reset_bed_count,
             },
             status=status.HTTP_200_OK,
         )
@@ -687,12 +693,13 @@ class ProviderBedsView(APIView):
         beds = (
             Bed.objects.filter(facility__provider_id=request.user.provider_id)
             .select_related("facility", "facility__district", "assigned_parolee")
-            .order_by("facility__name", "label")
         )
+
+        beds = sorted(beds, key=lambda bed: (bed.facility.name, *_bed_sort_key(bed)))
 
         data = []
         for bed in beds:
-            parolee = bed.assigned_parolee
+            parolee = getattr(bed, "assigned_parolee", None)
             data.append(
                 {
                     "bed_id": bed.id,

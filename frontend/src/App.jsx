@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import AdminDash from "../admin/admin_dash";
 import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
@@ -98,10 +99,40 @@ function AdminPage() {
 }
 
 function MainDashboardPageComponent() {
+  const [isReadOnly, setIsReadOnly] = useState(true);
+  const [roleLoaded, setRoleLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRole = async () => {
+      const { response, payload } = await apiJson("/api/me/");
+
+      if (cancelled) {
+        return;
+      }
+
+      if (response.ok) {
+        const role = payload?.role || "";
+        setIsReadOnly(!(role === "admin" || role === "case_manager"));
+      } else {
+        setIsReadOnly(true);
+      }
+
+      setRoleLoaded(true);
+    };
+
+    loadRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer"]}>
       <PageTemplate>
-        <MainDash />
+        {roleLoaded ? <MainDash readOnly={isReadOnly} /> : <p>Loading dashboard...</p>}
       </PageTemplate>
     </RolePageGate>
   );

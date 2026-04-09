@@ -29,6 +29,24 @@ class Command(BaseCommand):
         size = options["size"]
         self.stdout.write(f"Seeding database (size={size})...")
 
+        def mark_sex_offender_beds(target_facilities):
+            marked_total = 0
+            for facility in target_facilities:
+                facility_beds = list(Bed.objects.filter(facility=facility).order_by("id"))
+                for index, bed in enumerate(facility_beds[:2], start=1):
+                    update_fields = []
+                    so_label = f"S/O Bed {index}"
+                    if bed.label != so_label:
+                        bed.label = so_label
+                        update_fields.append("label")
+                    if not bed.is_sex_offender_bed:
+                        bed.is_sex_offender_bed = True
+                        update_fields.append("is_sex_offender_bed")
+                    if update_fields:
+                        bed.save(update_fields=[*update_fields, "updated_at"])
+                marked_total += min(2, len(facility_beds))
+            return marked_total
+
         # ---------------------------------------------------------------
         # Districts — Idaho's 7 judicial districts
         # ---------------------------------------------------------------
@@ -143,6 +161,14 @@ class Command(BaseCommand):
                 )
                 all_beds.append(b)
         self.stdout.write(f"  Created {len(all_beds)} beds")
+
+        # Designate up to 2 sex-offender beds for a subset of eligible facilities.
+        small_so_facilities = [
+            facility for facility in facilities
+            if facility.name in {"Boise Recovery House", "Idaho Falls Recovery"} and facility.accepts_sex_offender
+        ]
+        marked_small = mark_sex_offender_beds(small_so_facilities)
+        self.stdout.write(f"  Marked {marked_small} sex-offender designated beds")
 
         # ---------------------------------------------------------------
         # Sample Users
@@ -317,6 +343,13 @@ class Command(BaseCommand):
                     if created:
                         created_extra_beds += 1
             self.stdout.write(f"  Added {created_extra_beds} beds")
+
+            large_so_facilities = [
+                facility for facility in extra_facilities
+                if facility.accepts_sex_offender and facility.name in {"Nampa Renewal Center", "Twin Falls Horizon House", "Post Falls Community House"}
+            ]
+            marked_large = mark_sex_offender_beds(large_so_facilities)
+            self.stdout.write(f"  Marked {marked_large} additional sex-offender designated beds")
 
             # -----------------------------------------------------------
             # Additional users
