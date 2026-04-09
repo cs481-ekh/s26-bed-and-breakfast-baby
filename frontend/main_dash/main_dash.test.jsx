@@ -670,7 +670,7 @@ describe("MainDash", () => {
     expect(screen.queryByRole("option", { name: "A1234 - Doe, Jane" })).not.toBeInTheDocument();
   });
 
-  test("shows unassign action for occupied beds", async () => {
+  test("shows no hold action for occupied beds", async () => {
     render(<MainDash />);
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
@@ -680,7 +680,8 @@ describe("MainDash", () => {
     expect(screen.getByText("Occupied")).toBeInTheDocument();
     const occupiedRow = screen.getByText("Bed 102").closest("tr");
     expect(occupiedRow).not.toBeNull();
-    expect(within(occupiedRow).getByRole("button", { name: "Unassign" })).toBeInTheDocument();
+    expect(within(occupiedRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
+    expect(within(occupiedRow).getByText("Hold requests unavailable")).toBeInTheDocument();
   });
 
   test("shows hold request action for available beds", async () => {
@@ -695,7 +696,28 @@ describe("MainDash", () => {
     expect(within(availableRow).getByRole("button", { name: "Request Hold" })).toBeInTheDocument();
   });
 
-  test("shows release hold action for held beds", async () => {
+  test("confirms before submitting a hold request", async () => {
+    const confirmMock = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(<MainDash />);
+
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
+
+    const paroleeSearch = await screen.findByLabelText("Search parolees for Bed 101");
+    fireEvent.change(paroleeSearch, { target: { value: "Jane" } });
+    fireEvent.click(screen.getByRole("option", { name: "A1234 - Doe, Jane" }));
+
+    const availableRow = screen.getByText("Bed 101").closest("tr");
+    expect(availableRow).not.toBeNull();
+
+    fireEvent.click(within(availableRow).getByRole("button", { name: "Request Hold" }));
+
+    expect(confirmMock).toHaveBeenCalledWith("Request a hold on Bed 101 at Sunrise House?");
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/beds/22/hold/")).toBe(false);
+  });
+
+  test("shows no hold action for held beds", async () => {
     render(<MainDash />);
 
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
@@ -705,7 +727,8 @@ describe("MainDash", () => {
     expect(screen.getByText("Held")).toBeInTheDocument();
     const heldRow = screen.getByText("Bed 103").closest("tr");
     expect(heldRow).not.toBeNull();
-    expect(within(heldRow).getByRole("button", { name: "Release Hold" })).toBeInTheDocument();
+    expect(within(heldRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
+    expect(within(heldRow).getByText("Hold requests unavailable")).toBeInTheDocument();
   });
 
   test("shows notes column to all users", async () => {

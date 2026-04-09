@@ -400,87 +400,6 @@ export default function MainDash({ readOnly = false }) {
         }
     }, [expandedFacilityId, bedsByFacility, fetchFacilityBeds]);
 
-    // Assign selected parolee to one specific bed row.
-    const handleAssignBed = useCallback(async (bed, facility) => {
-        const selectedParolee = selectedParoleeByBed[bed.id];
-        if (!selectedParolee) {
-            setError('Please select a parolee before assigning a bed.');
-            return;
-        }
-
-        setProcessingBedId(bed.id);
-        setError('');
-        setSuccessMessage('');
-
-        try {
-            const selectedParoleeData = parolees.find((p) => String(p.id) === String(selectedParolee));
-            const { response, payload } = await apiJson(`/api/beds/${bed.id}/assign/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ parolee_id: selectedParolee }),
-            });
-            if (!response.ok) throw new Error(payload?.error || 'Assignment failed.');
-
-            const bedLabel = bed.label || `Bed ${bed.id}`;
-            const facilityName = facility.facility_name || 'Unknown facility';
-            const paroleeName = selectedParoleeData
-                ? `${selectedParoleeData.last_name}, ${selectedParoleeData.first_name}`
-                : 'Unknown parolee';
-            const paroleeId = selectedParoleeData?.idoc_id || selectedParolee;
-
-            setSuccessMessage(
-                `Assigned ${bedLabel} at ${facilityName} to ${paroleeName} (ID: ${paroleeId}).`
-            );
-
-            setSelectedParoleeByBed((prev) => ({ ...prev, [bed.id]: '' }));
-            await Promise.all([
-                fetchAvailability(),
-                fetchParolees(),
-                fetchFacilityBeds(facility.facility_id),
-            ]);
-        } catch (err) {
-            setError(err.message || 'Assignment failed.');
-        } finally {
-            setProcessingBedId(null);
-        }
-    }, [
-        parolees,
-        selectedParoleeByBed,
-        fetchAvailability,
-        fetchParolees,
-        fetchFacilityBeds,
-    ]);
-
-    // Shared release action for both occupied beds and held beds.
-    const handleUnassignBed = useCallback(async (bed, facility) => {
-        setProcessingBedId(bed.id);
-        setError('');
-        setSuccessMessage('');
-
-        try {
-            const { response, payload } = await apiJson(`/api/beds/${bed.id}/unassign/`, {
-                method: 'POST',
-            });
-            if (!response.ok) {
-                throw new Error(payload.error || 'Unassignment failed.');
-            }
-
-            const bedLabel = bed.label || `Bed ${bed.id}`;
-            const facilityName = facility.facility_name || 'Unknown facility';
-            setSuccessMessage(`Unassigned ${bedLabel} at ${facilityName}.`);
-
-            await Promise.all([
-                fetchAvailability(),
-                fetchParolees(),
-                fetchFacilityBeds(facility.facility_id),
-            ]);
-        } catch (requestError) {
-            setError(requestError.message || 'Unassignment failed.');
-        } finally {
-            setProcessingBedId(null);
-        }
-    }, [fetchAvailability, fetchParolees, fetchFacilityBeds]);
-
     // Request a hold reservation for a selected parolee on an available bed.
     const handleHoldBed = useCallback(async (bed, facility) => {
         const selectedParolee = selectedParoleeByBed[bed.id];
@@ -803,18 +722,15 @@ export default function MainDash({ readOnly = false }) {
                                                                     <th>Notes</th>
                                                                     <th>Last Updated</th>
                                                                     <th>Last Updated By</th>
-                                                                    <th>Assignment</th>
+                                                                    <th>Hold Request</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
                                                                 {facilityBeds.map((bed) => {
                                                                     const isAssignable = bed.status === 'available';
-                                                                    const isOccupied = bed.status === 'occupied';
-                                                                    const isHeld = bed.status === 'held';
                                                                     const isProcessing = processingBedId === bed.id;
                                                                     const isEditingNotes = editingBedId === bed.id;
                                                                     const canEditNotes = Boolean(bed.can_edit_notes);
-                                                                    const selectedParolee = selectedParoleeByBed[bed.id] || '';
                                                                     const paroleeSearchValue = paroleeSearchByBed[bed.id] || '';
                                                                     const isParoleeDropdownOpen = Boolean(paroleeDropdownOpenByBed[bed.id]);
                                                                     const filteredParolees = filterParolees(paroleeSearchValue);
@@ -914,91 +830,81 @@ export default function MainDash({ readOnly = false }) {
                                                                             <td title={`Last updated by ${bed.updated_by || 'System'} on ${renderTimestamp(bed.updated_at)}`}>{renderTimestamp(bed.updated_at)}</td>
                                                                             <td>{bed.updated_by || 'System'}</td>
                                                                             <td>
-                                                                                <div className="bed-assign-controls">
-                                                                                    <div className="parolee-combobox">
-                                                                                        <label
-                                                                                            htmlFor={`parolee-search-${bed.id}`}
-                                                                                            className="parolee-search-label"
-                                                                                        >
-                                                                                            Search parolees for {bed.label}
-                                                                                        </label>
-                                                                                        <input
-                                                                                            id={`parolee-search-${bed.id}`}
-                                                                                            type="search"
-                                                                                            className="parolee-search-input"
-                                                                                            placeholder="Search by number or name"
-                                                                                            value={paroleeSearchValue}
-                                                                                            onFocus={() => handleOpenParoleeDropdown(bed.id)}
-                                                                                            onBlur={() => handleCloseParoleeDropdown(bed.id)}
-                                                                                            onChange={(e) => handleParoleeSearchChange(bed.id, e.target.value)}
-                                                                                            aria-expanded={isParoleeDropdownOpen}
-                                                                                            aria-controls={`parolee-options-${bed.id}`}
-                                                                                            disabled={!isAssignable || parolees.length === 0 || isProcessing}
-                                                                                        />
-
-                                                                                        {isParoleeDropdownOpen && !(!isAssignable || parolees.length === 0 || isProcessing) && (
-                                                                                            <div
-                                                                                                id={`parolee-options-${bed.id}`}
-                                                                                                className="parolee-combobox-list"
-                                                                                                role="listbox"
-                                                                                                aria-label={`Parolee options for ${bed.label}`}
+                                                                                {isAssignable ? (
+                                                                                    <div className="bed-hold-controls">
+                                                                                        <div className="parolee-combobox">
+                                                                                            <label
+                                                                                                htmlFor={`parolee-search-${bed.id}`}
+                                                                                                className="parolee-search-label"
                                                                                             >
-                                                                                                {filteredParolees.length === 0 ? (
-                                                                                                    <div className="parolee-combobox-empty">
-                                                                                                        No matches found
-                                                                                                    </div>
-                                                                                                ) : filteredParolees.map((parolee) => {
-                                                                                                    const optionLabel = formatParoleeLabel(parolee);
-                                                                                                    const isSelected = String(selectedParolee) === String(parolee.id);
-                                                                                                    return (
-                                                                                                        <button
-                                                                                                            key={parolee.id}
-                                                                                                            type="button"
-                                                                                                            role="option"
-                                                                                                            aria-selected={isSelected}
-                                                                                                            className={isSelected ? 'parolee-combobox-option selected' : 'parolee-combobox-option'}
-                                                                                                            onMouseDown={(event) => event.preventDefault()}
-                                                                                                            onClick={() => handleSelectParolee(bed.id, parolee)}
-                                                                                                        >
-                                                                                                            {optionLabel}
-                                                                                                        </button>
-                                                                                                    );
-                                                                                                })}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
+                                                                                                Search parolees for {bed.label}
+                                                                                            </label>
+                                                                                            <input
+                                                                                                id={`parolee-search-${bed.id}`}
+                                                                                                type="search"
+                                                                                                className="parolee-search-input"
+                                                                                                placeholder="Search by number or name"
+                                                                                                value={paroleeSearchValue}
+                                                                                                onFocus={() => handleOpenParoleeDropdown(bed.id)}
+                                                                                                onBlur={() => handleCloseParoleeDropdown(bed.id)}
+                                                                                                onChange={(e) => handleParoleeSearchChange(bed.id, e.target.value)}
+                                                                                                aria-expanded={isParoleeDropdownOpen}
+                                                                                                aria-controls={`parolee-options-${bed.id}`}
+                                                                                                disabled={parolees.length === 0 || isProcessing}
+                                                                                            />
 
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="assign-bed-btn"
-                                                                                        disabled={!isAssignable || !selectedParolee || isProcessing}
-                                                                                        onClick={() => handleAssignBed(bed, facility)}
-                                                                                    >
-                                                                                        {isProcessing && isAssignable ? 'Assigning...' : 'Assign'}
-                                                                                    </button>
+                                                                                            {isParoleeDropdownOpen && !(parolees.length === 0 || isProcessing) && (
+                                                                                                <div
+                                                                                                    id={`parolee-options-${bed.id}`}
+                                                                                                    className="parolee-combobox-list"
+                                                                                                    role="listbox"
+                                                                                                    aria-label={`Parolee options for ${bed.label}`}
+                                                                                                >
+                                                                                                    {filteredParolees.length === 0 ? (
+                                                                                                        <div className="parolee-combobox-empty">
+                                                                                                            No matches found
+                                                                                                        </div>
+                                                                                                    ) : filteredParolees.map((parolee) => {
+                                                                                                        const optionLabel = formatParoleeLabel(parolee);
+                                                                                                        return (
+                                                                                                            <button
+                                                                                                                key={parolee.id}
+                                                                                                                type="button"
+                                                                                                                role="option"
+                                                                                                                className="parolee-combobox-option"
+                                                                                                                onMouseDown={(event) => event.preventDefault()}
+                                                                                                                onClick={() => handleSelectParolee(bed.id, parolee)}
+                                                                                                            >
+                                                                                                                {optionLabel}
+                                                                                                            </button>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
 
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="hold-bed-btn"
-                                                                                        disabled={!isAssignable || !selectedParolee || isProcessing}
-                                                                                        onClick={() => handleHoldBed(bed, facility)}
-                                                                                    >
-                                                                                        {isProcessing && isAssignable ? 'Requesting...' : 'Request Hold'}
-                                                                                    </button>
-
-                                                                                    {(isOccupied || isHeld) && (
                                                                                         <button
                                                                                             type="button"
-                                                                                            className="unassign-bed-btn"
-                                                                                            disabled={isProcessing}
-                                                                                            onClick={() => handleUnassignBed(bed, facility)}
+                                                                                            className="hold-bed-btn"
+                                                                                            disabled={!selectedParoleeByBed[bed.id] || isProcessing}
+                                                                                            onClick={() => {
+                                                                                                const bedLabel = bed.label || `Bed ${bed.id}`;
+                                                                                                const facilityName = facility.facility_name || 'Unknown facility';
+                                                                                                const confirmed = window.confirm(
+                                                                                                    `Request a hold on ${bedLabel} at ${facilityName}?`
+                                                                                                );
+                                                                                                if (!confirmed) {
+                                                                                                    return;
+                                                                                                }
+                                                                                                handleHoldBed(bed, facility);
+                                                                                            }}
                                                                                         >
-                                                                                            {isProcessing
-                                                                                                ? (isHeld ? 'Releasing...' : 'Unassigning...')
-                                                                                                : (isHeld ? 'Release Hold' : 'Unassign')}
+                                                                                            {isProcessing ? 'Requesting...' : 'Request Hold'}
                                                                                         </button>
-                                                                                    )}
-                                                                                </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <span className="bed-hold-unavailable">Hold requests unavailable</span>
+                                                                                )}
                                                                             </td>
                                                                         </tr>
                                                                     );
