@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import MainDash from "./main_dash";
@@ -188,34 +188,44 @@ describe("MainDash", () => {
   });
 
   test("filters facilities by selected districts", async () => {
+    const facilitiesFixture = [
+      {
+        facility_id: 1,
+        facility_name: "Sunrise House",
+        provider_name: "Provider A",
+        district_number: 1,
+        district_name: "North",
+        tier: "tier_1",
+        total_beds: 8,
+        assigned_beds: 5,
+        available_beds: 3,
+      },
+      {
+        facility_id: 2,
+        facility_name: "Cedar Home",
+        provider_name: "Provider B",
+        district_number: 2,
+        district_name: "South",
+        tier: "tier_2",
+        total_beds: 6,
+        assigned_beds: 2,
+        available_beds: 4,
+      },
+    ];
+
     fetchMock.mockImplementation(async (url) => {
       if (isAvailabilityRequest(url)) {
+        const parsedUrl = new URL(url, "http://localhost");
+        const selectedDistricts = parsedUrl.searchParams.getAll("district");
+        const filteredFacilities = selectedDistricts.length > 0
+          ? facilitiesFixture.filter((facility) => (
+            selectedDistricts.includes(String(facility.district_number))
+          ))
+          : facilitiesFixture;
+
         return {
           ok: true,
-          json: async () => [
-            {
-              facility_id: 1,
-              facility_name: "Sunrise House",
-              provider_name: "Provider A",
-              district_number: 1,
-              district_name: "North",
-              tier: "tier_1",
-              total_beds: 8,
-              assigned_beds: 5,
-              available_beds: 3,
-            },
-            {
-              facility_id: 2,
-              facility_name: "Cedar Home",
-              provider_name: "Provider B",
-              district_number: 2,
-              district_name: "South",
-              tier: "tier_2",
-              total_beds: 6,
-              assigned_beds: 2,
-              available_beds: 4,
-            },
-          ],
+          json: async () => filteredFacilities,
         };
       }
 
@@ -240,61 +250,80 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Clear All Filters" }));
 
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("filters facilities by gender target selections", async () => {
+    const facilitiesFixture = [
+      {
+        facility_id: 1,
+        facility_name: "Sunrise House",
+        provider_name: "Provider A",
+        district_number: 1,
+        district_name: "North",
+        tier: "tier_1",
+        total_beds: 8,
+        assigned_beds: 5,
+        available_beds: 3,
+        accepts_male: true,
+        accepts_female: true,
+      },
+      {
+        facility_id: 2,
+        facility_name: "Cedar Home",
+        provider_name: "Provider B",
+        district_number: 2,
+        district_name: "South",
+        tier: "tier_2",
+        total_beds: 6,
+        assigned_beds: 2,
+        available_beds: 4,
+        accepts_male: true,
+        accepts_female: false,
+      },
+      {
+        facility_id: 3,
+        facility_name: "Willow House",
+        provider_name: "Provider C",
+        district_number: 3,
+        district_name: "East",
+        tier: "tier_3",
+        total_beds: 4,
+        assigned_beds: 1,
+        available_beds: 3,
+        accepts_male: false,
+        accepts_female: true,
+      },
+    ];
+
     fetchMock.mockImplementation(async (url) => {
       if (isAvailabilityRequest(url)) {
+        const parsedUrl = new URL(url, "http://localhost");
+        const selectedGenders = parsedUrl.searchParams.getAll("gender");
+        const filteredFacilities = selectedGenders.length > 0
+          ? facilitiesFixture.filter((facility) => {
+            const isMaleOnly = Boolean(facility.accepts_male) && !Boolean(facility.accepts_female);
+            const isFemaleOnly = Boolean(facility.accepts_female) && !Boolean(facility.accepts_male);
+            const isEither = Boolean(facility.accepts_male) && Boolean(facility.accepts_female);
+            return (
+              (selectedGenders.includes("male") && isMaleOnly)
+              || (selectedGenders.includes("female") && isFemaleOnly)
+              || (selectedGenders.includes("either") && isEither)
+            );
+          })
+          : facilitiesFixture;
+
         return {
           ok: true,
-          json: async () => [
-            {
-              facility_id: 1,
-              facility_name: "Sunrise House",
-              provider_name: "Provider A",
-              district_number: 1,
-              district_name: "North",
-              tier: "tier_1",
-              total_beds: 8,
-              assigned_beds: 5,
-              available_beds: 3,
-              accepts_male: true,
-              accepts_female: true,
-            },
-            {
-              facility_id: 2,
-              facility_name: "Cedar Home",
-              provider_name: "Provider B",
-              district_number: 2,
-              district_name: "South",
-              tier: "tier_2",
-              total_beds: 6,
-              assigned_beds: 2,
-              available_beds: 4,
-              accepts_male: true,
-              accepts_female: false,
-            },
-            {
-              facility_id: 3,
-              facility_name: "Willow House",
-              provider_name: "Provider C",
-              district_number: 3,
-              district_name: "East",
-              tier: "tier_3",
-              total_beds: 4,
-              assigned_beds: 1,
-              available_beds: 3,
-              accepts_male: false,
-              accepts_female: true,
-            },
-          ],
+          json: async () => filteredFacilities,
         };
       }
 
@@ -332,17 +361,21 @@ describe("MainDash", () => {
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).not.toBeChecked();
 
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
-    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
-    expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+      expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    });
 
     fireEvent.click(eitherCheckbox);
 
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).toBeChecked();
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
-    expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
+    });
   });
 
   test("clear all filters resets search and filter selections", async () => {
@@ -414,8 +447,8 @@ describe("MainDash", () => {
     expect(searchInput).toHaveValue("");
     expect(districtCheckbox).not.toBeChecked();
     expect(genderCheckbox).not.toBeChecked();
-    expect(screen.getByText("Sunrise House")).toBeInTheDocument();
-    expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
+    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
   });
 
   test("shows facility bed rows when the facility is expanded", async () => {
