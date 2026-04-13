@@ -106,7 +106,7 @@ class Command(BaseCommand):
                     facility.city,
                     facility.zip_code,
                     facility.district.id,
-                    facility.tier,
+                    facility.track,
                     facility.accepts_male,
                     facility.accepts_female,
                     facility.accepts_sex_offender,

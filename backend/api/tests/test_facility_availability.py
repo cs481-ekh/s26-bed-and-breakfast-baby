@@ -16,7 +16,7 @@ def test_facility_availability_uses_assigned_beds(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
 
     bed_a = Bed.objects.create(facility=facility, label="Room 1 - A")
@@ -57,7 +57,7 @@ def test_facility_availability_includes_facilities_with_zero_beds(client):
         state="ID",
         zip_code="83651",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
 
     resp = client.get("/api/facilities/availability/")
@@ -83,7 +83,7 @@ def test_facility_availability_excludes_inactive_facilities(client):
         state="ID",
         zip_code="83605",
         district=district,
-        tier=Facility.Tier.TIER_3,
+        track=Facility.Track.HOTEL,
         is_active=False,
     )
 
@@ -106,7 +106,7 @@ def test_facility_availability_include_inactive_query_param(client):
         state="ID",
         zip_code="83702",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         is_active=True,
     )
     Facility.objects.create(
@@ -117,7 +117,7 @@ def test_facility_availability_include_inactive_query_param(client):
         state="ID",
         zip_code="83702",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
         is_active=False,
     )
 
@@ -146,7 +146,7 @@ def test_facility_availability_filters_district_gender_and_sex_offender(client):
         state="ID",
         zip_code="83701",
         district=district_1,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_male=True,
         accepts_female=False,
         accepts_sex_offender=True,
@@ -160,7 +160,7 @@ def test_facility_availability_filters_district_gender_and_sex_offender(client):
         state="ID",
         zip_code="83701",
         district=district_2,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_male=True,
         accepts_female=False,
         accepts_sex_offender=True,
@@ -174,7 +174,7 @@ def test_facility_availability_filters_district_gender_and_sex_offender(client):
         state="ID",
         zip_code="83701",
         district=district_1,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
         accepts_male=True,
         accepts_female=False,
         accepts_sex_offender=False,
@@ -202,7 +202,7 @@ def test_facility_availability_supports_multiple_district_and_gender_filters(cli
         state="ID",
         zip_code="83701",
         district=district_1,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_male=True,
         accepts_female=False,
     )
@@ -214,7 +214,7 @@ def test_facility_availability_supports_multiple_district_and_gender_filters(cli
         state="ID",
         zip_code="83701",
         district=district_2,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_male=False,
         accepts_female=True,
     )
@@ -226,7 +226,7 @@ def test_facility_availability_supports_multiple_district_and_gender_filters(cli
         state="ID",
         zip_code="83701",
         district=district_2,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
         accepts_male=True,
         accepts_female=True,
     )
@@ -251,7 +251,7 @@ def test_facility_availability_filters_by_sex_offender_bed_presence(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_sex_offender=True,
     )
     without_so_beds = Facility.objects.create(
@@ -262,7 +262,7 @@ def test_facility_availability_filters_by_sex_offender_bed_presence(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
 
     Bed.objects.create(facility=with_so_beds, label="Bed 1", is_sex_offender_bed=True)
@@ -294,7 +294,7 @@ def test_facility_beds_are_sorted_with_sex_offender_beds_first(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_sex_offender=True,
     )
 

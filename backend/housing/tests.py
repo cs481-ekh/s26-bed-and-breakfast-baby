@@ -18,7 +18,7 @@ class BedSexOffenderDesignationTests(TestCase):
 			state="ID",
 			zip_code="83701",
 			district=self.district,
-			tier=Facility.Tier.TIER_1,
+			track=Facility.Track.BASIC,
 			accepts_sex_offender=True,
 		)
 
@@ -37,7 +37,7 @@ class BedSexOffenderDesignationTests(TestCase):
 			state="ID",
 			zip_code="83701",
 			district=self.district,
-			tier=Facility.Tier.TIER_2,
+			track=Facility.Track.PLUS,
 			accepts_sex_offender=False,
 		)
 

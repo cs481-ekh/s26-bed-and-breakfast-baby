@@ -648,7 +648,7 @@ export default function MainDash({ readOnly = false }) {
                                 <th>Facility</th>
                                 <th>Provider</th>
                                 <th>District</th>
-                                <th>Tier</th>
+                                <th>Track</th>
                                 <th>Total Beds</th>
                                 <th>Assigned Beds</th>
                                 <th>Available Beds</th>
@@ -680,7 +680,7 @@ export default function MainDash({ readOnly = false }) {
                                             <td>
                                                 {facility.district_number} - {facility.district_name}
                                             </td>
-                                            <td>{facility.tier.replace('_', ' ')}</td>
+                                            <td>{facility.track.charAt(0).toUpperCase() + facility.track.slice(1)}</td>
                                             <td>{facility.total_beds}</td>
                                             <td>{facility.assigned_beds}</td>
                                             <td>{facility.available_beds}</td>

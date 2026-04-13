@@ -112,7 +112,7 @@ class FacilityAvailabilityView(APIView):
                     "provider_name": facility.provider.name,
                     "district_number": facility.district.number,
                     "district_name": facility.district.name,
-                    "tier": facility.tier,
+                    "track": facility.track,
                     "accepts_male": facility.accepts_male,
                     "accepts_female": facility.accepts_female,
                     "accepts_sex_offender": facility.accepts_sex_offender,
@@ -433,17 +433,13 @@ class BedHoldRequestView(APIView):
         if parolee.assigned_bed is not None:
             return Response({"error": "Parolee already has a bed assignment."}, status=status.HTTP_409_CONFLICT)
 
-        # Prevent duplicate active holds for the same bed/parolee pair.
-        if Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists():
-            return Response({"error": "This bed already has an active hold for the selected parolee."}, status=status.HTTP_409_CONFLICT)
-
         event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
         hold_note = (
             f"[{event_time}] Hold requested for {parolee.last_name}, {parolee.first_name} "
             f"({parolee.idoc_id}) pending facility approval."
         )
 
-        # Create hold record first, then sync bed status for dashboard visibility.
+        # Create hold record and append a visible audit note, but keep the bed available.
         Hold.objects.create(
             bed=bed,
             parolee=parolee,
@@ -453,9 +449,8 @@ class BedHoldRequestView(APIView):
         )
 
         bed.notes = f"{bed.notes}\n{hold_note}".strip() if bed.notes else hold_note
-        bed.status = Bed.Status.HELD
         bed.updated_by = request_user
-        bed.save(update_fields=["status", "updated_by", "notes", "updated_at"])
+        bed.save(update_fields=["updated_by", "notes", "updated_at"])
 
         return Response(
             {"message": f"Hold requested on bed '{bed.label}'."},
