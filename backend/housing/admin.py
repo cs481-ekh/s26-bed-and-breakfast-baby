@@ -45,8 +45,8 @@ class ProviderAdmin(admin.ModelAdmin):
 
 @admin.register(Facility)
 class FacilityAdmin(admin.ModelAdmin):
-    list_display = ("name", "provider", "city", "district", "tier", "is_active", "bed_count")
-    list_filter = ("district", "tier", "is_active")
+    list_display = ("name", "provider", "city", "district", "track", "is_active", "bed_count")
+    list_filter = ("district", "track", "is_active")
     search_fields = ("name", "city", "provider__name")
 
     @admin.display(description="Beds")

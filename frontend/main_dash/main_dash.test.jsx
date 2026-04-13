@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import MainDash from "./main_dash";
@@ -22,7 +22,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -89,8 +89,14 @@ describe("MainDash", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
     vi.restoreAllMocks();
   });
+
+  const waitForPendingOperations = () => {
+    return Promise.resolve();
+  };
 
   test("renders facility availability rows from API", async () => {
     render(<MainDash />);
@@ -102,7 +108,7 @@ describe("MainDash", () => {
     expect(facilityRow).not.toBeNull();
     expect(screen.getByText("Provider A")).toBeInTheDocument();
     expect(within(facilityRow).getByText("1 - North")).toBeInTheDocument();
-    expect(screen.getByText("tier 1")).toBeInTheDocument();
+    expect(screen.getByText("Basic")).toBeInTheDocument();
     expect(screen.getByText("S/O beds: No")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/facilities/availability/"));
@@ -120,7 +126,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -131,7 +137,7 @@ describe("MainDash", () => {
               provider_name: "Beacon Housing",
               district_number: 2,
               district_name: "South",
-              tier: "tier_2",
+              track: "plus",
               total_beds: 6,
               assigned_beds: 2,
               available_beds: 4,
@@ -161,10 +167,10 @@ describe("MainDash", () => {
     const searchInput = screen.getByLabelText("Search facilities or providers");
 
     fireEvent.change(searchInput, { target: { value: "sun" } });
-    expect(await screen.findByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
     });
+    expect(await screen.findByText((_, element) => element?.textContent === "Sunrise House")).toBeInTheDocument();
     expect(await screen.findByText("Sun", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: "beacon" } });
@@ -175,24 +181,37 @@ describe("MainDash", () => {
     expect(await screen.findByText("Beacon", { selector: ".search-match" })).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Provider A"' } });
+    await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+    });
     expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
     });
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" OR "Beacon Housing"' } });
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    });
 
     fireEvent.change(searchInput, { target: { value: '"Sunrise House" AND "Beacon Housing"' } });
-    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    });
 
     fireEvent.change(searchInput, { target: { value: "nomatch" } });
-    expect(await screen.findByText("No facilities found.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("No facilities found.")).toBeInTheDocument();
+    });
 
     fireEvent.change(searchInput, { target: { value: "" } });
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    });
+    
+    await waitForPendingOperations();
   });
 
   test("filters facilities by selected districts", async () => {
@@ -203,7 +222,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -214,7 +233,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -258,15 +277,19 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByLabelText("1 - North"));
 
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
     await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
       expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Clear All Filters" }));
 
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    });
+    
+    await waitForPendingOperations();
   });
 
   test("filters facilities by gender target selections", async () => {
@@ -277,7 +300,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -290,7 +313,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -303,7 +326,7 @@ describe("MainDash", () => {
         provider_name: "Provider C",
         district_number: 3,
         district_name: "East",
-        tier: "tier_3",
+        track: "hotel",
         total_beds: 4,
         assigned_beds: 1,
         available_beds: 3,
@@ -369,8 +392,8 @@ describe("MainDash", () => {
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).not.toBeChecked();
 
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
     await waitFor(() => {
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
       expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
       expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
     });
@@ -379,11 +402,14 @@ describe("MainDash", () => {
 
     expect(maleCenteredCheckbox).toBeChecked();
     expect(eitherCheckbox).toBeChecked();
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    
     await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
       expect(screen.queryByText("Willow House")).not.toBeInTheDocument();
     });
+    
+    await waitForPendingOperations();
   });
 
   test("clear all filters resets search and filter selections", async () => {
@@ -398,7 +424,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -409,7 +435,7 @@ describe("MainDash", () => {
               provider_name: "Beacon Housing",
               district_number: 2,
               district_name: "South",
-              tier: "tier_2",
+              track: "plus",
               total_beds: 6,
               assigned_beds: 2,
               available_beds: 4,
@@ -438,7 +464,10 @@ describe("MainDash", () => {
 
     const searchInput = screen.getByLabelText("Search facilities or providers");
     fireEvent.change(searchInput, { target: { value: "beacon" } });
-    expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.queryByText("Sunrise House")).not.toBeInTheDocument();
+    });
     expect(screen.getByText("Cedar Home")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
@@ -459,8 +488,13 @@ describe("MainDash", () => {
     expect(districtCheckbox).not.toBeChecked();
     expect(genderCheckbox).not.toBeChecked();
     expect(soBedCoverageCheckbox).not.toBeChecked();
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    });
+    
+    await waitForPendingOperations();
   });
 
   test("filters facilities by sex offender bed coverage", async () => {
@@ -471,7 +505,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -483,7 +517,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -495,7 +529,7 @@ describe("MainDash", () => {
         provider_name: "Provider C",
         district_number: 3,
         district_name: "East",
-        tier: "tier_3",
+        track: "hotel",
         total_beds: 4,
         assigned_beds: 1,
         available_beds: 3,
@@ -548,16 +582,21 @@ describe("MainDash", () => {
     expect(hasSOBedsCheckbox).toBeChecked();
     expect(noSOBedsCheckbox).not.toBeChecked();
 
-    expect(await screen.findByText("Sunrise House")).toBeInTheDocument();
-    expect(await screen.findByText("Willow House")).toBeInTheDocument();
     await waitFor(() => {
+      expect(screen.getByText("Sunrise House")).toBeInTheDocument();
+      expect(screen.getByText("Willow House")).toBeInTheDocument();
       expect(screen.queryByText("Cedar Home")).not.toBeInTheDocument();
     });
 
     fireEvent.click(noSOBedsCheckbox);
     expect(hasSOBedsCheckbox).toBeChecked();
     expect(noSOBedsCheckbox).toBeChecked();
-    expect(await screen.findByText("Cedar Home")).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText("Cedar Home")).toBeInTheDocument();
+    });
+    
+    await waitForPendingOperations();
   });
 
   test("shows facility bed rows when the facility is expanded", async () => {
@@ -590,7 +629,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -656,18 +695,26 @@ describe("MainDash", () => {
     const paroleeSearch = await screen.findByLabelText("Search parolees for Bed 101");
 
     fireEvent.change(paroleeSearch, { target: { value: "A1234" } });
-    expect(screen.getByRole("option", { name: "A1234 - Doe, Jane" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "A1234 - Doe, Jane" })).toBeInTheDocument();
+    });
     expect(screen.queryByRole("option", { name: "B5678 - Smith, John" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("option", { name: "A1234 - Doe, Jane" }));
     expect(paroleeSearch).toHaveValue("A1234 - Doe, Jane");
 
     fireEvent.change(paroleeSearch, { target: { value: "Jane" } });
-    expect(screen.getByRole("option", { name: "A1234 - Doe, Jane" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "A1234 - Doe, Jane" })).toBeInTheDocument();
+    });
 
     fireEvent.change(paroleeSearch, { target: { value: "Brown" } });
-    expect(screen.getByRole("option", { name: "C9012 - Brown, Janet" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "C9012 - Brown, Janet" })).toBeInTheDocument();
+    });
     expect(screen.queryByRole("option", { name: "A1234 - Doe, Jane" })).not.toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows no hold action for occupied beds", async () => {
@@ -682,6 +729,8 @@ describe("MainDash", () => {
     expect(occupiedRow).not.toBeNull();
     expect(within(occupiedRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
     expect(within(occupiedRow).getByText("Hold requests unavailable")).toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows hold request action for available beds", async () => {
@@ -694,6 +743,8 @@ describe("MainDash", () => {
     const availableRow = screen.getByText("Bed 101").closest("tr");
     expect(availableRow).not.toBeNull();
     expect(within(availableRow).getByRole("button", { name: "Request Hold" })).toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows read-only text for available beds when holds are disabled", async () => {
@@ -707,6 +758,8 @@ describe("MainDash", () => {
     expect(availableRow).not.toBeNull();
     expect(within(availableRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
     expect(within(availableRow).getByText("Hold requests are read-only for this role.")).toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("confirms before submitting a hold request", async () => {
@@ -728,6 +781,9 @@ describe("MainDash", () => {
 
     expect(confirmMock).toHaveBeenCalledWith("Request a hold on Bed 101 at Sunrise House?");
     expect(fetchMock.mock.calls.some(([url]) => url === "/api/beds/22/hold/")).toBe(false);
+    
+    await waitForPendingOperations();
+    confirmMock.mockRestore();
   });
 
   test("shows no hold action for held beds", async () => {
@@ -742,6 +798,8 @@ describe("MainDash", () => {
     expect(heldRow).not.toBeNull();
     expect(within(heldRow).queryByRole("button", { name: "Request Hold" })).not.toBeInTheDocument();
     expect(within(heldRow).getByText("Hold requests unavailable")).toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows notes column to all users", async () => {
@@ -756,7 +814,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -803,6 +861,8 @@ describe("MainDash", () => {
     expect(within(bedsTable).getByText("Notes")).toBeInTheDocument();
     expect(within(bedsTable).getByText("None")).toBeInTheDocument();
     expect(within(bedsTable).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows note edit controls when user can edit notes", async () => {
@@ -817,7 +877,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -861,6 +921,8 @@ describe("MainDash", () => {
     fireEvent.click(screen.getByRole("button", { name: "View Beds" }));
 
     expect(await screen.findByRole("button", { name: "Edit" })).toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("admins can expand and collapse full note history", async () => {
@@ -875,7 +937,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -928,6 +990,8 @@ describe("MainDash", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Show less" }));
     expect(screen.queryByText("oldest change")).not.toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 
   test("shows only the last 3 note changes", async () => {
@@ -942,7 +1006,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -989,5 +1053,7 @@ describe("MainDash", () => {
     expect(screen.getByText("third change")).toBeInTheDocument();
     expect(screen.getByText("second change")).toBeInTheDocument();
     expect(screen.queryByText("oldest change")).not.toBeInTheDocument();
+    
+    await waitForPendingOperations();
   });
 });

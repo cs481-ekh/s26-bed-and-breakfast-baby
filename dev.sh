@@ -35,17 +35,34 @@ fi
 
 wait_for_backend_ready() {
 	echo "waiting for backend API health endpoint..."
-	for i in $(seq 1 60); do
+	for i in $(seq 1 180); do
+		# Fail fast if the backend container has stopped unexpectedly.
+		backend_cid="$(docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -q backend 2>/dev/null || true)"
+		if [ -n "$backend_cid" ]; then
+			backend_state="$(docker inspect -f '{{.State.Status}}' "$backend_cid" 2>/dev/null || true)"
+			if [ "$backend_state" = "exited" ] || [ "$backend_state" = "dead" ]; then
+				echo "Error: backend container is not running (state=$backend_state)"
+				docker compose -f docker-compose.yml -f docker-compose.dev.yml logs --no-color backend | tail -n 120 || true
+				return 1
+			fi
+		fi
+
+		# Host-side probe (works when port publishing is available).
 		if command -v curl >/dev/null 2>&1; then
 			if curl -fsS "http://localhost:8000/api/health/" >/dev/null 2>&1; then
 				echo "backend is ready"
 				return 0
 			fi
-		else
-			if docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=1)" >/dev/null 2>&1; then
-				echo "backend is ready"
-				return 0
-			fi
+		fi
+
+		# In-container probe (works even when host networking or curl is flaky).
+		if docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T backend python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health/', timeout=1)" >/dev/null 2>&1; then
+			echo "backend is ready"
+			return 0
+		fi
+
+		if [ $((i % 10)) -eq 0 ]; then
+			echo "still waiting for backend... (${i}s elapsed)"
 		fi
 		sleep 1
 	done

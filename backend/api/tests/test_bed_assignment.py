@@ -16,7 +16,7 @@ def test_unassign_single_bed_success(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed A", status=Bed.Status.OCCUPIED)
     parolee = Parolee.objects.create(
@@ -50,7 +50,7 @@ def test_unassign_single_bed_without_assignment_conflict(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed B", status=Bed.Status.AVAILABLE)
 
@@ -78,7 +78,7 @@ def test_request_hold_on_available_bed(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold", status=Bed.Status.AVAILABLE)
     parolee = Parolee.objects.create(
@@ -97,9 +97,64 @@ def test_request_hold_on_available_bed(client):
 
     assert resp.status_code == 200
     bed.refresh_from_db()
-    assert bed.status == Bed.Status.HELD
+    assert bed.status == Bed.Status.AVAILABLE
     assert "hold requested" in bed.notes.lower()
     assert Hold.objects.filter(bed=bed, parolee=parolee, status=Hold.Status.ACTIVE).exists()
+
+
+@pytest.mark.django_db
+def test_multiple_hold_requests_can_be_placed_on_same_bed(client):
+    district = District.objects.create(number=14, name="Multiple Hold District")
+    provider = Provider.objects.create(name="Provider Multiple Holds")
+    case_manager = User.objects.create_user(
+        username="case_mgr_multiple_holds",
+        password="testpass123",
+        role=User.Role.CASE_MANAGER,
+        district=district,
+    )
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Multiple Hold House",
+        address="420 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        track=Facility.Track.BASIC,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed Multi", status=Bed.Status.AVAILABLE)
+    first_parolee = Parolee.objects.create(
+        idoc_id="IDOC-801",
+        first_name="Avery",
+        last_name="Stone",
+        district=district,
+    )
+    second_parolee = Parolee.objects.create(
+        idoc_id="IDOC-802",
+        first_name="Blake",
+        last_name="Rowe",
+        district=district,
+    )
+
+    client.force_login(case_manager)
+    first_resp = client.post(
+        f"/api/beds/{bed.id}/hold/",
+        data={"parolee_id": first_parolee.id},
+        content_type="application/json",
+    )
+    second_resp = client.post(
+        f"/api/beds/{bed.id}/hold/",
+        data={"parolee_id": second_parolee.id},
+        content_type="application/json",
+    )
+
+    assert first_resp.status_code == 200
+    assert second_resp.status_code == 200
+
+    bed.refresh_from_db()
+    assert bed.status == Bed.Status.AVAILABLE
+    assert Hold.objects.filter(bed=bed, status=Hold.Status.ACTIVE).count() == 2
+    assert bed.notes.lower().count("hold requested") == 2
 
 
 @pytest.mark.django_db
@@ -120,7 +175,7 @@ def test_request_hold_requires_case_manager_or_admin(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Restricted", status=Bed.Status.AVAILABLE)
     parolee = Parolee.objects.create(
@@ -159,7 +214,7 @@ def test_request_hold_requires_parolee(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
 
@@ -182,7 +237,7 @@ def test_unassign_releases_held_bed(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Held", status=Bed.Status.HELD)
     parolee = Parolee.objects.create(

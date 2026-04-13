@@ -114,7 +114,7 @@ function MainDashboardPageComponent() {
 
       if (response.ok) {
         const role = payload?.role || "";
-        setIsReadOnly(!(role === "admin" || role === "case_manager"));
+        setIsReadOnly(!(role === "admin" || role === "case_manager" || role === "parole_officer"));
       } else {
         setIsReadOnly(true);
       }
