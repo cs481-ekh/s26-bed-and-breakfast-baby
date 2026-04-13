@@ -11,8 +11,6 @@ describe("MainDash", () => {
   );
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    
     fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
       if (isAvailabilityRequest(url)) {
         return {
@@ -24,7 +22,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -91,19 +89,13 @@ describe("MainDash", () => {
   });
 
   afterEach(() => {
-    cleanup();
-    vi.runOnlyPendingTimers();
     vi.useRealTimers();
-    vi.clearAllTimers();
+    cleanup();
     vi.restoreAllMocks();
   });
 
   const waitForPendingOperations = () => {
-    return waitFor(() => {
-      vi.runOnlyPendingTimers();
-    }, { timeout: 100 }).catch(() => {
-      // Ignore timeout - we just want to run any pending timers
-    });
+    return Promise.resolve();
   };
 
   test("renders facility availability rows from API", async () => {
@@ -116,7 +108,7 @@ describe("MainDash", () => {
     expect(facilityRow).not.toBeNull();
     expect(screen.getByText("Provider A")).toBeInTheDocument();
     expect(within(facilityRow).getByText("1 - North")).toBeInTheDocument();
-    expect(screen.getByText("tier 1")).toBeInTheDocument();
+    expect(screen.getByText("Basic")).toBeInTheDocument();
     expect(screen.getByText("S/O beds: No")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/facilities/availability/"));
@@ -134,7 +126,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -145,7 +137,7 @@ describe("MainDash", () => {
               provider_name: "Beacon Housing",
               district_number: 2,
               district_name: "South",
-              tier: "tier_2",
+              track: "plus",
               total_beds: 6,
               assigned_beds: 2,
               available_beds: 4,
@@ -230,7 +222,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -241,7 +233,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -308,7 +300,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -321,7 +313,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -334,7 +326,7 @@ describe("MainDash", () => {
         provider_name: "Provider C",
         district_number: 3,
         district_name: "East",
-        tier: "tier_3",
+        track: "hotel",
         total_beds: 4,
         assigned_beds: 1,
         available_beds: 3,
@@ -432,7 +424,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -443,7 +435,7 @@ describe("MainDash", () => {
               provider_name: "Beacon Housing",
               district_number: 2,
               district_name: "South",
-              tier: "tier_2",
+              track: "plus",
               total_beds: 6,
               assigned_beds: 2,
               available_beds: 4,
@@ -513,7 +505,7 @@ describe("MainDash", () => {
         provider_name: "Provider A",
         district_number: 1,
         district_name: "North",
-        tier: "tier_1",
+        track: "basic",
         total_beds: 8,
         assigned_beds: 5,
         available_beds: 3,
@@ -525,7 +517,7 @@ describe("MainDash", () => {
         provider_name: "Provider B",
         district_number: 2,
         district_name: "South",
-        tier: "tier_2",
+        track: "plus",
         total_beds: 6,
         assigned_beds: 2,
         available_beds: 4,
@@ -537,7 +529,7 @@ describe("MainDash", () => {
         provider_name: "Provider C",
         district_number: 3,
         district_name: "East",
-        tier: "tier_3",
+        track: "hotel",
         total_beds: 4,
         assigned_beds: 1,
         available_beds: 3,
@@ -637,7 +629,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -822,7 +814,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -885,7 +877,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -945,7 +937,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
@@ -1014,7 +1006,7 @@ describe("MainDash", () => {
               provider_name: "Provider A",
               district_number: 1,
               district_name: "North",
-              tier: "tier_1",
+              track: "basic",
               total_beds: 8,
               assigned_beds: 5,
               available_beds: 3,
