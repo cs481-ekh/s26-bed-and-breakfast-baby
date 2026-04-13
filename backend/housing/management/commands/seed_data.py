@@ -94,17 +94,17 @@ class Command(BaseCommand):
         # Facilities
         # ---------------------------------------------------------------
         facilities_data = [
-            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, "tier_2", True, True, True),
-            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, "tier_1", True, False, False),
-            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, "tier_2", True, True, False),
-            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, "tier_3", False, True, False),
-            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, "tier_2", True, True, True),
-            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, "tier_1", True, False, False),
-            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, "tier_2", False, True, False),
-            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, "tier_3", True, True, True),
+            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, Facility.Track.PLUS, True, True, True),
+            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, Facility.Track.BASIC, True, False, False),
+            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, Facility.Track.PLUS, True, True, False),
+            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, Facility.Track.BASIC, False, True, False),
+            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, Facility.Track.PLUS, True, True, True),
+            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, Facility.Track.BASIC, True, False, False),
+            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, Facility.Track.PLUS, False, True, False),
+            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, Facility.Track.BASIC, True, True, True),
         ]
         facilities = []
-        for prov, name, addr, city, zip_code, dist_num, tier, accepts_male, accepts_female, accepts_sex_offender in facilities_data:
+        for prov, name, addr, city, zip_code, dist_num, track, accepts_male, accepts_female, accepts_sex_offender in facilities_data:
             f, _ = Facility.objects.get_or_create(
                 name=name,
                 provider=prov,
@@ -113,7 +113,7 @@ class Command(BaseCommand):
                     "city": city,
                     "zip_code": zip_code,
                     "district": districts[dist_num],
-                    "tier": tier,
+                    "track": track,
                     "accepts_male": accepts_male,
                     "accepts_female": accepts_female,
                     "accepts_sex_offender": accepts_sex_offender,
@@ -289,24 +289,24 @@ class Command(BaseCommand):
                 extra_providers.append(provider)
 
             extra_facilities_data = [
-                ("Boise Bridge House", "1101 River St", "Boise", "83703", 4, Facility.Tier.TIER_2, True, False, False),
-                ("Meridian Pathways Home", "2210 Fairview Ave", "Meridian", "83642", 4, Facility.Tier.TIER_1, False, True, False),
-                ("Nampa Renewal Center", "785 Front St", "Nampa", "83651", 3, Facility.Tier.TIER_2, True, True, True),
-                ("Caldwell New Start Residence", "402 Arthur St", "Caldwell", "83605", 3, Facility.Tier.TIER_3, False, True, False),
-                ("Idaho Falls Riverbend House", "1542 Skyline Dr", "Idaho Falls", "83402", 7, Facility.Tier.TIER_2, True, True, False),
-                ("Pocatello Independence Home", "633 Grant Ave", "Pocatello", "83204", 6, Facility.Tier.TIER_1, True, False, False),
-                ("Twin Falls Horizon House", "912 Addison Ave", "Twin Falls", "83301", 5, Facility.Tier.TIER_3, True, True, True),
-                ("Lewiston Gateway Residence", "301 Thain Rd", "Lewiston", "83501", 2, Facility.Tier.TIER_2, True, True, False),
-                ("Moscow Stability House", "111 Main St", "Moscow", "83843", 2, Facility.Tier.TIER_1, False, True, False),
-                ("Coeur d'Alene Harbor Home", "709 Sherman Ave", "Coeur d'Alene", "83814", 1, Facility.Tier.TIER_2, False, True, False),
-                ("Post Falls Community House", "120 Spokane St", "Post Falls", "83854", 1, Facility.Tier.TIER_3, True, False, True),
-                ("Burley Turning Point", "88 Overland Ave", "Burley", "83318", 5, Facility.Tier.TIER_1, True, True, False),
-                ("Rexburg Sunrise Home", "240 College Ave", "Rexburg", "83440", 7, Facility.Tier.TIER_2, True, True, False),
-                ("Mountain Home Transit House", "515 Airbase Rd", "Mountain Home", "83647", 4, Facility.Tier.TIER_1, True, False, False),
-                ("Sandpoint Lakeside Residence", "63 Cedar St", "Sandpoint", "83864", 1, Facility.Tier.TIER_2, True, True, False),
+                ("Boise Bridge House", "1101 River St", "Boise", "83703", 4, Facility.Track.PLUS, True, False, False),
+                ("Meridian Pathways Home", "2210 Fairview Ave", "Meridian", "83642", 4, Facility.Track.BASIC, False, True, False),
+                ("Nampa Renewal Center", "785 Front St", "Nampa", "83651", 3, Facility.Track.PLUS, True, True, True),
+                ("Caldwell New Start Residence", "402 Arthur St", "Caldwell", "83605", 3, Facility.Track.BASIC, False, True, False),
+                ("Idaho Falls Riverbend House", "1542 Skyline Dr", "Idaho Falls", "83402", 7, Facility.Track.PLUS, True, True, False),
+                ("Pocatello Independence Home", "633 Grant Ave", "Pocatello", "83204", 6, Facility.Track.BASIC, True, False, False),
+                ("Twin Falls Horizon House", "912 Addison Ave", "Twin Falls", "83301", 5, Facility.Track.PLUS, True, True, True),
+                ("Lewiston Gateway Residence", "301 Thain Rd", "Lewiston", "83501", 2, Facility.Track.PLUS, True, True, False),
+                ("Moscow Stability House", "111 Main St", "Moscow", "83843", 2, Facility.Track.BASIC, False, True, False),
+                ("Coeur d'Alene Harbor Home", "709 Sherman Ave", "Coeur d'Alene", "83814", 1, Facility.Track.PLUS, False, True, False),
+                ("Post Falls Community House", "120 Spokane St", "Post Falls", "83854", 1, Facility.Track.BASIC, True, False, True),
+                ("Burley Turning Point", "88 Overland Ave", "Burley", "83318", 5, Facility.Track.BASIC, True, True, False),
+                ("Rexburg Sunrise Home", "240 College Ave", "Rexburg", "83440", 7, Facility.Track.PLUS, True, True, False),
+                ("Mountain Home Transit House", "515 Airbase Rd", "Mountain Home", "83647", 4, Facility.Track.BASIC, True, False, False),
+                ("Sandpoint Lakeside Residence", "63 Cedar St", "Sandpoint", "83864", 1, Facility.Track.PLUS, True, True, False),
             ]
             extra_facilities = []
-            for idx, (name, addr, city, zip_code, district_num, tier, accepts_male, accepts_female, accepts_sex_offender) in enumerate(extra_facilities_data, start=1):
+            for idx, (name, addr, city, zip_code, district_num, track, accepts_male, accepts_female, accepts_sex_offender) in enumerate(extra_facilities_data, start=1):
                 provider = extra_providers[(idx - 1) % len(extra_providers)]
                 facility, _ = Facility.objects.get_or_create(
                     name=name,
@@ -316,7 +316,7 @@ class Command(BaseCommand):
                         "city": city,
                         "zip_code": zip_code,
                         "district": districts[district_num],
-                        "tier": tier,
+                        "track": track,
                         "accepts_male": accepts_male,
                         "accepts_female": accepts_female,
                         "accepts_sex_offender": accepts_sex_offender,

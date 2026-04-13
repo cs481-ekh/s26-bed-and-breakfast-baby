@@ -94,10 +94,10 @@ class Facility(models.Model):
     A provider may operate multiple facilities across different districts.
     """
 
-    class Tier(models.TextChoices):
-        TIER_1 = "tier_1", "Tier 1"
-        TIER_2 = "tier_2", "Tier 2"
-        TIER_3 = "tier_3", "Tier 3"
+    class Track(models.TextChoices):
+        BASIC = "basic", "Basic"
+        PLUS = "plus", "Plus"
+        HOTEL = "hotel", "Hotel"
 
     provider = models.ForeignKey(
         Provider,
@@ -114,10 +114,10 @@ class Facility(models.Model):
         on_delete=models.PROTECT,
         related_name="facilities",
     )
-    tier = models.CharField(
+    track = models.CharField(
         max_length=10,
-        choices=Tier.choices,
-        help_text="IDOC three-tiered housing standard",
+        choices=Track.choices,
+        help_text="IDOC housing track standard",
     )
     accepts_male = models.BooleanField(default=True)
     accepts_female = models.BooleanField(default=True)

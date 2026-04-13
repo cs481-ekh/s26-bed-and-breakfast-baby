@@ -16,7 +16,7 @@ def test_unassign_single_bed_success(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed A", status=Bed.Status.OCCUPIED)
     parolee = Parolee.objects.create(
@@ -50,7 +50,7 @@ def test_unassign_single_bed_without_assignment_conflict(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed B", status=Bed.Status.AVAILABLE)
 
@@ -78,7 +78,7 @@ def test_request_hold_on_available_bed(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold", status=Bed.Status.AVAILABLE)
     parolee = Parolee.objects.create(
@@ -120,7 +120,7 @@ def test_request_hold_requires_case_manager_or_admin(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Restricted", status=Bed.Status.AVAILABLE)
     parolee = Parolee.objects.create(
@@ -159,7 +159,7 @@ def test_request_hold_requires_parolee(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
 
@@ -182,7 +182,7 @@ def test_unassign_releases_held_bed(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed Held", status=Bed.Status.HELD)
     parolee = Parolee.objects.create(

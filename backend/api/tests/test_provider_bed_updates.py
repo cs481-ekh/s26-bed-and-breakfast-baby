@@ -23,7 +23,7 @@ def test_provider_can_assign_client_by_existing_idoc_record(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
 
     bed = Bed.objects.create(facility=facility, label="Room 1 - A")
@@ -69,7 +69,7 @@ def test_non_provider_cannot_assign_client(client):
         state="ID",
         zip_code="83651",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
 
     bed = Bed.objects.create(facility=facility, label="Room 1 - B")
@@ -110,7 +110,7 @@ def test_provider_beds_are_sorted_with_sex_offender_beds_first(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
         accepts_sex_offender=True,
     )
     second_facility = Facility.objects.create(
@@ -121,7 +121,7 @@ def test_provider_beds_are_sorted_with_sex_offender_beds_first(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
 
     Bed.objects.create(facility=second_facility, label="Bed 3")
@@ -166,7 +166,7 @@ def test_provider_beds_returns_null_client_fields_for_unassigned_beds(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
 
     unassigned_bed = Bed.objects.create(facility=facility, label="Bed 1")

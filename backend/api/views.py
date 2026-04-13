@@ -112,7 +112,7 @@ class FacilityAvailabilityView(APIView):
                     "provider_name": facility.provider.name,
                     "district_number": facility.district.number,
                     "district_name": facility.district.name,
-                    "tier": facility.tier,
+                    "track": facility.track,
                     "accepts_male": facility.accepts_male,
                     "accepts_female": facility.accepts_female,
                     "accepts_sex_offender": facility.accepts_sex_offender,
