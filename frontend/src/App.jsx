@@ -65,6 +65,20 @@ function AdminPage() {
     }
   };
 
+  const handleEnableUser = async (username) => {
+    const { response, payload } = await apiJson("/api/users/enable/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!response.ok) {
+      throw new Error(payload?.error || "Failed to reactivate user.");
+    }
+
+    return payload;
+  };
+
   const handleChangeRole = async (username, role) => {
     try {
       const { response, payload } = await apiJson("/api/users/update-role/", {
@@ -91,6 +105,7 @@ function AdminPage() {
           onAddUser={handleAddUser}
           onRemoveUser={handleRemoveUser}
           onDisableUser={handleDisableUser}
+          onEnableUser={handleEnableUser}
           onChangeRole={handleChangeRole}
         />
       </PageTemplate>

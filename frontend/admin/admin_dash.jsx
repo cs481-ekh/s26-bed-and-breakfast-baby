@@ -9,7 +9,7 @@ const ROLES = [
     { value: "provider", label: "Housing Provider" },
 ];
 
-export default function AdminDash({ onRemoveUser, onChangeRole }) {
+export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, onChangeRole }) {
     const userTableRef = useRef(null);
     const [activePanel, setActivePanel] = useState("users");
 
@@ -54,6 +54,54 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
             refreshUsers();
         } catch {
             setUserActionMessage("Unable to remove user right now.");
+        }
+    };
+
+    const handleToggleSelectedUserActive = async () => {
+        if (!selectedUser?.username) {
+        return;
+        }
+
+        const isCurrentlyActive = Boolean(selectedUser.is_active);
+
+        const confirmed = window.confirm(
+        isCurrentlyActive
+            ? `Deactivate account "${selectedUser.username}"? They will remain in the list but will not be able to sign in.`
+            : `Reactivate account "${selectedUser.username}"?`
+        );
+
+        if (!confirmed) {
+        return;
+        }
+
+        try {
+        if (isCurrentlyActive) {
+            if (onDisableUser) {
+            await onDisableUser(selectedUser.username);
+            }
+
+            setSelectedUser((current) =>
+            current ? { ...current, is_active: false } : current
+            );
+            setUserActionMessage(`Deactivated user ${selectedUser.username}.`);
+        } else {
+            if (onEnableUser) {
+            await onEnableUser(selectedUser.username);
+            }
+
+            setSelectedUser((current) =>
+            current ? { ...current, is_active: true } : current
+            );
+            setUserActionMessage(`Reactivated user ${selectedUser.username}.`);
+        }
+
+        refreshUsers();
+        } catch (error) {
+        setUserActionMessage(
+            error instanceof Error
+            ? error.message
+            : "Unable to update account status right now."
+        );
         }
     };
 
@@ -151,12 +199,38 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
                                             ))}
                                         </select>
                                     </div>
+                                    
+                                    <p className="admin-selection-label">
+                                        Status: <strong>{selectedUser.is_active ? "Active" : "Inactive"}</strong>
+                                    </p>
+
                                     <div className="admin-action-buttons">
-                                        <button type="button" className="admin-primary-button" onClick={handleUpdateSelectedRole}>
-                                            Update User
+                                        <button
+                                        type="button"
+                                        className="admin-primary-button"
+                                        onClick={handleUpdateSelectedRole}
+                                        >
+                                        Update User
                                         </button>
-                                        <button type="button" className="admin-danger-button" onClick={handleRemoveSelectedUser}>
-                                            Remove User
+
+                                        <button
+                                        type="button"
+                                        className={
+                                            selectedUser.is_active
+                                            ? "admin-secondary-button"
+                                            : "admin-primary-button"
+                                        }
+                                        onClick={handleToggleSelectedUserActive}
+                                        >
+                                        {selectedUser.is_active ? "Deactivate User" : "Reactivate User"}
+                                        </button>
+
+                                        <button
+                                        type="button"
+                                        className="admin-danger-button"
+                                        onClick={handleRemoveSelectedUser}
+                                        >
+                                        Remove User Permanently
                                         </button>
                                     </div>
                                 </>
