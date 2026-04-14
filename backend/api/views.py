@@ -380,26 +380,92 @@ class UserViewSet(viewsets.ModelViewSet):
         Disable a user account by setting is_active to False.
         Expects: {"username": "user@example.com"}
         """
-        username = request.data.get('username')
-        
+        username = (request.data.get('username') or '').strip()
+
         if not username:
             return Response(
                 {"error": "Username is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             user = User.objects.get(username=username)
+
+            # Safety guard: do not allow an admin to deactivate their own active account.
+            if (
+                request.user.is_authenticated
+                and request.user.pk == user.pk
+                and getattr(request.user, "role", None) == User.Role.ADMIN
+                and request.user.is_active
+            ):
+                return Response(
+                    {"error": "Admins cannot deactivate their own active account."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            if not user.is_active:
+                return Response(
+                    {
+                        "message": f"User {username} is already inactive.",
+                        "user": UserSerializer(user).data,
+                    },
+                    status=status.HTTP_200_OK
+                )
+
             user.is_active = False
-            user.save()
-            
+            user.save(update_fields=['is_active'])
+
             return Response(
                 {
-                    "message": f"User {username} has been disabled.",
-                    "user": UserSerializer(user).data
+                    "message": f"User {username} has been deactivated.",
+                    "user": UserSerializer(user).data,
                 },
                 status=status.HTTP_200_OK
             )
+
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"User {username} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['post'], url_path='enable')
+    def enable_user(self, request):
+        """
+        Reactivate a user account by setting is_active to True.
+        Expects: {"username": "user@example.com"}
+        """
+        username = (request.data.get('username') or '').strip()
+
+        if not username:
+            return Response(
+                {"error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+
+            if user.is_active:
+                return Response(
+                    {
+                        "message": f"User {username} is already active.",
+                        "user": UserSerializer(user).data,
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+
+            return Response(
+                {
+                    "message": f"User {username} has been reactivated.",
+                    "user": UserSerializer(user).data,
+                },
+                status=status.HTTP_200_OK
+            )
+
         except User.DoesNotExist:
             return Response(
                 {"error": f"User {username} not found."},
