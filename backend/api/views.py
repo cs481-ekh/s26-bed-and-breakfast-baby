@@ -896,12 +896,17 @@ class ProviderBedCreateView(APIView):
         except Facility.DoesNotExist:
             return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        bed = Bed.objects.create(
-            facility=facility,
-            label=label,
-            notes=notes,
-            is_sex_offender_bed=is_sex_offender_bed,
-        )
+        with transaction.atomic():
+            if is_sex_offender_bed and not facility.accepts_sex_offender:
+                facility.accepts_sex_offender = True
+                facility.save(update_fields=["accepts_sex_offender", "updated_at"])
+
+            bed = Bed.objects.create(
+                facility=facility,
+                label=label,
+                notes=notes,
+                is_sex_offender_bed=is_sex_offender_bed,
+            )
 
         return Response(_provider_bed_payload(bed), status=status.HTTP_201_CREATED)
 
