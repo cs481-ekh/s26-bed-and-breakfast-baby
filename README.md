@@ -27,6 +27,8 @@ The repository includes automated build and test scripts and runs continuous int
 - Windows PowerShell: `./test.ps1`
 - Bash (Git Bash/WSL/macOS/Linux): `bash test.sh`
 
+`--errors-only` Shows only errors and not the entire code snippets in the terminal
+
 ## Development
 
 Start the development environment:
@@ -34,6 +36,9 @@ Start the development environment:
 ```bash
 ./dev.sh
 ```
+
+`--data` Generates mock data to be able to test with </br>
+`--data-large` Generates a very large sample size for unique testing/debugging oppertunities </br>
 
 Frontend:
 http://localhost:5173
