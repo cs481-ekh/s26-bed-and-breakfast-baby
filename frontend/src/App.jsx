@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import AdminDash from "../admin/admin_dash";
 import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
@@ -66,22 +67,17 @@ function AdminPage() {
   };
 
   const handleEnableUser = async (username) => {
-    try {
-      const { response, payload } = await apiJson("/api/users/enable/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      });
+    const { response, payload } = await apiJson("/api/users/enable/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
 
-      if (!response.ok) {
-        alert(`Failed to enable user: ${payload.error || "Unknown error"}`);
-        return;
-      }
-
-      alert(`User ${username} has been enabled successfully.`);
-    } catch (error) {
-      alert(`Error enabling user: ${error.message}`);
+    if (!response.ok) {
+      throw new Error(payload?.error || "Failed to reactivate user.");
     }
+
+    return payload;
   };
 
   const handleChangeRole = async (username, role) => {
@@ -119,10 +115,40 @@ function AdminPage() {
 }
 
 function MainDashboardPageComponent() {
+  const [isReadOnly, setIsReadOnly] = useState(true);
+  const [roleLoaded, setRoleLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRole = async () => {
+      const { response, payload } = await apiJson("/api/me/");
+
+      if (cancelled) {
+        return;
+      }
+
+      if (response.ok) {
+        const role = payload?.role || "";
+        setIsReadOnly(!(role === "admin" || role === "case_manager" || role === "parole_officer"));
+      } else {
+        setIsReadOnly(true);
+      }
+
+      setRoleLoaded(true);
+    };
+
+    loadRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer"]}>
       <PageTemplate>
-        <MainDash />
+        {roleLoaded ? <MainDash readOnly={isReadOnly} /> : <p>Loading dashboard...</p>}
       </PageTemplate>
     </RolePageGate>
   );

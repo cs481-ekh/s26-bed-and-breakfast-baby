@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
 
@@ -131,10 +132,10 @@ class Facility(models.Model):
     A provider may operate multiple facilities across different districts.
     """
 
-    class Tier(models.TextChoices):
-        TIER_1 = "tier_1", "Tier 1"
-        TIER_2 = "tier_2", "Tier 2"
-        TIER_3 = "tier_3", "Tier 3"
+    class Track(models.TextChoices):
+        BASIC = "basic", "Basic"
+        PLUS = "plus", "Plus"
+        HOTEL = "hotel", "Hotel"
 
     provider = models.ForeignKey(
         Provider,
@@ -151,10 +152,10 @@ class Facility(models.Model):
         on_delete=models.PROTECT,
         related_name="facilities",
     )
-    tier = models.CharField(
+    track = models.CharField(
         max_length=10,
-        choices=Tier.choices,
-        help_text="IDOC three-tiered housing standard",
+        choices=Track.choices,
+        help_text="IDOC housing track standard",
     )
     accepts_male = models.BooleanField(default=True)
     accepts_female = models.BooleanField(default=True)
@@ -226,6 +227,10 @@ class Bed(models.Model):
         choices=Status.choices,
         default=Status.AVAILABLE,
     )
+    is_sex_offender_bed = models.BooleanField(
+        default=False,
+        help_text="Whether this bed is designated for sex-offender eligible placements",
+    )
     notes = models.TextField(blank=True)
     updated_by = models.ForeignKey(
         User,
@@ -238,6 +243,32 @@ class Bed(models.Model):
 
     class Meta:
         unique_together = ["facility", "label"]
+
+    def clean(self):
+        super().clean()
+        if not self.is_sex_offender_bed:
+            return
+
+        if self.facility_id is None:
+            return
+
+        if not self.facility.accepts_sex_offender:
+            raise ValidationError(
+                {"is_sex_offender_bed": "This facility is not configured to accept sex-offender placements."}
+            )
+
+        designated_count = Bed.objects.filter(
+            facility_id=self.facility_id,
+            is_sex_offender_bed=True,
+        ).exclude(pk=self.pk).count()
+        if designated_count >= 2:
+            raise ValidationError(
+                {"is_sex_offender_bed": "Each facility can designate at most 2 sex-offender beds."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.label} @ {self.facility.name} [{self.get_status_display()}]"

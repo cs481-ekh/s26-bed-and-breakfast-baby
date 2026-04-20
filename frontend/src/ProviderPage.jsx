@@ -4,34 +4,104 @@ import { apiJson } from "./apiClient";
 import PageTemplate from "./components/PageTemplate";
 import "./ProviderPage.css";
 
+function formatDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString();
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
 export default function ProviderPage() {
   const [beds, setBeds] = useState([]);
+  const [holds, setHolds] = useState([]);
+  const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [selectedBedId, setSelectedBedId] = useState("");
   const [idocId, setIdocId] = useState("");
+  const [lookupResult, setLookupResult] = useState(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [holdActionId, setHoldActionId] = useState("");
+  const [bedForm, setBedForm] = useState({
+    facilityId: "",
+    label: "",
+    notes: "",
+    isSexOffenderBed: false,
+  });
+  const [endDateDrafts, setEndDateDrafts] = useState({});
 
   const availableBeds = useMemo(
     () => beds.filter((bed) => bed.bed_status === "available"),
     [beds]
   );
+  const activeHolds = useMemo(
+    () => holds.filter((hold) => hold.status === "active"),
+    [holds]
+  );
+
+  useEffect(() => {
+    const nextDrafts = {};
+
+    beds.forEach((bed) => {
+      if (bed.parolee_id && bed.housing_end_date) {
+        nextDrafts[bed.parolee_id] = bed.housing_end_date;
+      }
+    });
+
+    setEndDateDrafts(nextDrafts);
+  }, [beds]);
 
   const fetchBeds = useCallback(async () => {
     try {
       setLoading(true);
-      const { response, payload } = await apiJson("/api/provider/beds/");
+      const [bedsResponse, holdsResponse, facilitiesResponse] = await Promise.all([
+        apiJson("/api/provider/beds/"),
+        apiJson("/api/provider/holds/"),
+        apiJson("/api/provider/facilities/"),
+      ]);
 
-      if (!response.ok) {
-        throw new Error(payload?.error || "Could not load provider beds.");
+      if (!bedsResponse.response.ok) {
+        throw new Error(bedsResponse.payload?.error || "Could not load provider beds.");
       }
 
-      setBeds(Array.isArray(payload) ? payload : []);
+      if (!holdsResponse.response.ok) {
+        throw new Error(holdsResponse.payload?.error || "Could not load pending holds.");
+      }
+
+      if (!facilitiesResponse.response.ok) {
+        throw new Error(facilitiesResponse.payload?.error || "Could not load provider facilities.");
+      }
+
+      setBeds(Array.isArray(bedsResponse.payload) ? bedsResponse.payload : []);
+      setHolds(Array.isArray(holdsResponse.payload) ? holdsResponse.payload : []);
+      setFacilities(Array.isArray(facilitiesResponse.payload) ? facilitiesResponse.payload : []);
       setError("");
     } catch (requestError) {
-      setError(requestError.message || "Could not load provider beds.");
+      setError(requestError.message || "Could not load provider data.");
       setBeds([]);
+      setHolds([]);
+      setFacilities([]);
     } finally {
       setLoading(false);
     }
@@ -41,11 +111,43 @@ export default function ProviderPage() {
     fetchBeds();
   }, [fetchBeds]);
 
-  const handleSubmit = async (event) => {
+  const handleLookupClient = async (event) => {
+    event.preventDefault();
+
+    if (!idocId.trim()) {
+      setError("Enter an IDOC number to look up a client.");
+      return;
+    }
+
+    try {
+      setLookupLoading(true);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson(
+        `/api/provider/parolees/lookup/?idoc_id=${encodeURIComponent(idocId.trim())}`
+      );
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not find that client.");
+      }
+
+      setLookupResult(payload);
+      setMessage(`Found ${payload?.full_name || payload?.idoc_id || "client"}.`);
+      fetchBeds();
+    } catch (requestError) {
+      setLookupResult(null);
+      setError(requestError.message || "Could not find that client.");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleAssignClient = async (event) => {
     event.preventDefault();
 
     if (!selectedBedId || !idocId.trim()) {
-      setError("Select a bed and enter a client ID.");
+      setError("Select a bed and enter an IDOC number.");
       return;
     }
 
@@ -70,9 +172,116 @@ export default function ProviderPage() {
       setMessage(payload?.message || "Client assigned successfully.");
       setSelectedBedId("");
       setIdocId("");
+      setLookupResult(null);
       fetchBeds();
     } catch (requestError) {
       setError(requestError.message || "Could not assign client to bed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateBed = async (event) => {
+    event.preventDefault();
+
+    if (!bedForm.facilityId || !bedForm.label.trim()) {
+      setError("Choose a facility and provide a bed label.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson("/api/provider/beds/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          facility_id: bedForm.facilityId,
+          label: bedForm.label.trim(),
+          notes: bedForm.notes.trim(),
+          is_sex_offender_bed: bedForm.isSexOffenderBed,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not create bed.");
+      }
+
+      setMessage(`Bed ${payload?.bed_label || bedForm.label.trim()} created successfully.`);
+      setBedForm({
+        facilityId: bedForm.facilityId,
+        label: "",
+        notes: "",
+        isSexOffenderBed: false,
+      });
+      fetchBeds();
+    } catch (requestError) {
+      setError(requestError.message || "Could not create bed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleHoldDecision = async (holdId, decision) => {
+    try {
+      setHoldActionId(`${decision}-${holdId}`);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson(`/api/provider/holds/${holdId}/${decision}/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error(payload?.error || `Could not ${decision} hold.`);
+      }
+
+      setMessage(payload?.message || `Hold ${decision}d successfully.`);
+      fetchBeds();
+    } catch (requestError) {
+      setError(requestError.message || `Could not ${decision} hold.`);
+    } finally {
+      setHoldActionId("");
+    }
+  };
+
+  const handleEndDateChange = (paroleeId, value) => {
+    setEndDateDrafts((current) => ({
+      ...current,
+      [paroleeId]: value,
+    }));
+  };
+
+  const handleUpdateEndDate = async (paroleeId) => {
+    const housingEndDate = endDateDrafts[paroleeId];
+
+    if (!housingEndDate) {
+      setError("Choose a new end date first.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson(`/api/provider/placements/${paroleeId}/end-date/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ housing_end_date: housingEndDate }),
+      });
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not update the end date.");
+      }
+
+      setMessage(payload?.message || "End date updated successfully.");
+      fetchBeds();
+    } catch (requestError) {
+      setError(requestError.message || "Could not update the end date.");
     } finally {
       setSaving(false);
     }
@@ -82,68 +291,323 @@ export default function ProviderPage() {
     <RolePageGate allowedRoles={["provider", "admin"]}>
       <PageTemplate>
         <section className="provider-page">
-          <h1>Housing Provider Bed Updates</h1>
-          <p>Assign a client to an available bed using an existing client record ID.</p>
+          <header className="provider-hero">
+            <div>
+              <p className="provider-kicker">Housing provider workspace</p>
+              <h1>Manage beds, holds, and placements</h1>
+              <p>
+                Look up a client by IDOC number, create beds for your facilities, approve or deny holds, and adjust
+                placement end dates when someone leaves early.
+              </p>
+            </div>
+            <div className="provider-stat-grid">
+              <div className="provider-stat-card">
+                <span>Available beds</span>
+                <strong>{availableBeds.length}</strong>
+              </div>
+              <div className="provider-stat-card">
+                <span>Pending holds</span>
+                <strong>{activeHolds.length}</strong>
+              </div>
+              <div className="provider-stat-card">
+                <span>Facilities</span>
+                <strong>{facilities.length}</strong>
+              </div>
+            </div>
+          </header>
 
-          <form onSubmit={handleSubmit} style={{ marginBottom: "1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <label>
-              Bed
-              <select value={selectedBedId} onChange={(e) => setSelectedBedId(e.target.value)} style={{ marginLeft: "0.5rem" }}>
-                <option value="">Select available bed</option>
-                {availableBeds.map((bed) => (
-                  <option key={bed.bed_id} value={bed.bed_id}>
-                    {bed.facility_name} - {bed.bed_label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="provider-grid">
+            <article className="provider-card">
+              <div className="card-heading">
+                <div>
+                  <p className="card-label">Client workflow</p>
+                  <h2>Find and assign a client</h2>
+                </div>
+                <span className="card-hint">Search by IDOC number first</span>
+              </div>
 
-            <label>
-              Client ID
-              <input
-                type="text"
-                value={idocId}
-                onChange={(e) => setIdocId(e.target.value)}
-                placeholder="IDOC-10001"
-                style={{ marginLeft: "0.5rem" }}
-              />
-            </label>
+              <form className="provider-form" onSubmit={handleLookupClient}>
+                <label>
+                  IDOC number
+                  <input
+                    type="text"
+                    value={idocId}
+                    onChange={(event) => setIdocId(event.target.value)}
+                    placeholder="IDOC-10001"
+                  />
+                </label>
 
-            <button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Assign Client"}
-            </button>
-          </form>
+                <div className="form-actions">
+                  <button type="submit" className="secondary" disabled={lookupLoading}>
+                    {lookupLoading ? "Looking up..." : "Find client"}
+                  </button>
+                </div>
+              </form>
 
-          {loading && <p>Loading beds...</p>}
-          {!loading && error && <p style={{ color: "#b42318" }}>{error}</p>}
-          {!loading && !error && message && <p style={{ color: "#067647" }}>{message}</p>}
+              {lookupResult && (
+                <div className="lookup-result">
+                  <div>
+                    <strong>{lookupResult.full_name}</strong>
+                    <p>{lookupResult.idoc_id}</p>
+                  </div>
+                  <div>
+                    <span>District {lookupResult.district_number}</span>
+                    <span>
+                      Current placement: {lookupResult.assigned_facility_name || "Not assigned"}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-          {!loading && !error && (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left" }}>Facility</th>
-                  <th style={{ textAlign: "left" }}>District</th>
-                  <th style={{ textAlign: "left" }}>Bed</th>
-                  <th style={{ textAlign: "left" }}>Status</th>
-                  <th style={{ textAlign: "left" }}>Client ID</th>
-                  <th style={{ textAlign: "left" }}>Client</th>
-                </tr>
-              </thead>
-              <tbody>
-                {beds.map((bed) => (
-                  <tr key={bed.bed_id}>
-                    <td>{bed.facility_name}</td>
-                    <td>{bed.district_number}</td>
-                    <td>{bed.bed_label}</td>
-                    <td>{bed.bed_status}</td>
-                    <td>{bed.client_id || "-"}</td>
-                    <td>{bed.client_name || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              <form className="provider-form" onSubmit={handleAssignClient}>
+                <label>
+                  Available bed
+                  <select value={selectedBedId} onChange={(event) => setSelectedBedId(event.target.value)}>
+                    <option value="">Select a bed</option>
+                    {availableBeds.map((bed) => (
+                      <option key={bed.bed_id} value={bed.bed_id}>
+                        {bed.facility_name} - {bed.bed_label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="form-actions">
+                  <button type="submit" disabled={saving || availableBeds.length === 0}>
+                    {saving ? "Saving..." : "Assign 30-day placement"}
+                  </button>
+                </div>
+              </form>
+            </article>
+
+            <article className="provider-card">
+              <div className="card-heading">
+                <div>
+                  <p className="card-label">Bed setup</p>
+                  <h2>Add a bed</h2>
+                </div>
+                <span className="card-hint">Provider-owned facilities only</span>
+              </div>
+
+              <form className="provider-form" onSubmit={handleCreateBed}>
+                <label>
+                  Facility
+                  <select
+                    value={bedForm.facilityId}
+                    onChange={(event) => setBedForm((current) => ({ ...current, facilityId: event.target.value }))}
+                  >
+                    <option value="">Select a facility</option>
+                    {facilities.map((facility) => (
+                      <option key={facility.facility_id} value={facility.facility_id}>
+                        {facility.facility_name} - District {facility.district_number}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Bed label
+                  <input
+                    type="text"
+                    value={bedForm.label}
+                    onChange={(event) => setBedForm((current) => ({ ...current, label: event.target.value }))}
+                    placeholder="Room 2 - Bed A"
+                  />
+                </label>
+
+                <label>
+                  Notes
+                  <textarea
+                    rows="3"
+                    value={bedForm.notes}
+                    onChange={(event) => setBedForm((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="Optional bed notes"
+                  />
+                </label>
+
+                <label className="inline-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={bedForm.isSexOffenderBed}
+                    onChange={(event) =>
+                      setBedForm((current) => ({ ...current, isSexOffenderBed: event.target.checked }))
+                    }
+                  />
+                  Designated sex-offender bed
+                </label>
+
+                <div className="form-actions">
+                  <button type="submit" disabled={saving || facilities.length === 0}>
+                    {saving ? "Saving..." : "Add bed"}
+                  </button>
+                </div>
+              </form>
+            </article>
+          </div>
+
+          <article className="provider-card provider-card-wide">
+            <div className="card-heading">
+              <div>
+                <p className="card-label">Hold queue</p>
+                <h2>Approve or deny pending holds</h2>
+              </div>
+            </div>
+
+            {loading && <p>Loading provider data...</p>}
+            {!loading && activeHolds.length === 0 && <p>No active holds are waiting for review.</p>}
+
+            {!loading && activeHolds.length > 0 && (
+              <div className="table-wrap">
+                <table className="provider-table">
+                  <thead>
+                    <tr>
+                      <th>Bed</th>
+                      <th>Client</th>
+                      <th>Reason</th>
+                      <th>Expires</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeHolds.map((hold) => (
+                        <tr key={hold.hold_id}>
+                          <td>
+                            <strong>{hold.facility_name}</strong>
+                            <div>{hold.bed_label}</div>
+                          </td>
+                          <td>
+                            <strong>{hold.client_name}</strong>
+                            <div>{hold.client_id}</div>
+                          </td>
+                          <td>{hold.reason || "-"}</td>
+                          <td>{formatDateTime(hold.expires_at)}</td>
+                          <td>
+                            <div className="row-actions">
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => handleHoldDecision(hold.hold_id, "deny")}
+                                disabled={holdActionId === `deny-${hold.hold_id}`}
+                              >
+                                {holdActionId === `deny-${hold.hold_id}` ? "Denying..." : "Deny"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleHoldDecision(hold.hold_id, "approve")}
+                                disabled={holdActionId === `approve-${hold.hold_id}`}
+                              >
+                                {holdActionId === `approve-${hold.hold_id}` ? "Approving..." : "Approve"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </article>
+
+          <article className="provider-card provider-card-wide">
+            <div className="card-heading">
+              <div>
+                <p className="card-label">Bed roster</p>
+                <h2>Current bed assignments</h2>
+              </div>
+            </div>
+
+            {!loading && error && <p className="status status-error">{error}</p>}
+            {!loading && !error && message && <p className="status status-success">{message}</p>}
+
+            {!loading && !error && (
+              <div className="table-wrap">
+                <table className="provider-table">
+                  <thead>
+                    <tr>
+                      <th>Facility</th>
+                      <th>Bed</th>
+                      <th>Status</th>
+                      <th>Client</th>
+                      <th>Program dates</th>
+                      <th>Hold</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {beds.map((bed) => (
+                      <tr key={bed.bed_id}>
+                        <td>
+                          <strong>{bed.facility_name}</strong>
+                          <div>District {bed.district_number}</div>
+                        </td>
+                        <td>{bed.bed_label}</td>
+                        <td>
+                          <span className={`status-pill status-${bed.bed_status}`}>{bed.bed_status_label}</span>
+                        </td>
+                        <td>
+                          <strong>{bed.client_name || bed.assignment_placeholder}</strong>
+                          <div>{bed.client_id || "-"}</div>
+                        </td>
+                        <td>
+                          <div>Start: {formatDate(bed.housing_start_date)}</div>
+                          <div>End: {formatDate(bed.housing_end_date)}</div>
+                        </td>
+                        <td>
+                          {bed.hold_id ? (
+                            <>
+                              <strong>{bed.hold_client_name}</strong>
+                              <div>Expires {formatDateTime(bed.hold_expires_at)}</div>
+                            </>
+                          ) : (
+                            <span>-</span>
+                          )}
+                        </td>
+                        <td>
+                          {bed.parolee_id ? (
+                            <div className="end-date-editor">
+                              <input
+                                type="date"
+                                value={endDateDrafts[bed.parolee_id] || ""}
+                                onChange={(event) => handleEndDateChange(bed.parolee_id, event.target.value)}
+                              />
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => handleUpdateEndDate(bed.parolee_id)}
+                                disabled={saving}
+                              >
+                                Update end date
+                              </button>
+                            </div>
+                          ) : bed.hold_id ? (
+                            <div className="row-actions">
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => handleHoldDecision(bed.hold_id, "deny")}
+                                disabled={holdActionId === `deny-${bed.hold_id}`}
+                              >
+                                Deny hold
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleHoldDecision(bed.hold_id, "approve")}
+                                disabled={holdActionId === `approve-${bed.hold_id}`}
+                              >
+                                Approve hold
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="muted">No action needed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </article>
         </section>
       </PageTemplate>
     </RolePageGate>

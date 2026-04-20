@@ -15,7 +15,7 @@ def test_non_admin_cannot_edit_bed_notes(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_1,
+        track=Facility.Track.BASIC,
     )
     bed = Bed.objects.create(facility=facility, label="Bed 1", notes="Existing note")
     non_admin = User.objects.create_user(
@@ -48,7 +48,7 @@ def test_admin_can_edit_bed_notes(client):
         state="ID",
         zip_code="83701",
         district=district,
-        tier=Facility.Tier.TIER_2,
+        track=Facility.Track.PLUS,
     )
     bed = Bed.objects.create(facility=facility, label="Bed 2", notes="Old")
     admin_user = User.objects.create_user(

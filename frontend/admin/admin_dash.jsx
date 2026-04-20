@@ -10,7 +10,7 @@ const ROLES = [
     { value: "provider", label: "Housing Provider" },
 ];
 
-export default function AdminDash({ onRemoveUser, onChangeRole, onDisableUser, onEnableUser }) {
+export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, onChangeRole }) {
     const userTableRef = useRef(null);
     const [activePanel, setActivePanel] = useState("users");
 
@@ -59,39 +59,51 @@ export default function AdminDash({ onRemoveUser, onChangeRole, onDisableUser, o
         }
     };
 
-    const handleDisableSelectedUser = async () => {
+    const handleToggleSelectedUserActive = async () => {
         if (!selectedUser?.username) {
-            return;
+        return;
         }
 
-        const isCurrentlyActive = selectedUser.is_active;
-        const action = isCurrentlyActive ? "disable" : "enable";
-        const confirmationMessage = isCurrentlyActive
-            ? `Disable account "${selectedUser.username}"? The user will not be able to log in.`
-            : `Activate account "${selectedUser.username}"? The user will be able to log in again.`;
+        const isCurrentlyActive = Boolean(selectedUser.is_active);
 
-        const confirmed = window.confirm(confirmationMessage);
+        const confirmed = window.confirm(
+        isCurrentlyActive
+            ? `Deactivate account "${selectedUser.username}"? They will remain in the list but will not be able to sign in.`
+            : `Reactivate account "${selectedUser.username}"?`
+        );
 
         if (!confirmed) {
-            return;
+        return;
         }
 
         try {
-            if (isCurrentlyActive) {
-                if (onDisableUser) {
-                    await onDisableUser(selectedUser.username);
-                }
-                setUserActionMessage(`Disabled user ${selectedUser.username}.`);
-            } else {
-                if (onEnableUser) {
-                    await onEnableUser(selectedUser.username);
-                }
-                setUserActionMessage(`Activated user ${selectedUser.username}.`);
+        if (isCurrentlyActive) {
+            if (onDisableUser) {
+            await onDisableUser(selectedUser.username);
             }
-            setSelectedUser(null);
-            refreshUsers();
-        } catch {
-            setUserActionMessage(`Unable to ${action} user right now.`);
+
+            setSelectedUser((current) =>
+            current ? { ...current, is_active: false } : current
+            );
+            setUserActionMessage(`Deactivated user ${selectedUser.username}.`);
+        } else {
+            if (onEnableUser) {
+            await onEnableUser(selectedUser.username);
+            }
+
+            setSelectedUser((current) =>
+            current ? { ...current, is_active: true } : current
+            );
+            setUserActionMessage(`Reactivated user ${selectedUser.username}.`);
+        }
+
+        refreshUsers();
+        } catch (error) {
+        setUserActionMessage(
+            error instanceof Error
+            ? error.message
+            : "Unable to update account status right now."
+        );
         }
     };
 
@@ -215,14 +227,39 @@ export default function AdminDash({ onRemoveUser, onChangeRole, onDisableUser, o
                                                 </option>
                                             ))}
                                         </select>
-                                        <button type="button" className="admin-primary-button admin-compact-button" onClick={handleUpdateSelectedRole}>
-                                            Update Role
+                                    </div>
+                                    
+                                    <p className="admin-selection-label">
+                                        Status: <strong>{selectedUser.is_active ? "Active" : "Inactive"}</strong>
+                                    </p>
+
+                                    <div className="admin-action-buttons">
+                                        <button
+                                        type="button"
+                                        className="admin-primary-button"
+                                        onClick={handleUpdateSelectedRole}
+                                        >
+                                        Update User
                                         </button>
-                                        <button type="button" className="admin-secondary-button admin-compact-button" onClick={handleDisableSelectedUser}>
-                                            {selectedUser?.is_active ? "Disable" : "Activate"}
+
+                                        <button
+                                        type="button"
+                                        className={
+                                            selectedUser.is_active
+                                            ? "admin-secondary-button"
+                                            : "admin-primary-button"
+                                        }
+                                        onClick={handleToggleSelectedUserActive}
+                                        >
+                                        {selectedUser.is_active ? "Deactivate User" : "Reactivate User"}
                                         </button>
-                                        <button type="button" className="admin-danger-button admin-compact-button" onClick={handleRemoveSelectedUser}>
-                                            Remove
+
+                                        <button
+                                        type="button"
+                                        className="admin-danger-button"
+                                        onClick={handleRemoveSelectedUser}
+                                        >
+                                        Remove User Permanently
                                         </button>
                                     </div>
                                 </div>

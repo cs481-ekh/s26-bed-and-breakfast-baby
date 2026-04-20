@@ -29,6 +29,24 @@ class Command(BaseCommand):
         size = options["size"]
         self.stdout.write(f"Seeding database (size={size})...")
 
+        def mark_sex_offender_beds(target_facilities):
+            marked_total = 0
+            for facility in target_facilities:
+                facility_beds = list(Bed.objects.filter(facility=facility).order_by("id"))
+                for index, bed in enumerate(facility_beds[:2], start=1):
+                    update_fields = []
+                    so_label = f"S/O Bed {index}"
+                    if bed.label != so_label:
+                        bed.label = so_label
+                        update_fields.append("label")
+                    if not bed.is_sex_offender_bed:
+                        bed.is_sex_offender_bed = True
+                        update_fields.append("is_sex_offender_bed")
+                    if update_fields:
+                        bed.save(update_fields=[*update_fields, "updated_at"])
+                marked_total += min(2, len(facility_beds))
+            return marked_total
+
         # ---------------------------------------------------------------
         # Districts — Idaho's 7 judicial districts
         # ---------------------------------------------------------------
@@ -76,17 +94,17 @@ class Command(BaseCommand):
         # Facilities
         # ---------------------------------------------------------------
         facilities_data = [
-            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, "tier_2", True, True, True),
-            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, "tier_1", True, False, False),
-            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, "tier_2", True, True, False),
-            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, "tier_3", False, True, False),
-            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, "tier_2", True, True, True),
-            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, "tier_1", True, False, False),
-            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, "tier_2", False, True, False),
-            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, "tier_3", True, True, True),
+            (providers[0], "Boise Recovery House",    "123 Main St",   "Boise",        "83702", 4, Facility.Track.PLUS, True, True, True),
+            (providers[0], "Meridian Sober Living",   "456 Pine Ave",  "Meridian",     "83642", 4, Facility.Track.BASIC, True, False, False),
+            (providers[1], "Canyon House",            "789 Elm St",    "Nampa",        "83651", 3, Facility.Track.PLUS, True, True, False),
+            (providers[1], "Caldwell Transition Home","321 Oak Blvd",  "Caldwell",     "83605", 3, Facility.Track.BASIC, False, True, False),
+            (providers[2], "Idaho Falls Recovery",    "555 River Rd",  "Idaho Falls",  "83401", 7, Facility.Track.PLUS, True, True, True),
+            (providers[2], "Pocatello Reentry House", "222 Center St", "Pocatello",    "83201", 6, Facility.Track.BASIC, True, False, False),
+            (providers[3], "Coeur d'Alene Haven",     "100 Lake Dr",   "Coeur d'Alene","83814", 1, Facility.Track.PLUS, False, True, False),
+            (providers[4], "Twin Falls Recovery",     "444 Blue Rd",   "Twin Falls",   "83301", 5, Facility.Track.BASIC, True, True, True),
         ]
         facilities = []
-        for prov, name, addr, city, zip_code, dist_num, tier, accepts_male, accepts_female, accepts_sex_offender in facilities_data:
+        for prov, name, addr, city, zip_code, dist_num, track, accepts_male, accepts_female, accepts_sex_offender in facilities_data:
             f, _ = Facility.objects.get_or_create(
                 name=name,
                 provider=prov,
@@ -95,7 +113,7 @@ class Command(BaseCommand):
                     "city": city,
                     "zip_code": zip_code,
                     "district": districts[dist_num],
-                    "tier": tier,
+                    "track": track,
                     "accepts_male": accepts_male,
                     "accepts_female": accepts_female,
                     "accepts_sex_offender": accepts_sex_offender,
@@ -143,6 +161,14 @@ class Command(BaseCommand):
                 )
                 all_beds.append(b)
         self.stdout.write(f"  Created {len(all_beds)} beds")
+
+        # Designate up to 2 sex-offender beds for a subset of eligible facilities.
+        small_so_facilities = [
+            facility for facility in facilities
+            if facility.name in {"Boise Recovery House", "Idaho Falls Recovery"} and facility.accepts_sex_offender
+        ]
+        marked_small = mark_sex_offender_beds(small_so_facilities)
+        self.stdout.write(f"  Marked {marked_small} sex-offender designated beds")
 
         # ---------------------------------------------------------------
         # Sample Users
@@ -243,33 +269,57 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional providers and facilities
             # -----------------------------------------------------------
+            extra_providers_data = [
+                ("Gem State Reentry Housing", "Rachel Moore", "rachel@gsrh.example.com", "208-555-0201"),
+                ("Snake River Transitional Services", "Daniel Brooks", "daniel@srts.example.com", "208-555-0202"),
+                ("Panhandle Recovery Network", "Monica Hayes", "monica@prn.example.com", "208-555-0203"),
+                ("Southeast Idaho Housing Partners", "Kevin Lawson", "kevin@sihp.example.com", "208-555-0204"),
+                ("High Desert Community Housing", "Erin Flores", "erin@hdch.example.com", "208-555-0205"),
+            ]
             extra_providers = []
-            for idx in range(1, 6):
+            for name, contact, email, phone in extra_providers_data:
                 provider, _ = Provider.objects.get_or_create(
-                    name=f"Large Seed Provider {idx}",
+                    name=name,
                     defaults={
-                        "contact_name": f"Provider Contact {idx}",
-                        "contact_email": f"large.provider{idx}@idoc.example.com",
-                        "contact_phone": f"208-555-{2000 + idx}",
+                        "contact_name": contact,
+                        "contact_email": email,
+                        "contact_phone": phone,
                     },
                 )
                 extra_providers.append(provider)
 
+            extra_facilities_data = [
+                ("Boise Bridge House", "1101 River St", "Boise", "83703", 4, Facility.Track.PLUS, True, False, False),
+                ("Meridian Pathways Home", "2210 Fairview Ave", "Meridian", "83642", 4, Facility.Track.BASIC, False, True, False),
+                ("Nampa Renewal Center", "785 Front St", "Nampa", "83651", 3, Facility.Track.PLUS, True, True, True),
+                ("Caldwell New Start Residence", "402 Arthur St", "Caldwell", "83605", 3, Facility.Track.BASIC, False, True, False),
+                ("Idaho Falls Riverbend House", "1542 Skyline Dr", "Idaho Falls", "83402", 7, Facility.Track.PLUS, True, True, False),
+                ("Pocatello Independence Home", "633 Grant Ave", "Pocatello", "83204", 6, Facility.Track.BASIC, True, False, False),
+                ("Twin Falls Horizon House", "912 Addison Ave", "Twin Falls", "83301", 5, Facility.Track.PLUS, True, True, True),
+                ("Lewiston Gateway Residence", "301 Thain Rd", "Lewiston", "83501", 2, Facility.Track.PLUS, True, True, False),
+                ("Moscow Stability House", "111 Main St", "Moscow", "83843", 2, Facility.Track.BASIC, False, True, False),
+                ("Coeur d'Alene Harbor Home", "709 Sherman Ave", "Coeur d'Alene", "83814", 1, Facility.Track.PLUS, False, True, False),
+                ("Post Falls Community House", "120 Spokane St", "Post Falls", "83854", 1, Facility.Track.BASIC, True, False, True),
+                ("Burley Turning Point", "88 Overland Ave", "Burley", "83318", 5, Facility.Track.BASIC, True, True, False),
+                ("Rexburg Sunrise Home", "240 College Ave", "Rexburg", "83440", 7, Facility.Track.PLUS, True, True, False),
+                ("Mountain Home Transit House", "515 Airbase Rd", "Mountain Home", "83647", 4, Facility.Track.BASIC, True, False, False),
+                ("Sandpoint Lakeside Residence", "63 Cedar St", "Sandpoint", "83864", 1, Facility.Track.PLUS, True, True, False),
+            ]
             extra_facilities = []
-            tiers = [Facility.Tier.TIER_1, Facility.Tier.TIER_2, Facility.Tier.TIER_3]
-            for idx in range(1, 16):
+            for idx, (name, addr, city, zip_code, district_num, track, accepts_male, accepts_female, accepts_sex_offender) in enumerate(extra_facilities_data, start=1):
                 provider = extra_providers[(idx - 1) % len(extra_providers)]
-                district_num = ((idx - 1) % 7) + 1
-                tier = tiers[(idx - 1) % len(tiers)]
                 facility, _ = Facility.objects.get_or_create(
-                    name=f"Large Seed Facility {idx}",
+                    name=name,
                     provider=provider,
                     defaults={
-                        "address": f"{1000 + idx} Expansion Ave",
-                        "city": "Boise" if idx % 2 == 0 else "Idaho Falls",
-                        "zip_code": f"83{200 + idx}",
+                        "address": addr,
+                        "city": city,
+                        "zip_code": zip_code,
                         "district": districts[district_num],
-                        "tier": tier,
+                        "track": track,
+                        "accepts_male": accepts_male,
+                        "accepts_female": accepts_female,
+                        "accepts_sex_offender": accepts_sex_offender,
                     },
                 )
                 # Ensure these facilities have programs linked.
@@ -287,36 +337,60 @@ class Command(BaseCommand):
                 for i in range(1, 21):
                     bed, created = Bed.objects.get_or_create(
                         facility=facility,
-                        label=f"Expansion Bed {i}",
+                        label=f"Bed {i}",
                     )
                     all_beds.append(bed)
                     if created:
                         created_extra_beds += 1
             self.stdout.write(f"  Added {created_extra_beds} beds")
 
+            large_so_facilities = [
+                facility for facility in extra_facilities
+                if facility.accepts_sex_offender and facility.name in {"Nampa Renewal Center", "Twin Falls Horizon House", "Post Falls Community House"}
+            ]
+            marked_large = mark_sex_offender_beds(large_so_facilities)
+            self.stdout.write(f"  Marked {marked_large} additional sex-offender designated beds")
+
             # -----------------------------------------------------------
             # Additional users
             # -----------------------------------------------------------
-            for idx in range(1, 11):
-                username = f"cm_large_{idx}"
+            extra_case_managers = [
+                ("cm_clark", "Jordan", "Clark", 1),
+                ("cm_diaz", "Taylor", "Diaz", 2),
+                ("cm_evans", "Morgan", "Evans", 3),
+                ("cm_foster", "Riley", "Foster", 4),
+                ("cm_grant", "Casey", "Grant", 5),
+                ("cm_hughes", "Avery", "Hughes", 6),
+                ("cm_ivy", "Drew", "Ivy", 7),
+                ("cm_kim", "Parker", "Kim", 4),
+                ("cm_lopez", "Reese", "Lopez", 3),
+                ("cm_morris", "Quinn", "Morris", 5),
+            ]
+            for username, first, last, district_num in extra_case_managers:
                 if not User.objects.filter(username=username).exists():
                     User.objects.create_user(
                         username=username,
                         password="testpass123",
-                        first_name=f"LargeCM{idx}",
-                        last_name="User",
+                        first_name=first,
+                        last_name=last,
                         role=User.Role.CASE_MANAGER,
-                        district=districts[((idx - 1) % 7) + 1],
+                        district=districts[district_num],
                     )
 
-            for idx in range(1, 6):
-                username = f"prov_large_{idx}"
+            extra_provider_users = [
+                ("prov_moore", "Rachel", "Moore"),
+                ("prov_brooks", "Daniel", "Brooks"),
+                ("prov_hayes", "Monica", "Hayes"),
+                ("prov_lawson", "Kevin", "Lawson"),
+                ("prov_flores", "Erin", "Flores"),
+            ]
+            for idx, (username, first, last) in enumerate(extra_provider_users, start=1):
                 if not User.objects.filter(username=username).exists():
                     User.objects.create_user(
                         username=username,
                         password="testpass123",
-                        first_name=f"LargeProv{idx}",
-                        last_name="User",
+                        first_name=first,
+                        last_name=last,
                         role=User.Role.PROVIDER,
                         provider=extra_providers[(idx - 1) % len(extra_providers)],
                     )
@@ -325,14 +399,26 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional parolees and placements
             # -----------------------------------------------------------
+            first_names = [
+                "Anthony", "Brian", "Carlos", "Derrick", "Ethan", "Frank", "George", "Henry", "Isaac", "Jason",
+                "Kevin", "Logan", "Marcus", "Nathan", "Oscar", "Patrick", "Ramon", "Samuel", "Travis", "Victor",
+                "Wesley", "Xavier", "Yuri", "Zane", "Caleb",
+            ]
+            last_names = [
+                "Bennett", "Carter", "Diaz", "Edwards", "Fisher", "Gonzalez", "Harris", "Irwin", "Jackson", "Kelly",
+                "Lawrence", "Mitchell", "Nelson", "Owens", "Perry", "Quintero", "Reed", "Sullivan", "Turner", "Vasquez",
+                "Walker", "Young", "Zimmerman", "Abbott", "Bradley", "Collins", "Donovan", "Ellis", "Fleming", "Griffin",
+                "Henderson",
+            ]
             created_parolees = 0
             for idx in range(20000, 20200):
                 district_num = ((idx - 20000) % 7) + 1
+                offset = idx - 20000
                 _, created = Parolee.objects.get_or_create(
                     idoc_id=f"IDOC-{idx}",
                     defaults={
-                        "first_name": f"Parolee{idx}",
-                        "last_name": "LargeSeed",
+                        "first_name": first_names[offset % len(first_names)],
+                        "last_name": last_names[(offset * 7) % len(last_names)],
                         "district": districts[district_num],
                     },
                 )
@@ -365,7 +451,7 @@ class Command(BaseCommand):
                     defaults={
                         "added_by": active_cm,
                         "priority": WaitlistEntry.Priority.MEDIUM,
-                        "notes": "Large seed waitlist entry",
+                        "notes": "Requested placement near support services and transportation routes",
                     },
                 )
                 if created:

@@ -1,0 +1,346 @@
+ID,Facility ID,Facility Name,Label,Status,Assigned Parolee ID,Updated At
+1,1,Boise Recovery House,Bed 1,occupied,IDOC-10001,2026-04-09 03:14:33.673015+00:00
+6,1,Boise Recovery House,Bed 6,held,,2026-04-09 03:14:33.704448+00:00
+83,10,Large Seed Facility 2,Expansion Bed 18,available,,2026-04-09 03:14:34.871010+00:00
+84,10,Large Seed Facility 2,Expansion Bed 19,available,,2026-04-09 03:14:34.878053+00:00
+85,10,Large Seed Facility 2,Expansion Bed 20,available,,2026-04-09 03:14:34.885201+00:00
+86,11,Large Seed Facility 3,Expansion Bed 1,available,,2026-04-09 03:14:34.892613+00:00
+87,11,Large Seed Facility 3,Expansion Bed 2,available,,2026-04-09 03:14:34.899074+00:00
+88,11,Large Seed Facility 3,Expansion Bed 3,available,,2026-04-09 03:14:34.905497+00:00
+89,11,Large Seed Facility 3,Expansion Bed 4,available,,2026-04-09 03:14:34.912330+00:00
+90,11,Large Seed Facility 3,Expansion Bed 5,available,,2026-04-09 03:14:34.916737+00:00
+91,11,Large Seed Facility 3,Expansion Bed 6,available,,2026-04-09 03:14:34.921267+00:00
+92,11,Large Seed Facility 3,Expansion Bed 7,available,,2026-04-09 03:14:34.925701+00:00
+93,11,Large Seed Facility 3,Expansion Bed 8,available,,2026-04-09 03:14:34.932089+00:00
+94,11,Large Seed Facility 3,Expansion Bed 9,available,,2026-04-09 03:14:34.938648+00:00
+2,1,Boise Recovery House,Bed 2,occupied,IDOC-10002,2026-04-09 03:14:49.060035+00:00
+3,1,Boise Recovery House,Bed 3,occupied,IDOC-10003,2026-04-09 03:14:49.076278+00:00
+4,1,Boise Recovery House,Bed 4,occupied,IDOC-10004,2026-04-09 03:14:49.092222+00:00
+5,1,Boise Recovery House,Bed 5,occupied,IDOC-10005,2026-04-09 03:14:49.105880+00:00
+7,2,Meridian Sober Living,Bed 1,occupied,IDOC-20000,2026-04-09 03:14:49.112322+00:00
+8,2,Meridian Sober Living,Bed 2,occupied,IDOC-20001,2026-04-09 03:14:49.119430+00:00
+9,2,Meridian Sober Living,Bed 3,occupied,IDOC-20002,2026-04-09 03:14:49.130267+00:00
+10,2,Meridian Sober Living,Bed 4,occupied,IDOC-20003,2026-04-09 03:14:49.139581+00:00
+11,3,Canyon House,Bed 1,occupied,IDOC-20004,2026-04-09 03:14:49.147058+00:00
+12,3,Canyon House,Bed 2,occupied,IDOC-20005,2026-04-09 03:14:49.157966+00:00
+13,3,Canyon House,Bed 3,occupied,IDOC-20006,2026-04-09 03:14:49.168967+00:00
+14,3,Canyon House,Bed 4,occupied,IDOC-20007,2026-04-09 03:14:49.176465+00:00
+15,3,Canyon House,Bed 5,occupied,IDOC-20008,2026-04-09 03:14:49.183928+00:00
+16,3,Canyon House,Bed 6,occupied,IDOC-20009,2026-04-09 03:14:49.190979+00:00
+17,3,Canyon House,Bed 7,occupied,IDOC-20010,2026-04-09 03:14:49.198055+00:00
+18,3,Canyon House,Bed 8,occupied,IDOC-20011,2026-04-09 03:14:49.205390+00:00
+19,4,Caldwell Transition Home,Bed 1,occupied,IDOC-20012,2026-04-09 03:14:49.212614+00:00
+20,4,Caldwell Transition Home,Bed 2,occupied,IDOC-20013,2026-04-09 03:14:49.220215+00:00
+21,4,Caldwell Transition Home,Bed 3,occupied,IDOC-20014,2026-04-09 03:14:49.227824+00:00
+22,4,Caldwell Transition Home,Bed 4,occupied,IDOC-20015,2026-04-09 03:14:49.234994+00:00
+23,4,Caldwell Transition Home,Bed 5,occupied,IDOC-20016,2026-04-09 03:14:49.242018+00:00
+24,5,Idaho Falls Recovery,Bed 1,occupied,IDOC-20017,2026-04-09 03:14:49.249116+00:00
+25,5,Idaho Falls Recovery,Bed 2,occupied,IDOC-20018,2026-04-09 03:14:49.256825+00:00
+26,5,Idaho Falls Recovery,Bed 3,occupied,IDOC-20019,2026-04-09 03:14:49.263979+00:00
+27,5,Idaho Falls Recovery,Bed 4,occupied,IDOC-20020,2026-04-09 03:14:49.270987+00:00
+28,5,Idaho Falls Recovery,Bed 5,occupied,IDOC-20021,2026-04-09 03:14:49.277118+00:00
+29,5,Idaho Falls Recovery,Bed 6,occupied,IDOC-20022,2026-04-09 03:14:49.282481+00:00
+30,6,Pocatello Reentry House,Bed 1,occupied,IDOC-20023,2026-04-09 03:14:49.288056+00:00
+31,6,Pocatello Reentry House,Bed 2,occupied,IDOC-20024,2026-04-09 03:14:49.293315+00:00
+32,6,Pocatello Reentry House,Bed 3,occupied,IDOC-20025,2026-04-09 03:14:49.298416+00:00
+33,6,Pocatello Reentry House,Bed 4,occupied,IDOC-20026,2026-04-09 03:14:49.304408+00:00
+34,7,Coeur d'Alene Haven,Bed 1,occupied,IDOC-20027,2026-04-09 03:14:49.310063+00:00
+35,7,Coeur d'Alene Haven,Bed 2,occupied,IDOC-20028,2026-04-09 03:14:49.315676+00:00
+36,7,Coeur d'Alene Haven,Bed 3,occupied,IDOC-20029,2026-04-09 03:14:49.322032+00:00
+37,7,Coeur d'Alene Haven,Bed 4,occupied,IDOC-20030,2026-04-09 03:14:49.328396+00:00
+38,7,Coeur d'Alene Haven,Bed 5,occupied,IDOC-20031,2026-04-09 03:14:49.336347+00:00
+39,7,Coeur d'Alene Haven,Bed 6,occupied,IDOC-20032,2026-04-09 03:14:49.341941+00:00
+40,7,Coeur d'Alene Haven,Bed 7,occupied,IDOC-20033,2026-04-09 03:14:49.347623+00:00
+41,8,Twin Falls Recovery,Bed 1,occupied,IDOC-20034,2026-04-09 03:14:49.353389+00:00
+42,8,Twin Falls Recovery,Bed 2,occupied,IDOC-20035,2026-04-09 03:14:49.358988+00:00
+44,8,Twin Falls Recovery,Bed 4,occupied,IDOC-20037,2026-04-09 03:14:49.371092+00:00
+45,8,Twin Falls Recovery,Bed 5,occupied,IDOC-20038,2026-04-09 03:14:49.377292+00:00
+46,9,Large Seed Facility 1,Expansion Bed 1,occupied,IDOC-20039,2026-04-09 03:14:49.382828+00:00
+47,9,Large Seed Facility 1,Expansion Bed 2,occupied,IDOC-20040,2026-04-09 03:14:49.388365+00:00
+48,9,Large Seed Facility 1,Expansion Bed 3,occupied,IDOC-20041,2026-04-09 03:14:49.394998+00:00
+49,9,Large Seed Facility 1,Expansion Bed 4,occupied,IDOC-20042,2026-04-09 03:14:49.401243+00:00
+50,9,Large Seed Facility 1,Expansion Bed 5,occupied,IDOC-20043,2026-04-09 03:14:49.407268+00:00
+51,9,Large Seed Facility 1,Expansion Bed 6,occupied,IDOC-20044,2026-04-09 03:14:49.413382+00:00
+52,9,Large Seed Facility 1,Expansion Bed 7,occupied,IDOC-20045,2026-04-09 03:14:49.419583+00:00
+53,9,Large Seed Facility 1,Expansion Bed 8,occupied,IDOC-20046,2026-04-09 03:14:49.441332+00:00
+54,9,Large Seed Facility 1,Expansion Bed 9,occupied,IDOC-20047,2026-04-09 03:14:49.447790+00:00
+55,9,Large Seed Facility 1,Expansion Bed 10,occupied,IDOC-20048,2026-04-09 03:14:49.454918+00:00
+56,9,Large Seed Facility 1,Expansion Bed 11,occupied,IDOC-20049,2026-04-09 03:14:49.461196+00:00
+57,9,Large Seed Facility 1,Expansion Bed 12,occupied,IDOC-20050,2026-04-09 03:14:49.475601+00:00
+59,9,Large Seed Facility 1,Expansion Bed 14,occupied,IDOC-20052,2026-04-09 03:14:49.497428+00:00
+60,9,Large Seed Facility 1,Expansion Bed 15,occupied,IDOC-20053,2026-04-09 03:14:49.504382+00:00
+61,9,Large Seed Facility 1,Expansion Bed 16,occupied,IDOC-20054,2026-04-09 03:14:49.511118+00:00
+62,9,Large Seed Facility 1,Expansion Bed 17,occupied,IDOC-20055,2026-04-09 03:14:49.517622+00:00
+63,9,Large Seed Facility 1,Expansion Bed 18,occupied,IDOC-20056,2026-04-09 03:14:49.524100+00:00
+64,9,Large Seed Facility 1,Expansion Bed 19,occupied,IDOC-20057,2026-04-09 03:14:49.530742+00:00
+65,9,Large Seed Facility 1,Expansion Bed 20,occupied,IDOC-20058,2026-04-09 03:14:49.537906+00:00
+66,10,Large Seed Facility 2,Expansion Bed 1,occupied,IDOC-20059,2026-04-09 03:14:49.549936+00:00
+67,10,Large Seed Facility 2,Expansion Bed 2,occupied,IDOC-20060,2026-04-09 03:14:49.556715+00:00
+68,10,Large Seed Facility 2,Expansion Bed 3,occupied,IDOC-20061,2026-04-09 03:14:49.562830+00:00
+69,10,Large Seed Facility 2,Expansion Bed 4,occupied,IDOC-20062,2026-04-09 03:14:49.569386+00:00
+70,10,Large Seed Facility 2,Expansion Bed 5,occupied,IDOC-20063,2026-04-09 03:14:49.576056+00:00
+71,10,Large Seed Facility 2,Expansion Bed 6,occupied,IDOC-20064,2026-04-09 03:14:49.582006+00:00
+72,10,Large Seed Facility 2,Expansion Bed 7,occupied,IDOC-20065,2026-04-09 03:14:49.589513+00:00
+73,10,Large Seed Facility 2,Expansion Bed 8,occupied,IDOC-20066,2026-04-09 03:14:49.594897+00:00
+74,10,Large Seed Facility 2,Expansion Bed 9,occupied,IDOC-20067,2026-04-09 03:14:49.609332+00:00
+75,10,Large Seed Facility 2,Expansion Bed 10,occupied,IDOC-20068,2026-04-09 03:14:49.616441+00:00
+76,10,Large Seed Facility 2,Expansion Bed 11,occupied,IDOC-20069,2026-04-09 03:14:49.623255+00:00
+77,10,Large Seed Facility 2,Expansion Bed 12,occupied,IDOC-20070,2026-04-09 03:14:49.628990+00:00
+78,10,Large Seed Facility 2,Expansion Bed 13,occupied,IDOC-20071,2026-04-09 03:14:49.635081+00:00
+79,10,Large Seed Facility 2,Expansion Bed 14,occupied,IDOC-20072,2026-04-09 03:14:49.641533+00:00
+80,10,Large Seed Facility 2,Expansion Bed 15,occupied,IDOC-20073,2026-04-09 03:14:49.648474+00:00
+82,10,Large Seed Facility 2,Expansion Bed 17,occupied,IDOC-20075,2026-04-09 03:14:49.661113+00:00
+95,11,Large Seed Facility 3,Expansion Bed 10,available,,2026-04-09 03:14:34.944443+00:00
+96,11,Large Seed Facility 3,Expansion Bed 11,available,,2026-04-09 03:14:34.951431+00:00
+97,11,Large Seed Facility 3,Expansion Bed 12,available,,2026-04-09 03:14:34.957125+00:00
+98,11,Large Seed Facility 3,Expansion Bed 13,available,,2026-04-09 03:14:34.963255+00:00
+99,11,Large Seed Facility 3,Expansion Bed 14,available,,2026-04-09 03:14:34.969236+00:00
+100,11,Large Seed Facility 3,Expansion Bed 15,available,,2026-04-09 03:14:34.975361+00:00
+101,11,Large Seed Facility 3,Expansion Bed 16,available,,2026-04-09 03:14:34.981040+00:00
+102,11,Large Seed Facility 3,Expansion Bed 17,available,,2026-04-09 03:14:34.989695+00:00
+103,11,Large Seed Facility 3,Expansion Bed 18,available,,2026-04-09 03:14:34.995424+00:00
+104,11,Large Seed Facility 3,Expansion Bed 19,available,,2026-04-09 03:14:35.001374+00:00
+105,11,Large Seed Facility 3,Expansion Bed 20,available,,2026-04-09 03:14:35.007857+00:00
+106,12,Large Seed Facility 4,Expansion Bed 1,available,,2026-04-09 03:14:35.014004+00:00
+107,12,Large Seed Facility 4,Expansion Bed 2,available,,2026-04-09 03:14:35.029076+00:00
+108,12,Large Seed Facility 4,Expansion Bed 3,available,,2026-04-09 03:14:35.036364+00:00
+109,12,Large Seed Facility 4,Expansion Bed 4,available,,2026-04-09 03:14:35.043303+00:00
+110,12,Large Seed Facility 4,Expansion Bed 5,available,,2026-04-09 03:14:35.050088+00:00
+111,12,Large Seed Facility 4,Expansion Bed 6,available,,2026-04-09 03:14:35.055837+00:00
+112,12,Large Seed Facility 4,Expansion Bed 7,available,,2026-04-09 03:14:35.062387+00:00
+113,12,Large Seed Facility 4,Expansion Bed 8,available,,2026-04-09 03:14:35.080409+00:00
+114,12,Large Seed Facility 4,Expansion Bed 9,available,,2026-04-09 03:14:35.102059+00:00
+115,12,Large Seed Facility 4,Expansion Bed 10,available,,2026-04-09 03:14:35.112444+00:00
+116,12,Large Seed Facility 4,Expansion Bed 11,available,,2026-04-09 03:14:35.125926+00:00
+117,12,Large Seed Facility 4,Expansion Bed 12,available,,2026-04-09 03:14:35.143723+00:00
+118,12,Large Seed Facility 4,Expansion Bed 13,available,,2026-04-09 03:14:35.149508+00:00
+119,12,Large Seed Facility 4,Expansion Bed 14,available,,2026-04-09 03:14:35.156090+00:00
+120,12,Large Seed Facility 4,Expansion Bed 15,available,,2026-04-09 03:14:35.165758+00:00
+121,12,Large Seed Facility 4,Expansion Bed 16,available,,2026-04-09 03:14:35.170333+00:00
+122,12,Large Seed Facility 4,Expansion Bed 17,available,,2026-04-09 03:14:35.185349+00:00
+123,12,Large Seed Facility 4,Expansion Bed 18,available,,2026-04-09 03:14:35.192233+00:00
+124,12,Large Seed Facility 4,Expansion Bed 19,available,,2026-04-09 03:14:35.215457+00:00
+125,12,Large Seed Facility 4,Expansion Bed 20,available,,2026-04-09 03:14:35.231257+00:00
+126,13,Large Seed Facility 5,Expansion Bed 1,available,,2026-04-09 03:14:35.248383+00:00
+127,13,Large Seed Facility 5,Expansion Bed 2,available,,2026-04-09 03:14:35.265015+00:00
+128,13,Large Seed Facility 5,Expansion Bed 3,available,,2026-04-09 03:14:35.282228+00:00
+129,13,Large Seed Facility 5,Expansion Bed 4,available,,2026-04-09 03:14:35.302608+00:00
+130,13,Large Seed Facility 5,Expansion Bed 5,available,,2026-04-09 03:14:35.310836+00:00
+131,13,Large Seed Facility 5,Expansion Bed 6,available,,2026-04-09 03:14:35.316434+00:00
+132,13,Large Seed Facility 5,Expansion Bed 7,available,,2026-04-09 03:14:35.324299+00:00
+133,13,Large Seed Facility 5,Expansion Bed 8,available,,2026-04-09 03:14:35.335515+00:00
+134,13,Large Seed Facility 5,Expansion Bed 9,available,,2026-04-09 03:14:35.367035+00:00
+135,13,Large Seed Facility 5,Expansion Bed 10,available,,2026-04-09 03:14:35.373917+00:00
+136,13,Large Seed Facility 5,Expansion Bed 11,available,,2026-04-09 03:14:35.421537+00:00
+137,13,Large Seed Facility 5,Expansion Bed 12,available,,2026-04-09 03:14:35.439776+00:00
+138,13,Large Seed Facility 5,Expansion Bed 13,available,,2026-04-09 03:14:35.448194+00:00
+139,13,Large Seed Facility 5,Expansion Bed 14,available,,2026-04-09 03:14:35.456514+00:00
+140,13,Large Seed Facility 5,Expansion Bed 15,available,,2026-04-09 03:14:35.462705+00:00
+141,13,Large Seed Facility 5,Expansion Bed 16,available,,2026-04-09 03:14:35.468635+00:00
+142,13,Large Seed Facility 5,Expansion Bed 17,available,,2026-04-09 03:14:35.474438+00:00
+143,13,Large Seed Facility 5,Expansion Bed 18,available,,2026-04-09 03:14:35.480277+00:00
+144,13,Large Seed Facility 5,Expansion Bed 19,available,,2026-04-09 03:14:35.493000+00:00
+145,13,Large Seed Facility 5,Expansion Bed 20,available,,2026-04-09 03:14:35.511962+00:00
+146,14,Large Seed Facility 6,Expansion Bed 1,available,,2026-04-09 03:14:35.520873+00:00
+147,14,Large Seed Facility 6,Expansion Bed 2,available,,2026-04-09 03:14:35.530524+00:00
+148,14,Large Seed Facility 6,Expansion Bed 3,available,,2026-04-09 03:14:35.537569+00:00
+149,14,Large Seed Facility 6,Expansion Bed 4,available,,2026-04-09 03:14:35.543337+00:00
+150,14,Large Seed Facility 6,Expansion Bed 5,available,,2026-04-09 03:14:35.549605+00:00
+151,14,Large Seed Facility 6,Expansion Bed 6,available,,2026-04-09 03:14:35.556134+00:00
+152,14,Large Seed Facility 6,Expansion Bed 7,available,,2026-04-09 03:14:35.565194+00:00
+153,14,Large Seed Facility 6,Expansion Bed 8,available,,2026-04-09 03:14:35.571215+00:00
+154,14,Large Seed Facility 6,Expansion Bed 9,available,,2026-04-09 03:14:35.579342+00:00
+155,14,Large Seed Facility 6,Expansion Bed 10,available,,2026-04-09 03:14:35.585770+00:00
+156,14,Large Seed Facility 6,Expansion Bed 11,available,,2026-04-09 03:14:35.593353+00:00
+157,14,Large Seed Facility 6,Expansion Bed 12,available,,2026-04-09 03:14:35.600264+00:00
+158,14,Large Seed Facility 6,Expansion Bed 13,available,,2026-04-09 03:14:35.608084+00:00
+159,14,Large Seed Facility 6,Expansion Bed 14,available,,2026-04-09 03:14:35.614822+00:00
+160,14,Large Seed Facility 6,Expansion Bed 15,available,,2026-04-09 03:14:35.621487+00:00
+161,14,Large Seed Facility 6,Expansion Bed 16,available,,2026-04-09 03:14:35.628640+00:00
+162,14,Large Seed Facility 6,Expansion Bed 17,available,,2026-04-09 03:14:35.635076+00:00
+163,14,Large Seed Facility 6,Expansion Bed 18,available,,2026-04-09 03:14:35.642180+00:00
+164,14,Large Seed Facility 6,Expansion Bed 19,available,,2026-04-09 03:14:35.649218+00:00
+165,14,Large Seed Facility 6,Expansion Bed 20,available,,2026-04-09 03:14:35.655842+00:00
+166,15,Large Seed Facility 7,Expansion Bed 1,available,,2026-04-09 03:14:35.663760+00:00
+167,15,Large Seed Facility 7,Expansion Bed 2,available,,2026-04-09 03:14:35.669982+00:00
+168,15,Large Seed Facility 7,Expansion Bed 3,available,,2026-04-09 03:14:35.676062+00:00
+169,15,Large Seed Facility 7,Expansion Bed 4,available,,2026-04-09 03:14:35.682365+00:00
+170,15,Large Seed Facility 7,Expansion Bed 5,available,,2026-04-09 03:14:35.688910+00:00
+171,15,Large Seed Facility 7,Expansion Bed 6,available,,2026-04-09 03:14:35.693872+00:00
+172,15,Large Seed Facility 7,Expansion Bed 7,available,,2026-04-09 03:14:35.699045+00:00
+173,15,Large Seed Facility 7,Expansion Bed 8,available,,2026-04-09 03:14:35.705315+00:00
+174,15,Large Seed Facility 7,Expansion Bed 9,available,,2026-04-09 03:14:35.710967+00:00
+175,15,Large Seed Facility 7,Expansion Bed 10,available,,2026-04-09 03:14:35.718386+00:00
+176,15,Large Seed Facility 7,Expansion Bed 11,available,,2026-04-09 03:14:35.724741+00:00
+177,15,Large Seed Facility 7,Expansion Bed 12,available,,2026-04-09 03:14:35.731899+00:00
+178,15,Large Seed Facility 7,Expansion Bed 13,available,,2026-04-09 03:14:35.739125+00:00
+179,15,Large Seed Facility 7,Expansion Bed 14,available,,2026-04-09 03:14:35.745852+00:00
+180,15,Large Seed Facility 7,Expansion Bed 15,available,,2026-04-09 03:14:35.751604+00:00
+181,15,Large Seed Facility 7,Expansion Bed 16,available,,2026-04-09 03:14:35.759451+00:00
+182,15,Large Seed Facility 7,Expansion Bed 17,available,,2026-04-09 03:14:35.780827+00:00
+183,15,Large Seed Facility 7,Expansion Bed 18,available,,2026-04-09 03:14:35.791700+00:00
+184,15,Large Seed Facility 7,Expansion Bed 19,available,,2026-04-09 03:14:35.802053+00:00
+185,15,Large Seed Facility 7,Expansion Bed 20,available,,2026-04-09 03:14:35.815319+00:00
+186,16,Large Seed Facility 8,Expansion Bed 1,available,,2026-04-09 03:14:35.832996+00:00
+187,16,Large Seed Facility 8,Expansion Bed 2,available,,2026-04-09 03:14:35.838636+00:00
+188,16,Large Seed Facility 8,Expansion Bed 3,available,,2026-04-09 03:14:35.852107+00:00
+189,16,Large Seed Facility 8,Expansion Bed 4,available,,2026-04-09 03:14:35.857505+00:00
+190,16,Large Seed Facility 8,Expansion Bed 5,available,,2026-04-09 03:14:35.871659+00:00
+191,16,Large Seed Facility 8,Expansion Bed 6,available,,2026-04-09 03:14:35.879756+00:00
+192,16,Large Seed Facility 8,Expansion Bed 7,available,,2026-04-09 03:14:35.887965+00:00
+193,16,Large Seed Facility 8,Expansion Bed 8,available,,2026-04-09 03:14:35.893111+00:00
+194,16,Large Seed Facility 8,Expansion Bed 9,available,,2026-04-09 03:14:35.901029+00:00
+195,16,Large Seed Facility 8,Expansion Bed 10,available,,2026-04-09 03:14:35.919624+00:00
+196,16,Large Seed Facility 8,Expansion Bed 11,available,,2026-04-09 03:14:35.925000+00:00
+197,16,Large Seed Facility 8,Expansion Bed 12,available,,2026-04-09 03:14:35.931308+00:00
+198,16,Large Seed Facility 8,Expansion Bed 13,available,,2026-04-09 03:14:35.937298+00:00
+199,16,Large Seed Facility 8,Expansion Bed 14,available,,2026-04-09 03:14:35.945510+00:00
+200,16,Large Seed Facility 8,Expansion Bed 15,available,,2026-04-09 03:14:35.953485+00:00
+201,16,Large Seed Facility 8,Expansion Bed 16,available,,2026-04-09 03:14:35.962818+00:00
+202,16,Large Seed Facility 8,Expansion Bed 17,available,,2026-04-09 03:14:35.970075+00:00
+203,16,Large Seed Facility 8,Expansion Bed 18,available,,2026-04-09 03:14:35.976918+00:00
+204,16,Large Seed Facility 8,Expansion Bed 19,available,,2026-04-09 03:14:35.986325+00:00
+205,16,Large Seed Facility 8,Expansion Bed 20,available,,2026-04-09 03:14:35.994544+00:00
+206,17,Large Seed Facility 9,Expansion Bed 1,available,,2026-04-09 03:14:36.003253+00:00
+207,17,Large Seed Facility 9,Expansion Bed 2,available,,2026-04-09 03:14:36.015874+00:00
+208,17,Large Seed Facility 9,Expansion Bed 3,available,,2026-04-09 03:14:36.024314+00:00
+209,17,Large Seed Facility 9,Expansion Bed 4,available,,2026-04-09 03:14:36.029975+00:00
+210,17,Large Seed Facility 9,Expansion Bed 5,available,,2026-04-09 03:14:36.039688+00:00
+211,17,Large Seed Facility 9,Expansion Bed 6,available,,2026-04-09 03:14:36.048309+00:00
+212,17,Large Seed Facility 9,Expansion Bed 7,available,,2026-04-09 03:14:36.052933+00:00
+213,17,Large Seed Facility 9,Expansion Bed 8,available,,2026-04-09 03:14:36.060838+00:00
+214,17,Large Seed Facility 9,Expansion Bed 9,available,,2026-04-09 03:14:36.068312+00:00
+215,17,Large Seed Facility 9,Expansion Bed 10,available,,2026-04-09 03:14:36.073732+00:00
+216,17,Large Seed Facility 9,Expansion Bed 11,available,,2026-04-09 03:14:36.080485+00:00
+217,17,Large Seed Facility 9,Expansion Bed 12,available,,2026-04-09 03:14:36.085602+00:00
+218,17,Large Seed Facility 9,Expansion Bed 13,available,,2026-04-09 03:14:36.091619+00:00
+219,17,Large Seed Facility 9,Expansion Bed 14,available,,2026-04-09 03:14:36.102412+00:00
+220,17,Large Seed Facility 9,Expansion Bed 15,available,,2026-04-09 03:14:36.113535+00:00
+221,17,Large Seed Facility 9,Expansion Bed 16,available,,2026-04-09 03:14:36.119229+00:00
+222,17,Large Seed Facility 9,Expansion Bed 17,available,,2026-04-09 03:14:36.232866+00:00
+223,17,Large Seed Facility 9,Expansion Bed 18,available,,2026-04-09 03:14:36.293298+00:00
+224,17,Large Seed Facility 9,Expansion Bed 19,available,,2026-04-09 03:14:36.323793+00:00
+225,17,Large Seed Facility 9,Expansion Bed 20,available,,2026-04-09 03:14:36.342468+00:00
+226,18,Large Seed Facility 10,Expansion Bed 1,available,,2026-04-09 03:14:36.361145+00:00
+227,18,Large Seed Facility 10,Expansion Bed 2,available,,2026-04-09 03:14:36.387790+00:00
+228,18,Large Seed Facility 10,Expansion Bed 3,available,,2026-04-09 03:14:36.400333+00:00
+229,18,Large Seed Facility 10,Expansion Bed 4,available,,2026-04-09 03:14:36.406916+00:00
+230,18,Large Seed Facility 10,Expansion Bed 5,available,,2026-04-09 03:14:36.412051+00:00
+231,18,Large Seed Facility 10,Expansion Bed 6,available,,2026-04-09 03:14:36.417112+00:00
+232,18,Large Seed Facility 10,Expansion Bed 7,available,,2026-04-09 03:14:36.437555+00:00
+233,18,Large Seed Facility 10,Expansion Bed 8,available,,2026-04-09 03:14:36.456527+00:00
+234,18,Large Seed Facility 10,Expansion Bed 9,available,,2026-04-09 03:14:36.476135+00:00
+235,18,Large Seed Facility 10,Expansion Bed 10,available,,2026-04-09 03:14:36.495252+00:00
+236,18,Large Seed Facility 10,Expansion Bed 11,available,,2026-04-09 03:14:36.515011+00:00
+237,18,Large Seed Facility 10,Expansion Bed 12,available,,2026-04-09 03:14:36.545037+00:00
+238,18,Large Seed Facility 10,Expansion Bed 13,available,,2026-04-09 03:14:36.573778+00:00
+239,18,Large Seed Facility 10,Expansion Bed 14,available,,2026-04-09 03:14:36.603661+00:00
+240,18,Large Seed Facility 10,Expansion Bed 15,available,,2026-04-09 03:14:36.633279+00:00
+241,18,Large Seed Facility 10,Expansion Bed 16,available,,2026-04-09 03:14:36.667699+00:00
+242,18,Large Seed Facility 10,Expansion Bed 17,available,,2026-04-09 03:14:36.703586+00:00
+243,18,Large Seed Facility 10,Expansion Bed 18,available,,2026-04-09 03:14:36.734147+00:00
+244,18,Large Seed Facility 10,Expansion Bed 19,available,,2026-04-09 03:14:36.766532+00:00
+245,18,Large Seed Facility 10,Expansion Bed 20,available,,2026-04-09 03:14:36.819351+00:00
+246,19,Large Seed Facility 11,Expansion Bed 1,available,,2026-04-09 03:14:36.855201+00:00
+247,19,Large Seed Facility 11,Expansion Bed 2,available,,2026-04-09 03:14:36.881433+00:00
+248,19,Large Seed Facility 11,Expansion Bed 3,available,,2026-04-09 03:14:36.901883+00:00
+249,19,Large Seed Facility 11,Expansion Bed 4,available,,2026-04-09 03:14:36.937524+00:00
+250,19,Large Seed Facility 11,Expansion Bed 5,available,,2026-04-09 03:14:36.971200+00:00
+251,19,Large Seed Facility 11,Expansion Bed 6,available,,2026-04-09 03:14:36.979055+00:00
+252,19,Large Seed Facility 11,Expansion Bed 7,available,,2026-04-09 03:14:36.998502+00:00
+253,19,Large Seed Facility 11,Expansion Bed 8,available,,2026-04-09 03:14:37.027592+00:00
+254,19,Large Seed Facility 11,Expansion Bed 9,available,,2026-04-09 03:14:37.059955+00:00
+255,19,Large Seed Facility 11,Expansion Bed 10,available,,2026-04-09 03:14:37.090093+00:00
+256,19,Large Seed Facility 11,Expansion Bed 11,available,,2026-04-09 03:14:37.110605+00:00
+257,19,Large Seed Facility 11,Expansion Bed 12,available,,2026-04-09 03:14:37.128187+00:00
+258,19,Large Seed Facility 11,Expansion Bed 13,available,,2026-04-09 03:14:37.153710+00:00
+259,19,Large Seed Facility 11,Expansion Bed 14,available,,2026-04-09 03:14:37.206346+00:00
+260,19,Large Seed Facility 11,Expansion Bed 15,available,,2026-04-09 03:14:37.223365+00:00
+261,19,Large Seed Facility 11,Expansion Bed 16,available,,2026-04-09 03:14:37.243014+00:00
+262,19,Large Seed Facility 11,Expansion Bed 17,available,,2026-04-09 03:14:37.272660+00:00
+263,19,Large Seed Facility 11,Expansion Bed 18,available,,2026-04-09 03:14:37.302705+00:00
+264,19,Large Seed Facility 11,Expansion Bed 19,available,,2026-04-09 03:14:37.332742+00:00
+265,19,Large Seed Facility 11,Expansion Bed 20,available,,2026-04-09 03:14:37.350568+00:00
+266,20,Large Seed Facility 12,Expansion Bed 1,available,,2026-04-09 03:14:37.368383+00:00
+267,20,Large Seed Facility 12,Expansion Bed 2,available,,2026-04-09 03:14:37.388170+00:00
+268,20,Large Seed Facility 12,Expansion Bed 3,available,,2026-04-09 03:14:37.405255+00:00
+269,20,Large Seed Facility 12,Expansion Bed 4,available,,2026-04-09 03:14:37.426026+00:00
+270,20,Large Seed Facility 12,Expansion Bed 5,available,,2026-04-09 03:14:37.446648+00:00
+271,20,Large Seed Facility 12,Expansion Bed 6,available,,2026-04-09 03:14:37.464039+00:00
+272,20,Large Seed Facility 12,Expansion Bed 7,available,,2026-04-09 03:14:37.478454+00:00
+273,20,Large Seed Facility 12,Expansion Bed 8,available,,2026-04-09 03:14:37.496650+00:00
+274,20,Large Seed Facility 12,Expansion Bed 9,available,,2026-04-09 03:14:37.515279+00:00
+275,20,Large Seed Facility 12,Expansion Bed 10,available,,2026-04-09 03:14:37.533083+00:00
+276,20,Large Seed Facility 12,Expansion Bed 11,available,,2026-04-09 03:14:37.554179+00:00
+277,20,Large Seed Facility 12,Expansion Bed 12,available,,2026-04-09 03:14:37.586004+00:00
+278,20,Large Seed Facility 12,Expansion Bed 13,available,,2026-04-09 03:14:37.605000+00:00
+279,20,Large Seed Facility 12,Expansion Bed 14,available,,2026-04-09 03:14:37.620912+00:00
+280,20,Large Seed Facility 12,Expansion Bed 15,available,,2026-04-09 03:14:37.636877+00:00
+281,20,Large Seed Facility 12,Expansion Bed 16,available,,2026-04-09 03:14:37.654521+00:00
+282,20,Large Seed Facility 12,Expansion Bed 17,available,,2026-04-09 03:14:37.674132+00:00
+283,20,Large Seed Facility 12,Expansion Bed 18,available,,2026-04-09 03:14:37.692536+00:00
+284,20,Large Seed Facility 12,Expansion Bed 19,available,,2026-04-09 03:14:37.738959+00:00
+285,20,Large Seed Facility 12,Expansion Bed 20,available,,2026-04-09 03:14:37.758359+00:00
+286,21,Large Seed Facility 13,Expansion Bed 1,available,,2026-04-09 03:14:37.775729+00:00
+287,21,Large Seed Facility 13,Expansion Bed 2,available,,2026-04-09 03:14:37.792292+00:00
+288,21,Large Seed Facility 13,Expansion Bed 3,available,,2026-04-09 03:14:37.812764+00:00
+289,21,Large Seed Facility 13,Expansion Bed 4,available,,2026-04-09 03:14:37.830372+00:00
+290,21,Large Seed Facility 13,Expansion Bed 5,available,,2026-04-09 03:14:37.849681+00:00
+291,21,Large Seed Facility 13,Expansion Bed 6,available,,2026-04-09 03:14:37.870424+00:00
+292,21,Large Seed Facility 13,Expansion Bed 7,available,,2026-04-09 03:14:37.901688+00:00
+293,21,Large Seed Facility 13,Expansion Bed 8,available,,2026-04-09 03:14:37.919773+00:00
+294,21,Large Seed Facility 13,Expansion Bed 9,available,,2026-04-09 03:14:37.939081+00:00
+295,21,Large Seed Facility 13,Expansion Bed 10,available,,2026-04-09 03:14:37.957055+00:00
+296,21,Large Seed Facility 13,Expansion Bed 11,available,,2026-04-09 03:14:38.009400+00:00
+297,21,Large Seed Facility 13,Expansion Bed 12,available,,2026-04-09 03:14:38.138964+00:00
+298,21,Large Seed Facility 13,Expansion Bed 13,available,,2026-04-09 03:14:38.278329+00:00
+299,21,Large Seed Facility 13,Expansion Bed 14,available,,2026-04-09 03:14:38.372763+00:00
+300,21,Large Seed Facility 13,Expansion Bed 15,available,,2026-04-09 03:14:38.401729+00:00
+301,21,Large Seed Facility 13,Expansion Bed 16,available,,2026-04-09 03:14:38.418141+00:00
+302,21,Large Seed Facility 13,Expansion Bed 17,available,,2026-04-09 03:14:38.434586+00:00
+303,21,Large Seed Facility 13,Expansion Bed 18,available,,2026-04-09 03:14:38.451829+00:00
+304,21,Large Seed Facility 13,Expansion Bed 19,available,,2026-04-09 03:14:38.467416+00:00
+305,21,Large Seed Facility 13,Expansion Bed 20,available,,2026-04-09 03:14:38.483497+00:00
+306,22,Large Seed Facility 14,Expansion Bed 1,available,,2026-04-09 03:14:38.499403+00:00
+307,22,Large Seed Facility 14,Expansion Bed 2,available,,2026-04-09 03:14:38.515601+00:00
+308,22,Large Seed Facility 14,Expansion Bed 3,available,,2026-04-09 03:14:38.526189+00:00
+309,22,Large Seed Facility 14,Expansion Bed 4,available,,2026-04-09 03:14:38.552101+00:00
+310,22,Large Seed Facility 14,Expansion Bed 5,available,,2026-04-09 03:14:38.568782+00:00
+311,22,Large Seed Facility 14,Expansion Bed 6,available,,2026-04-09 03:14:38.579156+00:00
+312,22,Large Seed Facility 14,Expansion Bed 7,available,,2026-04-09 03:14:38.592407+00:00
+313,22,Large Seed Facility 14,Expansion Bed 8,available,,2026-04-09 03:14:38.608207+00:00
+314,22,Large Seed Facility 14,Expansion Bed 9,available,,2026-04-09 03:14:38.617794+00:00
+315,22,Large Seed Facility 14,Expansion Bed 10,available,,2026-04-09 03:14:38.633594+00:00
+316,22,Large Seed Facility 14,Expansion Bed 11,available,,2026-04-09 03:14:38.640085+00:00
+317,22,Large Seed Facility 14,Expansion Bed 12,available,,2026-04-09 03:14:38.646111+00:00
+318,22,Large Seed Facility 14,Expansion Bed 13,available,,2026-04-09 03:14:38.652991+00:00
+319,22,Large Seed Facility 14,Expansion Bed 14,available,,2026-04-09 03:14:38.658605+00:00
+320,22,Large Seed Facility 14,Expansion Bed 15,available,,2026-04-09 03:14:38.677055+00:00
+321,22,Large Seed Facility 14,Expansion Bed 16,available,,2026-04-09 03:14:38.684003+00:00
+322,22,Large Seed Facility 14,Expansion Bed 17,available,,2026-04-09 03:14:38.689566+00:00
+323,22,Large Seed Facility 14,Expansion Bed 18,available,,2026-04-09 03:14:38.695936+00:00
+324,22,Large Seed Facility 14,Expansion Bed 19,available,,2026-04-09 03:14:38.702682+00:00
+325,22,Large Seed Facility 14,Expansion Bed 20,available,,2026-04-09 03:14:38.720452+00:00
+326,23,Large Seed Facility 15,Expansion Bed 1,available,,2026-04-09 03:14:38.725698+00:00
+327,23,Large Seed Facility 15,Expansion Bed 2,available,,2026-04-09 03:14:38.733030+00:00
+328,23,Large Seed Facility 15,Expansion Bed 3,available,,2026-04-09 03:14:38.739198+00:00
+329,23,Large Seed Facility 15,Expansion Bed 4,available,,2026-04-09 03:14:38.744546+00:00
+330,23,Large Seed Facility 15,Expansion Bed 5,available,,2026-04-09 03:14:38.762208+00:00
+331,23,Large Seed Facility 15,Expansion Bed 6,available,,2026-04-09 03:14:38.770000+00:00
+332,23,Large Seed Facility 15,Expansion Bed 7,available,,2026-04-09 03:14:38.776630+00:00
+333,23,Large Seed Facility 15,Expansion Bed 8,available,,2026-04-09 03:14:38.782557+00:00
+334,23,Large Seed Facility 15,Expansion Bed 9,available,,2026-04-09 03:14:38.800045+00:00
+335,23,Large Seed Facility 15,Expansion Bed 10,available,,2026-04-09 03:14:38.805479+00:00
+336,23,Large Seed Facility 15,Expansion Bed 11,available,,2026-04-09 03:14:38.871056+00:00
+337,23,Large Seed Facility 15,Expansion Bed 12,available,,2026-04-09 03:14:38.912612+00:00
+338,23,Large Seed Facility 15,Expansion Bed 13,available,,2026-04-09 03:14:38.933159+00:00
+339,23,Large Seed Facility 15,Expansion Bed 14,available,,2026-04-09 03:14:38.937443+00:00
+340,23,Large Seed Facility 15,Expansion Bed 15,available,,2026-04-09 03:14:38.943675+00:00
+341,23,Large Seed Facility 15,Expansion Bed 16,available,,2026-04-09 03:14:38.949134+00:00
+342,23,Large Seed Facility 15,Expansion Bed 17,available,,2026-04-09 03:14:38.955896+00:00
+343,23,Large Seed Facility 15,Expansion Bed 18,available,,2026-04-09 03:14:38.961610+00:00
+344,23,Large Seed Facility 15,Expansion Bed 19,available,,2026-04-09 03:14:38.967368+00:00
+345,23,Large Seed Facility 15,Expansion Bed 20,available,,2026-04-09 03:14:38.975973+00:00
+43,8,Twin Falls Recovery,Bed 3,occupied,IDOC-20036,2026-04-09 03:14:49.365386+00:00
+58,9,Large Seed Facility 1,Expansion Bed 13,occupied,IDOC-20051,2026-04-09 03:14:49.483817+00:00
+81,10,Large Seed Facility 2,Expansion Bed 16,occupied,IDOC-20074,2026-04-09 03:14:49.654872+00:00

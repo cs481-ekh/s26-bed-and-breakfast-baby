@@ -1,0 +1,26 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and tooling artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local environment and editor metadata
+.env
+.env.*
+.vscode/
+.idea/
+
+# VCS metadata
+.git/
+.gitignore
+
+# Local exports and temp artifacts
+csvout/
+*.log
