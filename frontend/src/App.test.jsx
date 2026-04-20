@@ -37,6 +37,15 @@ describe("App", () => {
         ]);
       }
 
+      if (url === "/api/users/create-invite/") {
+        return jsonResponse({
+          message: "Invite created for new.user@example.com.",
+          invite_link: "http://localhost:3000/register?token=test-token-123",
+          expires_at: "2026-04-22T00:00:00Z",
+          token: "test-token-123"
+        }, 201);
+      }
+
       return jsonResponse({}, 200);
     }));
 
@@ -56,7 +65,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: /^users$/i })).toBeInTheDocument();
   });
 
-  test("create account stub generates a link preview", async () => {
+  test("create account generates an invite link", async () => {
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /create account/i }));
@@ -66,7 +75,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /generate link/i }));
 
     expect(
-      await screen.findByText(/stub only: invite link generated locally/i)
+      await screen.findByText(/invite created successfully/i)
     ).toBeInTheDocument();
 
     await waitFor(() => {

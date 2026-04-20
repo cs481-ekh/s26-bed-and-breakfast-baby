@@ -64,6 +64,10 @@
   min-height: 0;
 }
 
+.admin-users-panel {
+  height: 100%;
+}
+
 .admin-users-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -90,10 +94,72 @@
   margin-bottom: 0.4rem;
 }
 
+.admin-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-selected-user-bar {
+  background: #f5f8ff;
+  border: 1px solid #d6e2f4;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-selected-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-selected-label {
+  font-weight: 600;
+  color: #1d2c44;
+}
+
+.admin-selected-role {
+  font-size: 0.85rem;
+  color: #4f617d;
+}
+
+.admin-selected-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-role-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #c9d6e6;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  min-width: 120px;
+}
+
+.admin-compact-button {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-message-bar {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
 .admin-panel-card .user-table-container {
   margin-top: 0;
-  height: calc(100% - 2rem);
-  max-height: calc(100vh - 240px);
+  height: calc(100% - 3rem);
+  max-height: calc(100vh - 200px);
   overflow: auto;
   padding: 0;
   border: 0;
@@ -202,6 +268,13 @@
   background: #f5f8ff;
   border: 1px solid #d6e2f4;
   border-radius: 10px;
+}
+
+.admin-link-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
 }
 
 .admin-link-preview p {
