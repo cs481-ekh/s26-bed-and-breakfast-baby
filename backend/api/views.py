@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urlparse
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.password_validation import validate_password
@@ -154,6 +157,146 @@ class SignUpView(APIView):
         )
 
 
+class ValidateInviteView(APIView):
+    """
+    Validate an invitation token and return invite details.
+    Used by the frontend to check if a token is valid before showing signup form.
+    """
+    def post(self, request):
+        from housing.models import Invite
+        
+        token = request.data.get('token')
+        
+        if not token:
+            return Response(
+                {"error": "Token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            invite = Invite.objects.get(token=token)
+            
+            if invite.is_used:
+                return Response(
+                    {"error": "This invite has already been used."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if invite.is_expired:
+                return Response(
+                    {"error": "This invite has expired."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            return Response(
+                {
+                    "email": invite.email,
+                    "role": invite.role,
+                    "expires_at": invite.expires_at.isoformat(),
+                },
+                status=status.HTTP_200_OK
+            )
+        except Invite.DoesNotExist:
+            return Response(
+                {"error": "Invalid invite token."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SignUpWithInviteView(APIView):
+    """
+    Complete account creation using a valid invitation token.
+    """
+    def post(self, request):
+        from housing.models import Invite
+        
+        token = request.data.get('token')
+        first_name = (request.data.get("first_name") or "").strip()
+        last_name = (request.data.get("last_name") or "").strip()
+        employee_id = (request.data.get("employee_id") or "").strip()
+        password = request.data.get("password") or ""
+        confirm_password = request.data.get("confirm_password") or ""
+
+        # Validate token first
+        if not token:
+            return Response(
+                {"error": "Token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            invite = Invite.objects.get(token=token)
+        except Invite.DoesNotExist:
+            return Response(
+                {"error": "Invalid invite token."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if invite.is_used:
+            return Response(
+                {"error": "This invite has already been used."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if invite.is_expired:
+            return Response(
+                {"error": "This invite has expired."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Collect all validation errors in one response for better form UX.
+        errors = {}
+        if not first_name:
+            errors["first_name"] = "First name is required."
+        if not last_name:
+            errors["last_name"] = "Last name is required."
+        if not employee_id:
+            errors["employee_id"] = "Employee ID is required."
+        if not password:
+            errors["password"] = "Password is required."
+        if not confirm_password:
+            errors["confirm_password"] = "Please confirm your password."
+
+        if password and confirm_password and password != confirm_password:
+            errors["confirm_password"] = "Passwords do not match."
+
+        if password:
+            try:
+                validate_password(password)
+            except ValidationError as exc:
+                errors["password"] = " ".join(exc.messages)
+
+        if errors:
+            return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the user
+        user = User.objects.create_user(
+            username=invite.email,
+            first_name=first_name,
+            last_name=last_name,
+            password=password,
+            email=invite.email,
+            role=invite.role,
+        )
+        
+        # Mark invite as used
+        invite.used_at = timezone.now()
+        invite.save()
+
+        return Response(
+            {
+                "id": user.id,
+                "email": user.email,
+                "employee_id": employee_id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "role": user.role,
+                "redirect_to": "/",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing users.
@@ -240,6 +383,112 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(
                 {
                     "message": f"User {username} has been disabled.",
+                    "user": UserSerializer(user).data
+                },
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": f"User {username} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['post'], url_path='create-invite', permission_classes=[IsAuthenticated])
+    def create_invite(self, request):
+        """
+        Create a secure invitation token for account creation.
+        Expects: {"email": "user@example.com", "role": "case_manager"}
+        """
+        from housing.models import Invite
+        import secrets
+        from datetime import timedelta
+        
+        email = (request.data.get('email') or '').strip()
+        role = (request.data.get('role') or User.Role.CASE_MANAGER).strip()
+        
+        if not email:
+            return Response(
+                {"error": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        valid_roles = {choice[0] for choice in User.Role.choices}
+        if role not in valid_roles:
+            return Response(
+                {"error": "Invalid role specified."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user already exists
+        if User.objects.filter(username=email).exists():
+            return Response(
+                {"error": "A user with this email already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate secure token
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + timedelta(days=3)
+        
+        # Create invite
+        invite = Invite.objects.create(
+            email=email,
+            role=role,
+            token=token,
+            expires_at=expires_at,
+            created_by=request.user if request.user.is_authenticated else None
+        )
+        
+        # Build an invite link that points to the frontend signup page.
+        frontend_origin = request.headers.get("Origin") or request.META.get("HTTP_REFERER")
+        if frontend_origin:
+            parsed = urlparse(frontend_origin)
+            if parsed.scheme and parsed.netloc:
+                frontend_origin = f"{parsed.scheme}://{parsed.netloc}"
+            else:
+                frontend_origin = None
+
+        if not frontend_origin:
+            frontend_origin = os.environ.get("FRONTEND_URL")
+
+        if not frontend_origin:
+            frontend_origin = f"{request.scheme}://{request.get_host()}"
+
+        frontend_origin = frontend_origin.rstrip("/")
+        invite_link = f"{frontend_origin}/register?token={token}"
+        
+        return Response(
+            {
+                "message": f"Invite created for {email}.",
+                "invite_link": invite_link,
+                "expires_at": invite.expires_at.isoformat(),
+                "token": token  # For debugging - remove in production
+            },
+            status=status.HTTP_201_CREATED
+        )
+    
+    @action(detail=False, methods=['post'], url_path='enable')
+    def enable_user(self, request):
+        """
+        Enable a user account by setting is_active to True.
+        Expects: {"username": "user@example.com"}
+        """
+        username = request.data.get('username')
+        
+        if not username:
+            return Response(
+                {"error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = User.objects.get(username=username)
+            user.is_active = True
+            user.save()
+            
+            return Response(
+                {
+                    "message": f"User {username} has been enabled.",
                     "user": UserSerializer(user).data
                 },
                 status=status.HTTP_200_OK

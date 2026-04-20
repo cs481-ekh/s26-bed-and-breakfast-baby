@@ -50,6 +50,44 @@ class User(AbstractUser):
         return f"{self.get_full_name()} ({self.get_role_display()})"
 
 
+class Invite(models.Model):
+    """
+    Secure invitation tokens for account creation.
+    Tokens expire after a set period and can only be used once.
+    """
+    email = models.EmailField()
+    role = models.CharField(
+        max_length=20,
+        choices=User.Role.choices,
+        default=User.Role.CASE_MANAGER,
+    )
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_invites",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Invite for {self.email} ({self.get_role_display()})"
+
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_used(self):
+        return self.used_at is not None
+
+
 # ===========================================================================
 # Geographic / Organizational
 # ===========================================================================

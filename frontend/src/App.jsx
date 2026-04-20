@@ -3,6 +3,7 @@ import AdminDash from "../admin/admin_dash";
 import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
 import LoginPage from "./LoginPage";
+import RegisterPage from "./RegisterPage";
 import { apiJson } from "./apiClient";
 import RolePageGate from "./RolePageGate";
 import ProviderPage from "./ProviderPage";
@@ -64,6 +65,25 @@ function AdminPage() {
     }
   };
 
+  const handleEnableUser = async (username) => {
+    try {
+      const { response, payload } = await apiJson("/api/users/enable/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
+
+      if (!response.ok) {
+        alert(`Failed to enable user: ${payload.error || "Unknown error"}`);
+        return;
+      }
+
+      alert(`User ${username} has been enabled successfully.`);
+    } catch (error) {
+      alert(`Error enabling user: ${error.message}`);
+    }
+  };
+
   const handleChangeRole = async (username, role) => {
     try {
       const { response, payload } = await apiJson("/api/users/update-role/", {
@@ -90,6 +110,7 @@ function AdminPage() {
           onAddUser={handleAddUser}
           onRemoveUser={handleRemoveUser}
           onDisableUser={handleDisableUser}
+          onEnableUser={handleEnableUser}
           onChangeRole={handleChangeRole}
         />
       </PageTemplate>
@@ -122,6 +143,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/main-dashboard" element={<MainDashboardPageComponent />} />
         <Route path="/provider-dashboard" element={<ProviderPage />} />
         <Route path="/admin" element={<AdminPage />} />

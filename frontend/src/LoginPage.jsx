@@ -112,7 +112,7 @@ export default function LoginPage() {
                 name="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="admin or admin@idoc.example.com"
+                placeholder="Enter your username"
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
                 required

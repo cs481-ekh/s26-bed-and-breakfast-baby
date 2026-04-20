@@ -6,6 +6,8 @@ from .views import (
     HealthView,
     UserViewSet,
     SignUpView,
+    ValidateInviteView,
+    SignUpWithInviteView,
     ParoleeListView,
     BedAssignView,
     BedHoldRequestView,
@@ -42,5 +44,7 @@ urlpatterns = [
     path("provider/beds/", ProviderBedsView.as_view()),
     path("provider/assign-client/", ProviderAssignClientView.as_view()),
     path("signup/", SignUpView.as_view()),
+    path("invites/validate/", ValidateInviteView.as_view()),
+    path("signup-with-invite/", SignUpWithInviteView.as_view()),
     path("", include(router.urls)),
 ]

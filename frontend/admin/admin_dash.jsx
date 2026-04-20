@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import UserTable from "./user_table";
 import "./admin_dash.css";
+import { apiJson } from "../src/apiClient";
 
 const ROLES = [
     { value: "admin", label: "Admin" },
@@ -9,7 +10,7 @@ const ROLES = [
     { value: "provider", label: "Housing Provider" },
 ];
 
-export default function AdminDash({ onRemoveUser, onChangeRole }) {
+export default function AdminDash({ onRemoveUser, onChangeRole, onDisableUser, onEnableUser }) {
     const userTableRef = useRef(null);
     const [activePanel, setActivePanel] = useState("users");
 
@@ -21,6 +22,7 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
     const [inviteRole, setInviteRole] = useState("case_manager");
     const [inviteLink, setInviteLink] = useState("");
     const [inviteMessage, setInviteMessage] = useState("");
+    const [copyFeedback, setCopyFeedback] = useState("");
 
     const refreshUsers = () => {
         userTableRef.current?.fetchUsers?.();
@@ -57,6 +59,42 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
         }
     };
 
+    const handleDisableSelectedUser = async () => {
+        if (!selectedUser?.username) {
+            return;
+        }
+
+        const isCurrentlyActive = selectedUser.is_active;
+        const action = isCurrentlyActive ? "disable" : "enable";
+        const confirmationMessage = isCurrentlyActive
+            ? `Disable account "${selectedUser.username}"? The user will not be able to log in.`
+            : `Activate account "${selectedUser.username}"? The user will be able to log in again.`;
+
+        const confirmed = window.confirm(confirmationMessage);
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            if (isCurrentlyActive) {
+                if (onDisableUser) {
+                    await onDisableUser(selectedUser.username);
+                }
+                setUserActionMessage(`Disabled user ${selectedUser.username}.`);
+            } else {
+                if (onEnableUser) {
+                    await onEnableUser(selectedUser.username);
+                }
+                setUserActionMessage(`Activated user ${selectedUser.username}.`);
+            }
+            setSelectedUser(null);
+            refreshUsers();
+        } catch {
+            setUserActionMessage(`Unable to ${action} user right now.`);
+        }
+    };
+
     const handleUpdateSelectedRole = async () => {
         if (!selectedUser?.username) {
             return;
@@ -74,21 +112,51 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
         }
     };
 
-    const handleGenerateInvite = (event) => {
+    const handleGenerateInvite = async (event) => {
         event.preventDefault();
+        setInviteMessage("");
+        setInviteLink("");
 
         if (!inviteEmail.trim()) {
             setInviteMessage("Enter an email address first.");
             return;
         }
 
-        const token = Math.random().toString(36).slice(2, 12);
-        const link = `${window.location.origin}/register?token=${token}`;
+        try {
+            const { response, payload } = await apiJson("/api/users/create-invite/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: inviteEmail.trim(),
+                    role: inviteRole,
+                }),
+            });
 
-        setInviteLink(link);
-        setInviteMessage(
-            "Stub only: invite link generated locally. Email delivery is not implemented yet."
-        );
+            if (!response.ok) {
+                setInviteMessage(`Failed to create invite: ${payload.error || "Unknown error"}`);
+                return;
+            }
+
+            setInviteLink(payload.invite_link);
+            setInviteMessage(
+                `Invite created successfully! Copy this link and send it to ${inviteEmail}. The link expires in 3 days.`
+            );
+        } catch {
+            setInviteMessage("Failed to create invite. Please try again.");
+        }
+    };
+
+    const handleCopyLink = async () => {
+        if (!inviteLink) return;
+
+        try {
+            await navigator.clipboard.writeText(inviteLink);
+            setCopyFeedback("Copied!");
+            setTimeout(() => setCopyFeedback(""), 2000);
+        } catch {
+            setCopyFeedback("Failed to copy");
+            setTimeout(() => setCopyFeedback(""), 2000);
+        }
     };
 
     return (
@@ -117,32 +185,29 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
 
             <div className="admin-main-panel">
                 {activePanel === "users" ? (
-                    <div className="admin-users-grid">
+                    <div className="admin-users-panel">
                         <div className="admin-panel-card">
                             <div className="admin-panel-header">
                                 <h2>Users</h2>
-                                <button type="button" className="admin-secondary-button" onClick={refreshUsers}>
-                                    Refresh Table
-                                </button>
+                                <div className="admin-header-actions">
+                                    <button type="button" className="admin-secondary-button" onClick={refreshUsers}>
+                                        Refresh Table
+                                    </button>
+                                </div>
                             </div>
-                            <UserTable
-                                ref={userTableRef}
-                                onSelectUser={handleSelectUser}
-                                selectedUsername={selectedUser?.username}
-                            />
-                        </div>
-
-                        <div className="admin-action-card">
-                            <h3>User Actions</h3>
-                            {selectedUser ? (
-                                <>
-                                    <p className="admin-selection-label">Selected: <strong>{selectedUser.username}</strong></p>
-                                    <div className="admin-form">
-                                        <label htmlFor="selected-role">Role</label>
+                            
+                            {selectedUser && (
+                                <div className="admin-selected-user-bar">
+                                    <div className="admin-selected-user-info">
+                                        <span className="admin-selected-label">Selected: <strong>{selectedUser.username}</strong></span>
+                                        <span className="admin-selected-role">Role: {selectedUser.role}</span>
+                                    </div>
+                                    <div className="admin-selected-user-actions">
                                         <select
                                             id="selected-role"
                                             value={selectedRole}
                                             onChange={(event) => setSelectedRole(event.target.value)}
+                                            className="admin-role-select"
                                         >
                                             {ROLES.map((role) => (
                                                 <option key={role.value} value={role.value}>
@@ -150,28 +215,38 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
                                                 </option>
                                             ))}
                                         </select>
-                                    </div>
-                                    <div className="admin-action-buttons">
-                                        <button type="button" className="admin-primary-button" onClick={handleUpdateSelectedRole}>
-                                            Update User
+                                        <button type="button" className="admin-primary-button admin-compact-button" onClick={handleUpdateSelectedRole}>
+                                            Update Role
                                         </button>
-                                        <button type="button" className="admin-danger-button" onClick={handleRemoveSelectedUser}>
-                                            Remove User
+                                        <button type="button" className="admin-secondary-button admin-compact-button" onClick={handleDisableSelectedUser}>
+                                            {selectedUser?.is_active ? "Disable" : "Activate"}
+                                        </button>
+                                        <button type="button" className="admin-danger-button admin-compact-button" onClick={handleRemoveSelectedUser}>
+                                            Remove
                                         </button>
                                     </div>
-                                </>
-                            ) : (
-                                <p>Click a row in the users table to open actions.</p>
+                                </div>
                             )}
-                            {userActionMessage && <p className="admin-inline-message">{userActionMessage}</p>}
+                            
+                            <UserTable
+                                ref={userTableRef}
+                                onSelectUser={handleSelectUser}
+                                selectedUsername={selectedUser?.username}
+                            />
+                            
+                            {userActionMessage && (
+                                <div className="admin-message-bar">
+                                    <p className="admin-inline-message">{userActionMessage}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ) : (
                     <div className="admin-panel-card admin-create-card">
-                        <h2>Create Account (Stub)</h2>
+                        <h2>Create Account</h2>
                         <p>
-                            Fill out email and role, then generate an invite link. Sending email is intentionally not
-                            implemented yet.
+                            Generate a secure invitation link for a new user. The link will be valid for 3 days and can only be used once.
+                            Copy the generated link and send it to the user via email.
                         </p>
 
                         <form onSubmit={handleGenerateInvite} className="admin-form admin-create-form">
@@ -205,7 +280,17 @@ export default function AdminDash({ onRemoveUser, onChangeRole }) {
 
                         {inviteLink && (
                             <div className="admin-link-preview">
-                                <h3>Generated Link</h3>
+                                <div className="admin-link-header">
+                                    <h3>Generated Link</h3>
+                                    <button
+                                        type="button"
+                                        className="admin-secondary-button"
+                                        onClick={handleCopyLink}
+                                        title="Copy link to clipboard"
+                                    >
+                                        {copyFeedback || "Copy"}
+                                    </button>
+                                </div>
                                 <p>{inviteLink}</p>
                             </div>
                         )}

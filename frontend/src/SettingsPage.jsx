@@ -22,11 +22,6 @@ export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accountInfo, setAccountInfo] = useState({ username: "", role: "" });
   const [isLoadingAccount, setIsLoadingAccount] = useState(true);
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    bed_assignment_updates: true,
-    hold_request_updates: true,
-    weekly_summary: false,
-  });
 
   useEffect(() => {
     let cancelled = false;
@@ -87,11 +82,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleNotificationToggle = (event) => {
-    const { name, checked } = event.target;
-    setNotificationPrefs((prev) => ({ ...prev, [name]: checked }));
-  };
-
   return (
     <section className="settings-page" aria-labelledby="settings-title">
       <div className="settings-card">
@@ -107,44 +97,6 @@ export default function SettingsPage() {
               Role: {isLoadingAccount ? "Loading..." : ROLE_LABELS[accountInfo.role] || accountInfo.role || "Unknown"}
             </p>
           </div>
-        </section>
-
-        <section className="settings-section" aria-labelledby="notification-section-title">
-          <h2 id="notification-section-title">Email Notification Preferences</h2>
-          <div className="notification-options">
-            <label className="checkbox-option">
-              <input
-                type="checkbox"
-                name="bed_assignment_updates"
-                checked={notificationPrefs.bed_assignment_updates}
-                onChange={handleNotificationToggle}
-              />
-              Bed assignment updates
-            </label>
-
-            <label className="checkbox-option">
-              <input
-                type="checkbox"
-                name="hold_request_updates"
-                checked={notificationPrefs.hold_request_updates}
-                onChange={handleNotificationToggle}
-              />
-              Hold request updates
-            </label>
-
-            <label className="checkbox-option">
-              <input
-                type="checkbox"
-                name="weekly_summary"
-                checked={notificationPrefs.weekly_summary}
-                onChange={handleNotificationToggle}
-              />
-              Weekly summary email
-            </label>
-          </div>
-          <button type="button" className="primary-action-button">
-            Save (not implemented yet)
-          </button>
         </section>
 
         <section className="settings-section" aria-labelledby="password-section-title">
