@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from .encryption import EncryptedField, EncryptedCharField
 
 
 # ===========================================================================
@@ -25,7 +26,8 @@ class User(AbstractUser):
         choices=Role.choices,
         default=Role.CASE_MANAGER,
     )
-    phone = models.CharField(max_length=20, blank=True)
+    # Contact phone number - encrypted
+    phone = EncryptedCharField(max_length=300, blank=True)
 
     # Case managers belong to a judicial district
     district = models.ForeignKey(
@@ -115,8 +117,9 @@ class Provider(models.Model):
     """
     name = models.CharField(max_length=200)
     contact_name = models.CharField(max_length=150, blank=True)
-    contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=20, blank=True)
+    # Contact information - encrypted for security
+    contact_email = EncryptedCharField(max_length=1000, blank=True)
+    contact_phone = EncryptedCharField(max_length=300, blank=True)
     website = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -143,7 +146,8 @@ class Facility(models.Model):
         related_name="facilities",
     )
     name = models.CharField(max_length=200)
-    address = models.TextField()
+    # Facility address - encrypted for security
+    address = EncryptedField(blank=True)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=2, default="ID")
     zip_code = models.CharField(max_length=10)
@@ -231,7 +235,8 @@ class Bed(models.Model):
         default=False,
         help_text="Whether this bed is designated for sex-offender eligible placements",
     )
-    notes = models.TextField(blank=True)
+    # Bed-specific notes - encrypted for security
+    notes = EncryptedField(blank=True)
     updated_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -281,15 +286,16 @@ class Bed(models.Model):
 class Parolee(models.Model):
     """
     Minimal parolee record for bed assignment tracking.
-    No sensitive PII is stored.
+    Sensitive PII is encrypted at rest.
     """
-    idoc_id = models.CharField(
-        max_length=50,
+    # government ID and personal information - encrypted for security
+    idoc_id = EncryptedCharField(
+        max_length=300,
         unique=True,
-        help_text="IDOC-assigned identifier",
+        help_text="IDOC-assigned identifier (encrypted)",
     )
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = EncryptedField(help_text="First name (encrypted)")
+    last_name = EncryptedField(help_text="Last name (encrypted)")
     district = models.ForeignKey(
         District,
         on_delete=models.PROTECT,
@@ -348,7 +354,8 @@ class Hold(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
-    reason = models.TextField(blank=True)
+    # Hold reason - encrypted for security
+    reason = EncryptedField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(
         help_text="When the hold automatically expires",
@@ -395,7 +402,8 @@ class WaitlistEntry(models.Model):
         choices=Priority.choices,
         default=Priority.MEDIUM,
     )
-    notes = models.TextField(blank=True)
+    # Sensitive placement notes - encrypted for security
+    notes = EncryptedField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
