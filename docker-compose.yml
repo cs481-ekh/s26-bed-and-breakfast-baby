@@ -18,7 +18,7 @@ services:
       context: ./backend
     environment:
       SECRET_KEY: ${SECRET_KEY:-django-insecure-dev-key-change-in-production}
-      DEBUG: ${DEBUG:-False}
+      DEBUG: ${DEBUG:-True}
       DB_NAME: ${DB_NAME:-app}
       DB_USER: ${DB_USER:-app}
       DB_PASSWORD: ${DB_PASSWORD:-app}
