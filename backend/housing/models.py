@@ -288,11 +288,11 @@ class Parolee(models.Model):
     Minimal parolee record for bed assignment tracking.
     Sensitive PII is encrypted at rest.
     """
-    # government ID and personal information - encrypted for security
-    idoc_id = EncryptedCharField(
-        max_length=300,
+    # government ID - NOT encrypted because it's used as a queryable unique identifier
+    idoc_id = models.CharField(
+        max_length=50,
         unique=True,
-        help_text="IDOC-assigned identifier (encrypted)",
+        help_text="IDOC-assigned identifier",
     )
     first_name = EncryptedField(help_text="First name (encrypted)")
     last_name = EncryptedField(help_text="Last name (encrypted)")
