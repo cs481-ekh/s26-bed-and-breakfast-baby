@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { apiJson } from "./apiClient";
 // just gonna reuse the styling for the login page - alex
 import "./login.css";
 
 export default function RegisterPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [token, setToken] = useState("");
   const [inviteData, setInviteData] = useState(null);
@@ -23,7 +23,10 @@ export default function RegisterPage() {
 
   // Validate token on component mount
   useEffect(() => {
-    const tokenParam = searchParams.get("token");
+    // SECURITY: Extract token from URL fragment (#token) instead of query parameter
+    // The fragment is never sent to the server, so it won't appear in server logs
+    const tokenParam = location.hash ? location.hash.substring(1) : '';
+    
     if (!tokenParam) {
       setError("No invitation token provided.");
       setLoading(false);
@@ -55,7 +58,7 @@ export default function RegisterPage() {
     };
 
     validateToken();
-  }, [searchParams]);
+  }, [location.hash]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

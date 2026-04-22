@@ -19,11 +19,28 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+#need to read up on this a bit more
+from rest_framework.throttling import AnonRateThrottle
 from housing.models import Facility, User, Bed, Parolee, Hold
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
 
 
 User = get_user_model()
+
+
+# custom throttle classes for rate limiting
+# sprint 5 secruity for login page
+# prevent ddos and other attacks 
+class LoginThrottle(AnonRateThrottle):
+    """rate limit loginn attempts to 5 per minute per IP address"""
+    scope = 'login'
+    rate = '5/min'
+
+
+class PasswordChangeThrottle(AnonRateThrottle):
+    """Rate limit password changes to 3 per hour per user"""
+    scope = 'password_change'
+    rate = '3/hour'
 
 
 def _bed_sort_key(bed):
@@ -619,11 +636,24 @@ class UserViewSet(viewsets.ModelViewSet):
     def create_invite(self, request):
         """
         Create a secure invitation token for account creation.
+        SECURITY: Only admins can create invites.
         Expects: {"email": "user@example.com", "role": "case_manager"}
+        Returns: invite_link with token in URL fragment (not logged in server logs)
         """
         from housing.models import Invite
         import secrets
         from datetime import timedelta
+        import logging
+        
+        logger = logging.getLogger('security')
+        
+        # SECURITY: Check that only admins can create invites
+        if getattr(request.user, "role", None) != User.Role.ADMIN:
+            logger.warning(f"Unauthorized invite creation attempt by {request.user.username}")
+            return Response(
+                {"error": "Only administrators can create invites."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         email = (request.data.get('email') or '').strip()
         role = (request.data.get('role') or User.Role.CASE_MANAGER).strip()
@@ -661,6 +691,8 @@ class UserViewSet(viewsets.ModelViewSet):
             created_by=request.user if request.user.is_authenticated else None
         )
         
+        logger.info(f"Invite created for {email} with role {role} by {request.user.username}")
+        
         # Build an invite link that points to the frontend signup page.
         frontend_origin = request.headers.get("Origin") or request.META.get("HTTP_REFERER")
         if frontend_origin:
@@ -677,14 +709,15 @@ class UserViewSet(viewsets.ModelViewSet):
             frontend_origin = f"{request.scheme}://{request.get_host()}"
 
         frontend_origin = frontend_origin.rstrip("/")
-        invite_link = f"{frontend_origin}/register?token={token}"
+        # SECURITY: Use URL fragment (#token=) instead of query parameter (?token=)
+        # Fragments are not sent to the server and won't appear in server logs
+        invite_link = f"{frontend_origin}/register#{token}"
         
         return Response(
             {
                 "message": f"Invite created for {email}.",
                 "invite_link": invite_link,
-                "expires_at": invite.expires_at.isoformat(),
-                "token": token  # For debugging - remove in production
+                "expires_at": invite.expires_at.isoformat()
             },
             status=status.HTTP_201_CREATED
         )
@@ -1004,14 +1037,18 @@ class CsrfCookieView(APIView):
 
 class SessionLoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger('security')
+        
         identifier = (request.data.get("username") or request.data.get("email") or "").strip()
         password = request.data.get("password") or ""
 
         if not identifier or not password:
             return Response(
-                {"error": "username and password are required."},
+                {"error": "Username/email and password are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1023,18 +1060,23 @@ class SessionLoginView(APIView):
 
         user = authenticate(request, username=username, password=password)
         if user is None:
+            # SECURITY: Return the same error message for all invalid login attempts
+            # This prevents user enumeration attacks where attackers can determine if an email exists
+            logger.warning(f"Failed login attempt for identifier: {identifier}")
             return Response(
-                {"error": "Invalid username or password."},
+                {"error": "Invalid username/email or password."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not user.is_active:
+            logger.warning(f"Login attempt for disabled account: {user.username}")
             return Response(
-                {"error": "This account is disabled."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"error": "Invalid username/email or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         login(request, user)
+        logger.info(f"Successful login for user: {user.username}")
         return Response(
             {
                 "message": "Login successful.",
@@ -1060,8 +1102,12 @@ class SessionLogoutView(APIView):
 
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PasswordChangeThrottle]
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger('security')
+        
         current_password = request.data.get("current_password") or ""
         new_password = request.data.get("new_password") or ""
         confirm_new_password = request.data.get("confirm_new_password") or ""
@@ -1087,13 +1133,18 @@ class ChangePasswordView(APIView):
             try:
                 validate_password(new_password, user=request.user)
             except ValidationError as exc:
-                errors["new_password"] = " ".join(exc.messages)
+                # SECURITY: Return generic error message instead of specific validation details
+                # This prevents attackers from learning password requirements
+                errors["new_password"] = "Password does not meet security requirements"
 
         if errors:
             return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
 
         request.user.set_password(new_password)
         request.user.save(update_fields=["password"])
+        
+        # AUDIT: Log password change
+        logger.info(f"Password changed for user: {request.user.username}")
 
         # Keep this browser session valid while invalidating sessions tied to the old auth hash.
         update_session_auth_hash(request, request.user)

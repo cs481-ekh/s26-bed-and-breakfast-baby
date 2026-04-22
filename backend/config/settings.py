@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +25,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-udb+!t+a&k3!ui(sr2zjqk0$e7b0b2&^3f$48x5o@ld&bof@bl'
+# Generate a new key with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is not set. Please check your .env file or set it in your environment.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "backend", "frontend"]
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,frontend').split(',')
 
 
 # Application definition
@@ -79,14 +87,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-import os
+DB_NAME = os.environ.get("DB_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+
+# In production, database credentials must be explicitly provided
+if not DEBUG and (not DB_NAME or not DB_USER or not DB_PASSWORD):
+    raise ValueError(
+        "Database credentials (DB_NAME, DB_USER, DB_PASSWORD) must be set in environment variables for production."
+    )
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "app"),
-        "USER": os.environ.get("DB_USER", "app"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "app"),
+        "NAME": DB_NAME or "app",
+        "USER": DB_USER or "app",
+        "PASSWORD": DB_PASSWORD or "app",
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
@@ -132,26 +148,158 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-# CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-]
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-]
+# CORS Configuration - Use environment variables for production domains
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173'
+).split(',')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS]
 
-# Session expires after 20 minutes of inactivity; timer resets on each request
-SESSION_COOKIE_AGE = 1200
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173'
+).split(',')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS]
+
+# Session Configuration - Hardened for security
+SESSION_COOKIE_AGE = 1200  # 20 minutes
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = not DEBUG  # HTTPS only in production
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to cookies
+SESSION_COOKIE_SAMESITE = 'Strict'  # CSRF protection
+
+CORS_ALLOW_CREDENTIALS = True
+
+# ============================================================================
+# SECURITY HEADERS CONFIGURATION
+# ============================================================================
+
+# Enforce HTTPS in production
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_SSL_HOST = os.environ.get('SECURE_SSL_HOST', None)
+
+# HTTP Strict Transport Security (HSTS)
+if not DEBUG:
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SECURE_HSTS_SECONDS = 0
+
+# Content Security Policy
+SECURE_CONTENT_SECURITY_POLICY = {
+    'default-src': ("'self'",),
+    'script-src': ("'self'",),
+    'style-src': ("'self'", "'unsafe-inline'"),  # Note: unsafe-inline for inline styles, remove if possible
+    'img-src': ("'self'", "data:", "https:"),
+    'font-src': ("'self'",),
+    'connect-src': ("'self'",),
+    'frame-ancestors': ("'none'",),
+    'base-uri': ("'self'",),
+    'form-action': ("'self'",),
+}
+
+# Additional Security Headers
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Referrer Policy
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Permissions Policy
+PERMISSIONS_POLICY = {
+    'accelerometer': [],
+    'camera': [],
+    'geolocation': [],
+    'gyroscope': [],
+    'magnetometer': [],
+    'microphone': [],
+    'payment': [],
+    'usb': [],
+}
 
 CORS_ALLOW_CREDENTIALS = True
 
 # Use the custom user model provided by the `housing` app
 AUTH_USER_MODEL = 'housing.User'
+
+# ============================================================================
+# REST FRAMEWORK CONFIGURATION
+# ============================================================================
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'login': '5/minute',
+        'password_change': '3/hour',
+    }
+}
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/django.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'security_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/security.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'security': {
+            'handlers': ['console', 'security_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
