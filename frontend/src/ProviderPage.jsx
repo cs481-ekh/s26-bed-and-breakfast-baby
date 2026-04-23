@@ -43,6 +43,15 @@ export default function ProviderPage() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [holdActionId, setHoldActionId] = useState("");
+  const [clientForm, setClientForm] = useState({
+    firstName: "",
+    lastName: "",
+    idocId: "",
+  });
+  const [anonymousHoldForm, setAnonymousHoldForm] = useState({
+    bedId: "",
+    reason: "",
+  });
   const [bedForm, setBedForm] = useState({
     facilityId: "",
     label: "",
@@ -140,6 +149,80 @@ export default function ProviderPage() {
       setError(requestError.message || "Could not find that client.");
     } finally {
       setLookupLoading(false);
+    }
+  };
+
+  const handleCreateClient = async (event) => {
+    event.preventDefault();
+
+    if (!clientForm.firstName.trim() || !clientForm.lastName.trim() || !clientForm.idocId.trim()) {
+      setError("Enter a first name, last name, and IDOC number.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson("/api/provider/clients/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: clientForm.firstName.trim(),
+          last_name: clientForm.lastName.trim(),
+          idoc_id: clientForm.idocId.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not create client.");
+      }
+
+      setMessage(`Created ${payload?.full_name || clientForm.idocId.trim()}.`);
+      setIdocId(payload?.idoc_id || clientForm.idocId.trim());
+      setLookupResult(payload);
+      setClientForm({ firstName: "", lastName: "", idocId: "" });
+    } catch (requestError) {
+      setError(requestError.message || "Could not create client.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateAnonymousHold = async (event) => {
+    event.preventDefault();
+
+    if (!anonymousHoldForm.bedId) {
+      setError("Choose a bed for the anonymous hold.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const { response, payload } = await apiJson("/api/provider/holds/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bed_id: anonymousHoldForm.bedId,
+          reason: anonymousHoldForm.reason.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not place anonymous hold.");
+      }
+
+      setMessage(payload?.message || "Anonymous hold placed successfully.");
+      setAnonymousHoldForm({ bedId: "", reason: "" });
+      fetchBeds();
+    } catch (requestError) {
+      setError(requestError.message || "Could not place anonymous hold.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -296,8 +379,8 @@ export default function ProviderPage() {
               <p className="provider-kicker">Housing provider workspace</p>
               <h1>Manage beds, holds, and placements</h1>
               <p>
-                Look up a client by IDOC number, create beds for your facilities, approve or deny holds, and adjust
-                placement end dates when someone leaves early.
+                Create clients from their name and IDOC number, place anonymous holds on beds, create beds for your
+                facilities, approve or deny holds, and adjust placement end dates when someone leaves early.
               </p>
             </div>
             <div className="provider-stat-grid">
@@ -375,6 +458,91 @@ export default function ProviderPage() {
                 <div className="form-actions">
                   <button type="submit" disabled={saving || availableBeds.length === 0}>
                     {saving ? "Saving..." : "Assign 30-day placement"}
+                  </button>
+                </div>
+              </form>
+            </article>
+
+            <article className="provider-card">
+              <div className="card-heading">
+                <div>
+                  <p className="card-label">Client intake</p>
+                  <h2>Create a client or anonymous hold</h2>
+                </div>
+                <span className="card-hint">Quick entry for intake workflows</span>
+              </div>
+
+              <form className="provider-form" onSubmit={handleCreateClient}>
+                <label>
+                  First name
+                  <input
+                    type="text"
+                    value={clientForm.firstName}
+                    onChange={(event) => setClientForm((current) => ({ ...current, firstName: event.target.value }))}
+                    placeholder="Jordan"
+                  />
+                </label>
+
+                <label>
+                  Last name
+                  <input
+                    type="text"
+                    value={clientForm.lastName}
+                    onChange={(event) => setClientForm((current) => ({ ...current, lastName: event.target.value }))}
+                    placeholder="Carter"
+                  />
+                </label>
+
+                <label>
+                  IDOC number
+                  <input
+                    type="text"
+                    value={clientForm.idocId}
+                    onChange={(event) => setClientForm((current) => ({ ...current, idocId: event.target.value }))}
+                    placeholder="IDOC-90001"
+                  />
+                </label>
+
+                <div className="form-actions">
+                  <button type="submit" className="secondary" disabled={saving}>
+                    {saving ? "Saving..." : "Create client"}
+                  </button>
+                </div>
+              </form>
+
+              <div style={{ height: "1rem" }} />
+
+              <form className="provider-form" onSubmit={handleCreateAnonymousHold}>
+                <label>
+                  Anonymous hold bed
+                  <select
+                    value={anonymousHoldForm.bedId}
+                    onChange={(event) => setAnonymousHoldForm((current) => ({ ...current, bedId: event.target.value }))}
+                  >
+                    <option value="">Select an available bed</option>
+                    {availableBeds.map((bed) => (
+                      <option key={bed.bed_id} value={bed.bed_id}>
+                        {bed.facility_name} - {bed.bed_label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Reason
+                  <textarea
+                    rows="3"
+                    value={anonymousHoldForm.reason}
+                    onChange={(event) =>
+                      setAnonymousHoldForm((current) => ({ ...current, reason: event.target.value }))
+                    }
+                    placeholder="Optional hold note"
+                  />
+                </label>
+
+                <div className="form-actions">
+                  <button type="submit" disabled={saving || availableBeds.length === 0}>
+                    {saving ? "Saving..." : "Place anonymous hold"}
                   </button>
                 </div>
               </form>
