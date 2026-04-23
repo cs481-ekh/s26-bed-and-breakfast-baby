@@ -158,6 +158,13 @@ def _require_admin_user(request):
         return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
     return None
+def _provider_default_facility(provider_id):
+    return (
+        Facility.objects.filter(provider_id=provider_id)
+        .select_related("district")
+        .order_by("name")
+        .first()
+    )
 
 
 def _release_expired_provider_assignments(provider_id):
