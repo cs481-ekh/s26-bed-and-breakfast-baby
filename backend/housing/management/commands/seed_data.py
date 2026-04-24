@@ -8,6 +8,7 @@ Run with:
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
+import random
 from housing.models import (
     User, District, Provider, Facility, Program, Bed, Parolee,
     Hold, WaitlistEntry,
@@ -28,6 +29,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         size = options["size"]
         self.stdout.write(f"Seeding database (size={size})...")
+
+        def random_past_datetime(min_days_ago=0, max_days_ago=1200):
+            """Return a random datetime between now-max_days_ago and now-min_days_ago."""
+            if max_days_ago < min_days_ago:
+                min_days_ago, max_days_ago = max_days_ago, min_days_ago
+
+            now = timezone.now()
+            random_days = random.randint(min_days_ago, max_days_ago)
+            random_seconds = random.randint(0, 86399)
+            return now - timedelta(days=random_days, seconds=random_seconds)
 
         def mark_sex_offender_beds(target_facilities):
             marked_total = 0
@@ -222,6 +233,10 @@ class Command(BaseCommand):
                 },
             )
             parolees.append(p)
+
+            # Spread seeded clients across a realistic timeline for dashboards and filtering.
+            random_created_at = random_past_datetime(min_days_ago=30, max_days_ago=1400)
+            Parolee.objects.filter(pk=p.pk).update(created_at=random_created_at)
         self.stdout.write(f"  Created {len(parolees)} parolees")
 
         # ---------------------------------------------------------------
@@ -242,7 +257,7 @@ class Command(BaseCommand):
         hold_bed.status = Bed.Status.HELD
         hold_bed.save()
         cm = User.objects.filter(role=User.Role.CASE_MANAGER).first()
-        Hold.objects.get_or_create(
+        hold, _ = Hold.objects.get_or_create(
             bed=hold_bed,
             parolee=parolees[1],
             defaults={
@@ -251,9 +266,10 @@ class Command(BaseCommand):
                 "expires_at": timezone.now() + timedelta(hours=48),
             },
         )
+        Hold.objects.filter(pk=hold.pk).update(created_at=random_past_datetime(min_days_ago=1, max_days_ago=180))
 
         # Create a waitlist entry
-        WaitlistEntry.objects.get_or_create(
+        waitlist_entry, _ = WaitlistEntry.objects.get_or_create(
             parolee=parolees[2],
             facility=facilities[4],
             defaults={
@@ -262,6 +278,7 @@ class Command(BaseCommand):
                 "notes": "Needs placement near Idaho Falls for family support",
             },
         )
+        WaitlistEntry.objects.filter(pk=waitlist_entry.pk).update(created_at=random_past_datetime(min_days_ago=1, max_days_ago=365))
 
         if size == "large":
             self.stdout.write("\nApplying large dataset expansion...")
@@ -414,7 +431,7 @@ class Command(BaseCommand):
             for idx in range(20000, 20200):
                 district_num = ((idx - 20000) % 7) + 1
                 offset = idx - 20000
-                _, created = Parolee.objects.get_or_create(
+                parolee, created = Parolee.objects.get_or_create(
                     idoc_id=f"IDOC-{idx}",
                     defaults={
                         "first_name": first_names[offset % len(first_names)],
@@ -422,6 +439,8 @@ class Command(BaseCommand):
                         "district": districts[district_num],
                     },
                 )
+                random_created_at = random_past_datetime(min_days_ago=15, max_days_ago=1700)
+                Parolee.objects.filter(pk=parolee.pk).update(created_at=random_created_at)
                 if created:
                     created_parolees += 1
             self.stdout.write(f"  Added {created_parolees} parolees")
