@@ -1,4 +1,5 @@
 import os
+import calendar
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model
@@ -22,7 +23,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 #need to read up on this a bit more
 from rest_framework.throttling import AnonRateThrottle
 from housing.models import Facility, User, Bed, Parolee, Hold
-from .serializers import UserSerializer, BedSerializer, ParoleeSerializer
+from .serializers import UserSerializer, BedSerializer, ParoleeSerializer, AdminClientSerializer
 
 
 User = get_user_model()
@@ -52,6 +53,18 @@ def _bed_sort_key(bed):
 
 
 PROVIDER_PLACEMENT_DAYS = 30
+
+
+def _months_ago(reference_date, months):
+    year = reference_date.year
+    month = reference_date.month - months
+
+    while month <= 0:
+        month += 12
+        year -= 1
+
+    day = min(reference_date.day, calendar.monthrange(year, month)[1])
+    return reference_date.replace(year=year, month=month, day=day)
 
 
 def _person_name(parolee):
@@ -819,6 +832,56 @@ class ParoleeListView(APIView):
     def get(self, request):
         parolees = Parolee.objects.filter(assigned_bed__isnull=True).order_by("last_name", "first_name")
         return Response(ParoleeSerializer(parolees, many=True).data)
+
+
+class AdminClientListView(APIView):
+    """Return clients in the system for at least 24 months (admin only)."""
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_403_FORBIDDEN)
+
+        if getattr(request.user, "role", None) != User.Role.ADMIN:
+            return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        cutoff_date = _months_ago(timezone.now().date(), 24)
+        clients = (
+            Parolee.objects.select_related("district", "assigned_bed", "assigned_bed__facility")
+            .filter(created_at__date__lte=cutoff_date)
+            .order_by("-created_at", "id")
+        )
+        return Response(AdminClientSerializer(clients, many=True).data)
+
+
+class AdminClientRemoveView(APIView):
+    """Remove a client from the system when they are unassigned (admin only)."""
+
+    def post(self, request, client_id):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_403_FORBIDDEN)
+
+        if getattr(request.user, "role", None) != User.Role.ADMIN:
+            return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            parolee = Parolee.objects.get(pk=client_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parolee.assigned_bed_id is not None:
+            return Response(
+                {"error": "Assigned clients cannot be removed. Unassign the client first."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        client_name = f"{parolee.last_name}, {parolee.first_name}"
+        client_idoc = parolee.idoc_id
+        parolee.delete()
+
+        return Response(
+            {"message": f"Removed client {client_name} ({client_idoc})."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class BedAssignView(APIView):
