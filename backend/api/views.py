@@ -853,6 +853,37 @@ class AdminClientListView(APIView):
         return Response(AdminClientSerializer(clients, many=True).data)
 
 
+class AdminClientRemoveView(APIView):
+    """Remove a client from the system when they are unassigned (admin only)."""
+
+    def post(self, request, client_id):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_403_FORBIDDEN)
+
+        if getattr(request.user, "role", None) != User.Role.ADMIN:
+            return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            parolee = Parolee.objects.get(pk=client_id)
+        except Parolee.DoesNotExist:
+            return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if parolee.assigned_bed_id is not None:
+            return Response(
+                {"error": "Assigned clients cannot be removed. Unassign the client first."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        client_name = f"{parolee.last_name}, {parolee.first_name}"
+        client_idoc = parolee.idoc_id
+        parolee.delete()
+
+        return Response(
+            {"message": f"Removed client {client_name} ({client_idoc})."},
+            status=status.HTTP_200_OK,
+        )
+
+
 class BedAssignView(APIView):
     """Assign an unassigned parolee to an available bed."""
 

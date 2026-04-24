@@ -239,6 +239,15 @@
   color: #fff;
 }
 
+.admin-primary-button:disabled,
+.admin-secondary-button:disabled,
+.admin-danger-button:disabled {
+  background: #c7ced9;
+  color: #5f6b7c;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
 .admin-inline-message {
   margin-top: 0.45rem;
   margin-bottom: 0;
