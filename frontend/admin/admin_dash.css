@@ -282,6 +282,28 @@
   word-break: break-all;
 }
 
+.admin-client-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.admin-client-filter-input {
+  flex: 1;
+  min-width: 220px;
+  box-sizing: border-box;
+  border: 1px solid #c9d6e6;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.86rem;
+}
+
+.admin-client-filter-input:focus {
+  outline: 2px solid #bfd2f5;
+  outline-offset: 1px;
+}
+
 @media (max-width: 1024px) {
   .admin-layout {
     grid-template-columns: 1fr;
@@ -292,5 +314,9 @@
   .admin-users-grid {
     grid-template-columns: 1fr;
     height: auto;
+  }
+
+  .admin-client-filter-row {
+    flex-wrap: wrap;
   }
 }

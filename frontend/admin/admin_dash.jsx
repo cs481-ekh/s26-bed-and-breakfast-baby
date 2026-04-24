@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import UserTable from "./user_table";
+import ManageClientsTable from "./manage_clients_table";
 import "./admin_dash.css";
 import { apiJson } from "../src/apiClient";
 
@@ -12,6 +13,7 @@ const ROLES = [
 
 export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, onChangeRole }) {
     const userTableRef = useRef(null);
+    const manageClientsTableRef = useRef(null);
     const [activePanel, setActivePanel] = useState("users");
 
     const [selectedUser, setSelectedUser] = useState(null);
@@ -26,6 +28,10 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
 
     const refreshUsers = () => {
         userTableRef.current?.fetchUsers?.();
+    };
+
+    const refreshClients = () => {
+        manageClientsTableRef.current?.fetchClients?.();
     };
 
     const handleSelectUser = (user) => {
@@ -342,9 +348,15 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                 ) : (
                     <div className="admin-panel-card admin-create-card">
                         <h2>Manage Clients</h2>
-                        <p>
-                            Client management tools will appear here.
-                        </p>
+                        <div className="admin-panel-header">
+                            <p>Review clients who have been in the system for 24 months or longer.</p>
+                            <div className="admin-header-actions">
+                                <button type="button" className="admin-secondary-button" onClick={refreshClients}>
+                                    Refresh Table
+                                </button>
+                            </div>
+                        </div>
+                        <ManageClientsTable ref={manageClientsTableRef} />
                     </div>
                 )}
             </div>
