@@ -1,5 +1,4 @@
 import os
-import calendar
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model
@@ -53,18 +52,6 @@ def _bed_sort_key(bed):
 
 
 PROVIDER_PLACEMENT_DAYS = 30
-
-
-def _months_ago(reference_date, months):
-    year = reference_date.year
-    month = reference_date.month - months
-
-    while month <= 0:
-        month += 12
-        year -= 1
-
-    day = min(reference_date.day, calendar.monthrange(year, month)[1])
-    return reference_date.replace(year=year, month=month, day=day)
 
 
 def _person_name(parolee):
@@ -835,7 +822,7 @@ class ParoleeListView(APIView):
 
 
 class AdminClientListView(APIView):
-    """Return clients in the system for at least 24 months (admin only)."""
+    """Return all clients sorted by longest time in system (admin only)."""
 
     def get(self, request):
         if not request.user.is_authenticated:
@@ -844,11 +831,9 @@ class AdminClientListView(APIView):
         if getattr(request.user, "role", None) != User.Role.ADMIN:
             return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
-        cutoff_date = _months_ago(timezone.now().date(), 24)
         clients = (
             Parolee.objects.select_related("district", "assigned_bed", "assigned_bed__facility")
-            .filter(created_at__date__lte=cutoff_date)
-            .order_by("-created_at", "id")
+            .order_by("created_at", "id")
         )
         return Response(AdminClientSerializer(clients, many=True).data)
 

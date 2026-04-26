@@ -28,7 +28,7 @@ def test_admin_clients_requires_admin_role(client):
 
 
 @pytest.mark.django_db
-def test_admin_clients_returns_only_clients_older_than_24_months(client):
+def test_admin_clients_returns_all_clients_sorted_by_months_desc(client):
     admin_user = User.objects.create_user(
         username="admin_user",
         password="testpass123",
@@ -62,11 +62,17 @@ def test_admin_clients_returns_only_clients_older_than_24_months(client):
     returned_ids = {entry["idoc_id"] for entry in payload}
 
     assert "IDOC-OLD-1" in returned_ids
-    assert "IDOC-NEW-1" not in returned_ids
+    assert "IDOC-NEW-1" in returned_ids
 
     older_row = next(entry for entry in payload if entry["idoc_id"] == "IDOC-OLD-1")
+    recent_row = next(entry for entry in payload if entry["idoc_id"] == "IDOC-NEW-1")
+
     assert older_row["months_in_system"] >= 24
     assert older_row["date_added"] == old_created_at.date().isoformat()
+    assert older_row["months_in_system"] > recent_row["months_in_system"]
+
+    ordered_months = [entry["months_in_system"] for entry in payload]
+    assert ordered_months == sorted(ordered_months, reverse=True)
 
 
 @pytest.mark.django_db
