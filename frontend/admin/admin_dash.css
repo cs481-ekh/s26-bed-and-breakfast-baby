@@ -313,6 +313,38 @@
   outline-offset: 1px;
 }
 
+.admin-client-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.55rem;
+  height: 1rem;
+  padding: 0 0.18rem;
+  border-radius: 999px;
+  vertical-align: middle;
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.admin-client-indicator-unassigned {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.admin-client-indicator-assigned {
+  background: #94a3b8;
+  min-width: 0.55rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  border-color: transparent;
+}
+
 @media (max-width: 1024px) {
   .admin-layout {
     grid-template-columns: 1fr;

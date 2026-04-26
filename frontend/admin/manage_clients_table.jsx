@@ -147,6 +147,7 @@ const ManageClientsTable = forwardRef((_, ref) => {
         <table className="user-table">
           <thead>
             <tr>
+              <th>Status</th>
               <th>IDOC ID</th>
               <th>Name</th>
               <th>District</th>
@@ -160,6 +161,23 @@ const ManageClientsTable = forwardRef((_, ref) => {
           <tbody>
             {filteredClients.map((client) => (
               <tr key={client.id || client.idoc_id} className="user-row">
+                <td>
+                  {client.assigned_bed_label ? (
+                    <span
+                      className="admin-client-indicator admin-client-indicator-assigned"
+                      title="Assigned"
+                      aria-label="Assigned client"
+                    />
+                  ) : (
+                    <span
+                      className="admin-client-indicator admin-client-indicator-unassigned"
+                      title="Flagged for removal"
+                      aria-label="Flagged for removal"
+                    >
+                      Flagged
+                    </span>
+                  )}
+                </td>
                 <td>{client.idoc_id || "N/A"}</td>
                 <td>{client.full_name || "N/A"}</td>
                 <td>
