@@ -143,13 +143,6 @@ def _require_provider_user(request):
     return request.user.provider_id
 
 
-def _provider_default_facility(provider_id):
-    return (
-        Facility.objects.filter(provider_id=provider_id)
-        .select_related("district")
-        .order_by("name")
-        .first()
-    )
 def _require_admin_user(request):
     if not request.user.is_authenticated:
         return Response({"error": "Authentication required."}, status=status.HTTP_403_FORBIDDEN)
@@ -158,6 +151,8 @@ def _require_admin_user(request):
         return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
     return None
+
+
 def _provider_default_facility(provider_id):
     return (
         Facility.objects.filter(provider_id=provider_id)
