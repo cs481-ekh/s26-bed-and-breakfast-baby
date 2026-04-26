@@ -5,6 +5,7 @@ import MainDash from "../main_dash/main_dash";
 import PageTemplate from "./components/PageTemplate";
 import LoginPage from "./LoginPage";
 import RegisterPage from "./RegisterPage";
+import AboutPage from "./AboutPage";
 import { apiJson } from "./apiClient";
 import RolePageGate from "./RolePageGate";
 import ProviderPage from "./ProviderPage";
@@ -170,6 +171,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/main-dashboard" element={<MainDashboardPageComponent />} />
         <Route path="/provider-dashboard" element={<ProviderPage />} />
         <Route path="/admin" element={<AdminPage />} />

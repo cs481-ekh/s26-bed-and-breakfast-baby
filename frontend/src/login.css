@@ -28,6 +28,13 @@
   border-radius: 12px;
   padding: 2.5rem 2rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.login-top-nav {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
 }
 
 /* Logo Container */
@@ -149,32 +156,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #eeeeee;
-  font-size: 0.8rem;
 }
 
-.footer-nav a {
-  color: #666666;
+.about-link {
+  color: #9ca3af;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.footer-nav a:hover {
-  color: #333333;
-}
-
-.divider {
-  color: #cccccc;
-}
-
-.nav-note {
-  color: #999999;
   font-size: 0.75rem;
-  font-style: italic;
+  transition: color 0.2s ease;
+  font-weight: 500;
+}
+
+.about-link:hover {
+  color: #333333;
+  text-decoration: underline;
 }
 
 
