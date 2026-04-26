@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bed and Breakfast Baby - Housing Management System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      color: #ffffff;
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .logo-link {
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+
+    .logo-link:hover {
+      transform: scale(1.05);
+    }
+
+    .header-logo {
+      height: 120px;
+      width: auto;
+      margin-bottom: 1.5rem;
+      filter: brightness(0) invert(1);
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.85;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    section {
+      padding: 1.75rem 2rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    section:last-child {
+      border-bottom: none;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1f2937;
+    }
+
+    p {
+      margin-bottom: 0;
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+
+    .features-list {
+      list-style: disc;
+      padding: 0 0 0 1.5rem;
+      margin: 0;
+      display: block;
+      color: #4b5563;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+
+    .features-list li {
+      margin-bottom: 0.5rem;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: 0;
+      color: #4b5563;
+      font-size: 0.95rem;
+    }
+
+    .team-intro {
+      margin-bottom: 1.5rem;
+    }
+
+    .team-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.8rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    .team-name {
+      margin: 0;
+      padding: 0.75rem 1rem;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      color: #1f2937;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .header {
+        padding: 2rem 1.5rem;
+      }
+
+      .header-logo {
+        height: 100px;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+      }
+
+      section {
+        padding: 1.5rem;
+      }
+
+      .team-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <a href="https://www.boisestate.edu/" target="_blank" rel="noopener noreferrer" class="logo-link">
+        <img src="sdp-logo-3.png" alt="Senior Design Project - Boise State University" class="header-logo" />
+      </a>
+      <h1>About</h1>
+      <p class="subtitle" style="color: #ffffff;">Boise State University • Senior Design Project</p>
+    </div>
+
+    <!-- Overview -->
+    <section>
+      <p>
+        Built by Boise State University senior students as part of the Senior Design Project, this web application streamlines housing and bed assignment management for the Idaho Department of Correction, enabling efficient coordination between correctional staff and housing providers.
+      </p>
+    </section>
+
+    <!-- Features -->
+    <section>
+      <h2>Features</h2>
+      <ul class="features-list">
+        <li>Bed assignment tracking across multiple facilities</li>
+        <li>Role-based access control</li>
+        <li>Parolee placement management</li>
+        <li>Secure authentication and password management</li>
+      </ul>
+    </section>
+
+    <!-- Team -->
+    <section>
+      <h2>Development Team</h2>
+      <div class="team-list">
+        <p class="team-name">Alec Conn</p>
+        <p class="team-name">Alexander Daniluc</p>
+        <p class="team-name">Thomas Pengelly</p>
+        <p class="team-name">Jackson Price</p>
+        <p class="team-name">Schylar Davis</p>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

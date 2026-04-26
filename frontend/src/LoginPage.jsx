@@ -3,6 +3,7 @@ import { apiJson, ensureCsrfCookie } from "./apiClient";
 import "./login.css";
 
 export default function LoginPage() {
+  const idocLogoUrl = `${import.meta.env.BASE_URL}logo1.png`;
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,8 +96,12 @@ export default function LoginPage() {
     <main className="login-page">
       <div className="login-container">
         <section className="login-card" aria-labelledby="login-title">
+          <div className="login-top-nav" aria-label="Page navigation">
+            <a href="/about" className="about-link">About</a>
+          </div>
+
           <div className="logo-container">
-            <img src="/logo1.png" alt="Idaho Department of Correction" className="logo" />
+            <img src={idocLogoUrl} alt="Idaho Department of Correction" className="logo" />
           </div>
 
           <h1 id="login-title">Log In</h1>
