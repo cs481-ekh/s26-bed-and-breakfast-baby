@@ -209,14 +209,14 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                         className={`admin-nav-button ${activePanel === "manage-clients" ? "active" : ""}`}
                         onClick={() => setActivePanel("manage-clients")}
                     >
-                        Manage Clients
+                        Clients
                     </button>
                     <button
                         type="button"
                         className={`admin-nav-button ${activePanel === "manage-facilities" ? "active" : ""}`}
                         onClick={() => setActivePanel("manage-facilities")}
                     >
-                        Manage Facilities
+                        Facilities
                     </button>
                 </div>
             </aside>
@@ -360,7 +360,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                     </div>
                 ) : activePanel === "manage-clients" ? (
                     <div className="admin-panel-card admin-create-card">
-                        <h2>Manage Clients</h2>
+                        <h2>Clients</h2>
                         <div className="admin-panel-header">
                             <p>Review clients who have been in the system for 24 months or longer.</p>
                             <div className="admin-header-actions">
@@ -373,7 +373,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                     </div>
                 ) : (
                     <div className="admin-panel-card admin-create-card">
-                        <h2>Manage Facilities</h2>
+                        <h2>Facilities</h2>
                         <div className="admin-panel-header">
                             <p>Review facility capacity and availability, including inactive facilities.</p>
                             <div className="admin-header-actions">

@@ -321,30 +321,42 @@
 
 .admin-facility-management-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
 .admin-facility-section {
-  border: 1px solid #d8e1ec;
-  border-radius: 10px;
-  background: #f9fbff;
-  padding: 0.75rem;
+  padding: 0;
 }
 
 .admin-facility-section h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1d2c44;
 }
 
 .admin-facility-section p {
-  margin: 0.35rem 0 0.6rem;
-  color: #4f617d;
-  font-size: 0.82rem;
+  margin: 0.4rem 0 0.6rem;
+  color: #364a67;
+  font-size: 0.86rem;
 }
 
 .admin-facility-form {
+  gap: 0.4rem;
+}
+
+.admin-facility-form-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.admin-facility-form-col {
+  display: flex;
+  flex-direction: column;
   gap: 0.4rem;
 }
 

@@ -274,67 +274,99 @@ const ManageFacilitiesTable = forwardRef((_, ref) => {
           <p>Add a new facility under an existing provider.</p>
 
           <form className="admin-form admin-facility-form" onSubmit={handleAddFacility}>
-            <label htmlFor="facility-provider">Provider</label>
-            <select
-              id="facility-provider"
-              value={newFacilityForm.providerId}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                providerId: event.target.value,
-              }))}
-              required
-            >
-              <option value="" disabled>Select a provider</option>
-              {providers.map((provider) => (
-                <option key={provider.provider_id} value={provider.provider_id}>
-                  {provider.provider_name}
-                </option>
-              ))}
-            </select>
+            <div className="admin-facility-form-cols">
+              <div className="admin-facility-form-col">
+                <label htmlFor="facility-provider">Provider</label>
+                <select
+                  id="facility-provider"
+                  value={newFacilityForm.providerId}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    providerId: event.target.value,
+                  }))}
+                  required
+                >
+                  <option value="" disabled>Select a provider</option>
+                  {providers.map((provider) => (
+                    <option key={provider.provider_id} value={provider.provider_id}>
+                      {provider.provider_name}
+                    </option>
+                  ))}
+                </select>
 
-            <label htmlFor="facility-name">Facility Name</label>
-            <input
-              id="facility-name"
-              type="text"
-              value={newFacilityForm.name}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                name: event.target.value,
-              }))}
-              placeholder="Sunrise House"
-              required
-            />
+                <label htmlFor="facility-name">Facility Name</label>
+                <input
+                  id="facility-name"
+                  type="text"
+                  value={newFacilityForm.name}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))}
+                  placeholder="Sunrise House"
+                  required
+                />
 
-            <label htmlFor="facility-district">District</label>
-            <select
-              id="facility-district"
-              value={newFacilityForm.districtId}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                districtId: event.target.value,
-              }))}
-              required
-            >
-              <option value="" disabled>Select a district</option>
-              {districts.map((district) => (
-                <option key={district.district_id} value={district.district_id}>
-                  District {district.district_number} - {district.district_name}
-                </option>
-              ))}
-            </select>
+                <label htmlFor="facility-district">District</label>
+                <select
+                  id="facility-district"
+                  value={newFacilityForm.districtId}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    districtId: event.target.value,
+                  }))}
+                  required
+                >
+                  <option value="" disabled>Select a district</option>
+                  {districts.map((district) => (
+                    <option key={district.district_id} value={district.district_id}>
+                      District {district.district_number} - {district.district_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <label htmlFor="facility-city">City</label>
-            <input
-              id="facility-city"
-              type="text"
-              value={newFacilityForm.city}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                city: event.target.value,
-              }))}
-              placeholder="Boise"
-              required
-            />
+              <div className="admin-facility-form-col">
+                <label htmlFor="facility-city">City</label>
+                <input
+                  id="facility-city"
+                  type="text"
+                  value={newFacilityForm.city}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    city: event.target.value,
+                  }))}
+                  placeholder="Boise"
+                  required
+                />
+
+                <label htmlFor="facility-address">Address (optional)</label>
+                <input
+                  id="facility-address"
+                  type="text"
+                  value={newFacilityForm.address}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    address: event.target.value,
+                  }))}
+                  placeholder="123 Main St"
+                />
+
+                <label htmlFor="facility-track">Track</label>
+                <select
+                  id="facility-track"
+                  value={newFacilityForm.track}
+                  onChange={(event) => setNewFacilityForm((current) => ({
+                    ...current,
+                    track: event.target.value,
+                  }))}
+                >
+                  <option value="basic">Basic</option>
+                  <option value="plus">Plus</option>
+                  <option value="hotel">Hotel</option>
+                </select>
+              </div>
+            </div>
 
             <div className="admin-facility-two-col">
               <div>
@@ -367,32 +399,6 @@ const ManageFacilitiesTable = forwardRef((_, ref) => {
                 />
               </div>
             </div>
-
-            <label htmlFor="facility-address">Address (optional)</label>
-            <input
-              id="facility-address"
-              type="text"
-              value={newFacilityForm.address}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                address: event.target.value,
-              }))}
-              placeholder="123 Main St"
-            />
-
-            <label htmlFor="facility-track">Track</label>
-            <select
-              id="facility-track"
-              value={newFacilityForm.track}
-              onChange={(event) => setNewFacilityForm((current) => ({
-                ...current,
-                track: event.target.value,
-              }))}
-            >
-              <option value="basic">Basic</option>
-              <option value="plus">Plus</option>
-              <option value="hotel">Hotel</option>
-            </select>
 
             <div className="admin-facility-checkboxes">
               <label>
