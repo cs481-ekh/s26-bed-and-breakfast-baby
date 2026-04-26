@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiJson } from "./apiClient";
 import "./SettingsPage.css";
 
@@ -16,6 +17,7 @@ const ROLE_LABELS = {
 };
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [statusMessage, setStatusMessage] = useState("");
@@ -85,7 +87,12 @@ export default function SettingsPage() {
   return (
     <section className="settings-page" aria-labelledby="settings-title">
       <div className="settings-card">
-        <h1 id="settings-title">Settings</h1>
+        <div className="settings-header">
+          <button className="back-button" onClick={() => navigate(-1)} aria-label="Go back">
+            ← Back
+          </button>
+          <h1 id="settings-title">Settings</h1>
+        </div>
 
         <section className="settings-section" aria-labelledby="account-section-title">
           <h2 id="account-section-title">Account</h2>
