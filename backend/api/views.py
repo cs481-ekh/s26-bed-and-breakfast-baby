@@ -1,5 +1,4 @@
 import os
-import calendar
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model
@@ -22,7 +21,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 #need to read up on this a bit more
 from rest_framework.throttling import AnonRateThrottle
-from housing.models import Facility, User, Bed, Parolee, Hold
+from housing.models import District, Facility, Provider, User, Bed, Parolee, Hold
 from .serializers import UserSerializer, BedSerializer, ParoleeSerializer, AdminClientSerializer
 
 
@@ -53,18 +52,6 @@ def _bed_sort_key(bed):
 
 
 PROVIDER_PLACEMENT_DAYS = 30
-
-
-def _months_ago(reference_date, months):
-    year = reference_date.year
-    month = reference_date.month - months
-
-    while month <= 0:
-        month += 12
-        year -= 1
-
-    day = min(reference_date.day, calendar.monthrange(year, month)[1])
-    return reference_date.replace(year=year, month=month, day=day)
 
 
 def _person_name(parolee):
@@ -135,6 +122,16 @@ def _require_provider_user(request):
         return Response({"error": "Provider account is not linked to a provider record."}, status=status.HTTP_400_BAD_REQUEST)
 
     return request.user.provider_id
+
+
+def _require_admin_user(request):
+    if not request.user.is_authenticated:
+        return Response({"error": "Authentication required."}, status=status.HTTP_403_FORBIDDEN)
+
+    if getattr(request.user, "role", None) != User.Role.ADMIN:
+        return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+    return None
 
 
 def _release_expired_provider_assignments(provider_id):
@@ -835,7 +832,7 @@ class ParoleeListView(APIView):
 
 
 class AdminClientListView(APIView):
-    """Return clients in the system for at least 24 months (admin only)."""
+    """Return all clients sorted by longest time in system (admin only)."""
 
     def get(self, request):
         if not request.user.is_authenticated:
@@ -844,11 +841,9 @@ class AdminClientListView(APIView):
         if getattr(request.user, "role", None) != User.Role.ADMIN:
             return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
-        cutoff_date = _months_ago(timezone.now().date(), 24)
         clients = (
             Parolee.objects.select_related("district", "assigned_bed", "assigned_bed__facility")
-            .filter(created_at__date__lte=cutoff_date)
-            .order_by("-created_at", "id")
+            .order_by("created_at", "id")
         )
         return Response(AdminClientSerializer(clients, many=True).data)
 
@@ -880,6 +875,219 @@ class AdminClientRemoveView(APIView):
 
         return Response(
             {"message": f"Removed client {client_name} ({client_idoc})."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminProviderListView(APIView):
+    """Return providers for admin facility management."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        providers = Provider.objects.order_by("name")
+        return Response(
+            [
+                {
+                    "provider_id": provider.id,
+                    "provider_name": provider.name,
+                    "is_active": provider.is_active,
+                }
+                for provider in providers
+            ],
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminDistrictListView(APIView):
+    """Return districts for admin facility management."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        districts = District.objects.order_by("number")
+        return Response(
+            [
+                {
+                    "district_id": district.id,
+                    "district_number": district.number,
+                    "district_name": district.name,
+                }
+                for district in districts
+            ],
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminFacilityCreateView(APIView):
+    """Create a new facility linked to an existing provider (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        provider_id = request.data.get("provider_id")
+        district_id = request.data.get("district_id")
+        name = (request.data.get("name") or "").strip()
+        address = (request.data.get("address") or "").strip()
+        city = (request.data.get("city") or "").strip()
+        state = (request.data.get("state") or "ID").strip().upper()[:2] or "ID"
+        zip_code = (request.data.get("zip_code") or "").strip()
+        track = (request.data.get("track") or "").strip().lower()
+        accepts_male = bool(request.data.get("accepts_male", True))
+        accepts_female = bool(request.data.get("accepts_female", True))
+        accepts_sex_offender = bool(request.data.get("accepts_sex_offender", False))
+
+        if not provider_id:
+            return Response({"error": "provider_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not district_id:
+            return Response({"error": "district_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not name:
+            return Response({"error": "name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not city:
+            return Response({"error": "city is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not zip_code:
+            return Response({"error": "zip_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_tracks = {choice[0] for choice in Facility.Track.choices}
+        if track not in valid_tracks:
+            return Response({"error": "track must be one of: basic, plus, hotel."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not accepts_male and not accepts_female:
+            return Response(
+                {"error": "Facility must accept at least one of male or female placements."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            provider = Provider.objects.get(pk=provider_id)
+        except Provider.DoesNotExist:
+            return Response({"error": "Provider not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            district = District.objects.get(pk=district_id)
+        except District.DoesNotExist:
+            return Response({"error": "District not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        facility = Facility.objects.create(
+            provider=provider,
+            district=district,
+            name=name,
+            address=address,
+            city=city,
+            state=state,
+            zip_code=zip_code,
+            track=track,
+            accepts_male=accepts_male,
+            accepts_female=accepts_female,
+            accepts_sex_offender=accepts_sex_offender,
+            is_active=True,
+        )
+
+        return Response(
+            {
+                "message": f"Created facility {facility.name}.",
+                "facility": {
+                    "facility_id": facility.id,
+                    "facility_name": facility.name,
+                    "provider_name": provider.name,
+                    "district_number": district.number,
+                    "district_name": district.name,
+                    "track": facility.track,
+                    "is_active": facility.is_active,
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminFacilityRemoveView(APIView):
+    """Remove a facility via soft or hard delete (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, facility_id):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        deletion_type = (request.data.get("deletion_type") or "soft").strip().lower()
+        if deletion_type not in {"soft", "hard"}:
+            return Response(
+                {"error": "deletion_type must be either 'soft' or 'hard'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            facility = Facility.objects.select_related("provider").get(pk=facility_id)
+        except Facility.DoesNotExist:
+            return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if deletion_type == "soft" and not facility.is_active:
+            return Response({"error": "Facility is already inactive."}, status=status.HTTP_409_CONFLICT)
+
+        assigned_count = Bed.objects.filter(facility_id=facility.id, assigned_parolee__isnull=False).count()
+        if assigned_count > 0:
+            return Response(
+                {"error": "Cannot remove a facility with currently assigned clients."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if deletion_type == "hard":
+            facility_name = facility.name
+            facility.delete()
+            return Response(
+                {"message": f"Facility {facility_name} was permanently deleted."},
+                status=status.HTTP_200_OK,
+            )
+
+        facility.is_active = False
+        facility.save(update_fields=["is_active", "updated_at"])
+
+        return Response(
+            {"message": f"Facility {facility.name} was removed from active use."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminFacilityToggleActiveView(APIView):
+    """Toggle facility active status between active and inactive (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, facility_id):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        try:
+            facility = Facility.objects.get(pk=facility_id)
+        except Facility.DoesNotExist:
+            return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        facility.is_active = not facility.is_active
+        facility.save(update_fields=["is_active", "updated_at"])
+
+        return Response(
+            {
+                "message": (
+                    f"Facility {facility.name} was reactivated."
+                    if facility.is_active
+                    else f"Facility {facility.name} was deactivated."
+                ),
+                "is_active": facility.is_active,
+            },
             status=status.HTTP_200_OK,
         )
 
