@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import UserTable from "./user_table";
 import ManageClientsTable from "./manage_clients_table";
+import ManageFacilitiesTable from "./manage_facilities_table";
 import "./admin_dash.css";
 import { apiJson } from "../src/apiClient";
 
@@ -14,6 +15,7 @@ const ROLES = [
 export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, onChangeRole }) {
     const userTableRef = useRef(null);
     const manageClientsTableRef = useRef(null);
+    const manageFacilitiesTableRef = useRef(null);
     const [activePanel, setActivePanel] = useState("users");
 
     const [selectedUser, setSelectedUser] = useState(null);
@@ -32,6 +34,10 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
 
     const refreshClients = () => {
         manageClientsTableRef.current?.fetchClients?.();
+    };
+
+    const refreshFacilities = () => {
+        manageFacilitiesTableRef.current?.fetchFacilities?.();
     };
 
     const handleSelectUser = (user) => {
@@ -205,6 +211,13 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                     >
                         Manage Clients
                     </button>
+                    <button
+                        type="button"
+                        className={`admin-nav-button ${activePanel === "manage-facilities" ? "active" : ""}`}
+                        onClick={() => setActivePanel("manage-facilities")}
+                    >
+                        Manage Facilities
+                    </button>
                 </div>
             </aside>
 
@@ -345,7 +358,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                             </div>
                         )}
                     </div>
-                ) : (
+                ) : activePanel === "manage-clients" ? (
                     <div className="admin-panel-card admin-create-card">
                         <h2>Manage Clients</h2>
                         <div className="admin-panel-header">
@@ -357,6 +370,19 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                             </div>
                         </div>
                         <ManageClientsTable ref={manageClientsTableRef} />
+                    </div>
+                ) : (
+                    <div className="admin-panel-card admin-create-card">
+                        <h2>Manage Facilities</h2>
+                        <div className="admin-panel-header">
+                            <p>Review facility capacity and availability, including inactive facilities.</p>
+                            <div className="admin-header-actions">
+                                <button type="button" className="admin-secondary-button" onClick={refreshFacilities}>
+                                    Refresh Table
+                                </button>
+                            </div>
+                        </div>
+                        <ManageFacilitiesTable ref={manageFacilitiesTableRef} />
                     </div>
                 )}
             </div>
