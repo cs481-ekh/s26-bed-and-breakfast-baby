@@ -1,4 +1,6 @@
 import os
+import uuid
+import calendar
 from urllib.parse import urlparse
 
 from django.contrib.auth import get_user_model
@@ -92,7 +94,7 @@ def _provider_bed_payload(bed, hold=None):
         "hold_status_label": hold.get_status_display() if hold else None,
         "hold_parolee_id": hold.parolee.id if hold else None,
         "hold_client_id": hold.parolee.idoc_id if hold else None,
-        "hold_client_name": _person_name(hold.parolee) if hold else None,
+        "hold_client_name": _provider_client_display_name(hold.parolee) if hold else None,
         "hold_expires_at": hold.expires_at.isoformat() if hold else None,
     }
 
@@ -114,6 +116,23 @@ def _provider_parolee_payload(parolee):
     }
 
 
+def _provider_client_display_name(parolee):
+    if parolee is None:
+        return None
+
+    if (parolee.idoc_id or "").upper().startswith("ANON-"):
+        return "Anonymous hold"
+
+    return _person_name(parolee)
+
+
+def _generate_anonymous_idoc_id():
+    while True:
+        idoc_id = f"ANON-{uuid.uuid4().hex[:10].upper()}"
+        if not Parolee.objects.filter(idoc_id__iexact=idoc_id).exists():
+            return idoc_id
+
+
 def _require_provider_user(request):
     if getattr(request.user, "role", None) != User.Role.PROVIDER:
         return Response({"error": "Only housing providers can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
@@ -132,6 +151,15 @@ def _require_admin_user(request):
         return Response({"error": "Only administrators can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
 
     return None
+
+
+def _provider_default_facility(provider_id):
+    return (
+        Facility.objects.filter(provider_id=provider_id)
+        .select_related("district")
+        .order_by("name")
+        .first()
+    )
 
 
 def _release_expired_provider_assignments(provider_id):
@@ -1504,6 +1532,51 @@ class ProviderClientLookupView(APIView):
         return Response(_provider_parolee_payload(parolee), status=status.HTTP_200_OK)
 
 
+class ProviderClientCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        first_name = (request.data.get("first_name") or "").strip()
+        last_name = (request.data.get("last_name") or "").strip()
+        idoc_id = (request.data.get("idoc_id") or "").strip()
+        facility_id = request.data.get("facility_id")
+
+        if not first_name:
+            return Response({"error": "first_name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not last_name:
+            return Response({"error": "last_name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not idoc_id:
+            return Response({"error": "idoc_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Parolee.objects.filter(idoc_id__iexact=idoc_id).exists():
+            return Response({"error": "A client with that IDOC number already exists."}, status=status.HTTP_409_CONFLICT)
+
+        if facility_id:
+            try:
+                facility = Facility.objects.select_related("district").get(pk=facility_id, provider_id=provider_id)
+            except Facility.DoesNotExist:
+                return Response({"error": "Facility not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            facility = _provider_default_facility(provider_id)
+            if facility is None:
+                return Response({"error": "Create a facility before adding clients."}, status=status.HTTP_400_BAD_REQUEST)
+
+        parolee = Parolee.objects.create(
+            idoc_id=idoc_id,
+            first_name=first_name,
+            last_name=last_name,
+            district=facility.district,
+        )
+
+        return Response(_provider_parolee_payload(parolee), status=status.HTTP_201_CREATED)
+
+
 class ProviderBedCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1566,7 +1639,7 @@ class ProviderHoldListView(APIView):
                     "facility_name": hold.bed.facility.name,
                     "parolee_id": hold.parolee_id,
                     "client_id": hold.parolee.idoc_id,
-                    "client_name": _person_name(hold.parolee),
+                    "client_name": _provider_client_display_name(hold.parolee),
                     "status": hold.status,
                     "status_label": hold.get_status_display(),
                     "reason": hold.reason,
@@ -1579,6 +1652,62 @@ class ProviderHoldListView(APIView):
 
 
             status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        provider_id = _require_provider_user(request)
+        if not isinstance(provider_id, int):
+            return provider_id
+
+        bed_id = request.data.get("bed_id")
+        reason = (request.data.get("reason") or "").strip()
+
+        if not bed_id:
+            return Response({"error": "bed_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bed = Bed.objects.select_related("facility", "facility__district").get(pk=bed_id)
+        except Bed.DoesNotExist:
+            return Response({"error": "Bed not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if bed.facility.provider_id != provider_id:
+            return Response({"error": "You can only manage holds for your own facilities."}, status=status.HTTP_403_FORBIDDEN)
+
+        if bed.status != Bed.Status.AVAILABLE:
+            return Response({"error": "Only available beds can be held."}, status=status.HTTP_409_CONFLICT)
+
+        request_user = request.user if request.user.is_authenticated else None
+        event_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S %Z")
+        hold_reason = reason or "Anonymous hold requested from the provider portal."
+
+        with transaction.atomic():
+            parolee = Parolee.objects.create(
+                idoc_id=_generate_anonymous_idoc_id(),
+                first_name="Anonymous",
+                last_name="Hold",
+                district=bed.facility.district,
+            )
+            hold = Hold.objects.create(
+                bed=bed,
+                parolee=parolee,
+                placed_by=request_user,
+                reason=hold_reason,
+                expires_at=timezone.now() + timedelta(hours=48),
+            )
+
+            _append_bed_note(
+                bed,
+                f"[{event_time}] Anonymous hold requested for bed {bed.label}.",
+                request_user,
+            )
+            bed.save(update_fields=["updated_by", "notes", "updated_at"])
+
+        return Response(
+            {
+                "message": f"Anonymous hold placed on {bed.label}.",
+                "hold": _provider_bed_payload(bed, hold),
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 

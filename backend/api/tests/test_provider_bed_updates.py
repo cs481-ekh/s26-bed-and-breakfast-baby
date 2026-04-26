@@ -448,3 +448,94 @@ def test_provider_can_update_end_date_and_release_early(client):
     assert bed.status == Bed.Status.AVAILABLE
     assert parolee.assigned_bed is None
     assert parolee.housing_end_date == timezone.now().date() - timedelta(days=1)
+
+
+@pytest.mark.django_db
+def test_provider_can_create_client_record(client):
+    district = District.objects.create(number=17, name="Client Intake District")
+    provider = Provider.objects.create(name="Provider Client Intake")
+
+    provider_user = User.objects.create_user(
+        username="provider_client_intake_user",
+        password="testpass123",
+        role=User.Role.PROVIDER,
+        provider=provider,
+    )
+
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Client Intake House",
+        address="900 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        track=Facility.Track.BASIC,
+    )
+
+    client.force_login(provider_user)
+    resp = client.post(
+        "/api/provider/clients/",
+        data={
+            "first_name": "Jamie",
+            "last_name": "Wells",
+            "idoc_id": "IDOC-17001",
+        },
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 201
+    body = resp.json()
+    parolee = Parolee.objects.get(pk=body["id"])
+    assert parolee.first_name == "Jamie"
+    assert parolee.last_name == "Wells"
+    assert parolee.idoc_id == "IDOC-17001"
+    assert parolee.district_id == facility.district_id
+
+
+@pytest.mark.django_db
+def test_provider_can_place_anonymous_hold(client):
+    district = District.objects.create(number=18, name="Anonymous Hold District")
+    provider = Provider.objects.create(name="Provider Anonymous Hold")
+
+    provider_user = User.objects.create_user(
+        username="provider_anonymous_hold_user",
+        password="testpass123",
+        role=User.Role.PROVIDER,
+        provider=provider,
+    )
+
+    facility = Facility.objects.create(
+        provider=provider,
+        name="Anonymous Hold House",
+        address="1000 Main St",
+        city="Boise",
+        state="ID",
+        zip_code="83701",
+        district=district,
+        track=Facility.Track.PLUS,
+    )
+    bed = Bed.objects.create(facility=facility, label="Bed 1")
+
+    client.force_login(provider_user)
+    resp = client.post(
+        "/api/provider/holds/",
+        data={
+            "bed_id": bed.id,
+            "reason": "Temporary anonymous reservation",
+        },
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 201
+    body = resp.json()
+    hold = Hold.objects.get(pk=body["hold"]["hold_id"])
+    bed.refresh_from_db()
+    hold.refresh_from_db()
+    assert hold.status == Hold.Status.ACTIVE
+    assert hold.parolee.first_name == "Anonymous"
+    assert hold.parolee.last_name == "Hold"
+    assert hold.parolee.idoc_id.startswith("ANON-")
+    assert hold.reason == "Temporary anonymous reservation"
+    assert bed.status == Bed.Status.AVAILABLE
+    assert body["hold"]["hold_client_name"] == "Anonymous hold"
