@@ -14,6 +14,34 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.back-button:active {
+  background-color: #dbeafe;
+}
+
 .settings-card h1 {
   margin: 0;
   font-size: 1.6rem;
