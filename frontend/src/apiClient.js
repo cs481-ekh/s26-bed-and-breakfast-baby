@@ -1,5 +1,14 @@
 const CSRF_ENDPOINT = "/api/auth/csrf/";
+const API_ROOT = import.meta.env.VITE_API_ROOT || '';
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function getFullUrl(endpoint) {
+  // If API_ROOT is set, use it; otherwise use the endpoint as-is
+  if (API_ROOT) {
+    return `${API_ROOT}${endpoint}`;
+  }
+  return endpoint;
+}
 
 function getCookie(name) {
   const cookieValue = document.cookie
@@ -15,7 +24,7 @@ function getCookie(name) {
 }
 
 export async function ensureCsrfCookie() {
-  await fetch(CSRF_ENDPOINT, {
+  await fetch(getFullUrl(CSRF_ENDPOINT), {
     method: "GET",
     credentials: "include",
   });
@@ -24,6 +33,7 @@ export async function ensureCsrfCookie() {
 export async function apiFetch(url, options = {}) {
   const method = (options.method || "GET").toUpperCase();
   const headers = new Headers(options.headers || {});
+  const fullUrl = getFullUrl(url);
 
   if (UNSAFE_METHODS.has(method)) {
     await ensureCsrfCookie();
@@ -33,7 +43,7 @@ export async function apiFetch(url, options = {}) {
     }
   }
 
-  return fetch(url, {
+  return fetch(fullUrl, {
     ...options,
     method,
     credentials: "include",

@@ -1,10 +1,12 @@
 services:
   backend:
     ports:
-      - "8000:8000"
+      - "${HOST_PORT_API:-8000}:8000"
     volumes:
       - ./backend:/app
     env_file: .env
+    environment:
+      APP_ROOT: ${APP_ROOT:-}
     command:
       [
         "bash",
@@ -14,10 +16,12 @@ services:
 
   frontend:
     ports:
-      - "5173:5173"
+      - "${HOST_PORT:-5173}:5173"
     environment:
       VITE_API_BASE_URL: http://localhost:8000
       VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_PUBLIC_URL: ${VITE_PUBLIC_URL:-}
+      VITE_API_ROOT: ${VITE_API_ROOT:-}
     volumes:
       - ./frontend:/app
       - /app/node_modules

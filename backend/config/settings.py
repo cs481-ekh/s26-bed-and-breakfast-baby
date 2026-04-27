@@ -20,6 +20,15 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ============================================================================
+# HTML ROOT CONFIGURATION FOR SDP DEPLOYMENT
+# ============================================================================
+# APP_ROOT is the URL prefix for the application on the SDP server
+# For local development, leave undefined or set to empty string
+# For SDP deployment, set to project name (e.g., 's26-bed-and-breakfast-baby')
+APP_ROOT = os.environ.get('APP_ROOT', '').rstrip('/')
+if APP_ROOT:
+    APP_ROOT = APP_ROOT + '/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -33,7 +42,7 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,frontend').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,frontend,sdp.boisestate.edu').split(',')
 
 
 # Application definition
@@ -147,7 +156,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = f'/{APP_ROOT}static/'
 
 # CORS Configuration - Use environment variables for production domains
 CORS_ALLOWED_ORIGINS = os.environ.get(
@@ -158,7 +167,7 @@ CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS]
 
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173'
+    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,https://sdp.boisestate.edu'
 ).split(',')
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS]
 
