@@ -308,7 +308,7 @@ class SignUpView(APIView):
         last_name = (request.data.get("last_name") or "").strip()
         employee_id = (request.data.get("employee_id") or "").strip()
         email = (request.data.get("email") or "").strip()
-        role = (request.data.get("role") or User.Role.CASE_MANAGER).strip()
+        role = (request.data.get("role") or User.Role.IDOC_STAFF).strip()
         password = request.data.get("password") or ""
         confirm_password = request.data.get("confirm_password") or ""
 
@@ -324,7 +324,7 @@ class SignUpView(APIView):
             errors["email"] = "Email is required."
         valid_roles = {choice[0] for choice in User.Role.choices}
         if role not in valid_roles:
-            errors["role"] = "Role must be admin, case_manager, parole_officer, or provider."
+            errors["role"] = "Role must be admin, idoc_staff, or provider."
         if not password:
             errors["password"] = "Password is required."
         if not confirm_password:
@@ -522,7 +522,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def update_role(self, request):
         """
         Update a user's role by username.
-        Expects: {"username": "user@example.com", "role": "admin|case_manager|parole_officer|provider"}
+        Expects: {"username": "user@example.com", "role": "admin|idoc_staff|provider"}
         """
         username = (request.data.get('username') or '').strip()
         role = (request.data.get('role') or '').strip()
@@ -536,7 +536,7 @@ class UserViewSet(viewsets.ModelViewSet):
         valid_roles = {choice[0] for choice in User.Role.choices}
         if role not in valid_roles:
             return Response(
-                {"error": "Invalid role. Use admin, case_manager, parole_officer, or provider."},
+                {"error": "Invalid role. Use admin, idoc_staff, or provider."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -675,7 +675,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         Create a secure invitation token for account creation.
         SECURITY: Only admins can create invites.
-        Expects: {"email": "user@example.com", "role": "case_manager"}
+        Expects: {"email": "user@example.com", "role": "idoc_staff"}
         Returns: invite_link with token in URL fragment (not logged in server logs)
         """
         from housing.models import Invite
@@ -694,7 +694,7 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         
         email = (request.data.get('email') or '').strip()
-        role = (request.data.get('role') or User.Role.CASE_MANAGER).strip()
+        role = (request.data.get('role') or User.Role.IDOC_STAFF).strip()
         
         if not email:
             return Response(
@@ -1165,9 +1165,9 @@ class BedHoldRequestView(APIView):
 
     def post(self, request, bed_id):
         request_user = request.user if request.user.is_authenticated else None
-        if request_user is None or getattr(request_user, "role", None) not in {User.Role.ADMIN, User.Role.CASE_MANAGER}:
+        if request_user is None or getattr(request_user, "role", None) not in {User.Role.ADMIN, User.Role.IDOC_STAFF}:
             return Response(
-                {"error": "Only case managers and admins can request holds."},
+                {"error": "Only IDOC staff and admins can request holds."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

@@ -131,7 +131,7 @@ function MainDashboardPageComponent() {
 
       if (response.ok) {
         const role = payload?.role || "";
-        setIsReadOnly(!(role === "admin" || role === "case_manager" || role === "parole_officer"));
+        setIsReadOnly(!(role === "admin" || role === "idoc_staff"));
       } else {
         setIsReadOnly(true);
       }
@@ -147,7 +147,7 @@ function MainDashboardPageComponent() {
   }, []);
 
   return (
-    <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer"]}>
+    <RolePageGate allowedRoles={["admin", "idoc_staff"]}>
       <PageTemplate>
         {roleLoaded ? <MainDash readOnly={isReadOnly} /> : <p>Loading dashboard...</p>}
       </PageTemplate>
@@ -157,7 +157,7 @@ function MainDashboardPageComponent() {
 
 function SettingsRoutePage() {
   return (
-    <RolePageGate allowedRoles={["admin", "case_manager", "parole_officer", "provider"]}>
+    <RolePageGate allowedRoles={["admin", "idoc_staff", "provider"]}>
       <PageTemplate>
         <SettingsPage />
       </PageTemplate>

@@ -30,9 +30,9 @@ def test_login_creates_authenticated_session(client):
 @pytest.mark.django_db
 def test_login_rejects_invalid_credentials(client):
     User.objects.create_user(
-        username="case_mgr",
+        username="staff_user",
         password="correctpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
     resp = client.post(
@@ -47,9 +47,9 @@ def test_login_rejects_invalid_credentials(client):
 @pytest.mark.django_db
 def test_logout_clears_session(client):
     user = User.objects.create_user(
-        username="po_seed",
+        username="staff_seed",
         password="testpass123",
-        role=User.Role.PAROLE_OFFICER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(user)

@@ -60,10 +60,10 @@ def test_non_provider_cannot_assign_client(client):
     district = District.objects.create(number=2, name="South")
     provider = Provider.objects.create(name="Provider B")
 
-    case_manager = User.objects.create_user(
-        username="case_mgr",
+    staff_user = User.objects.create_user(
+        username="staff_user",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
 
@@ -86,7 +86,7 @@ def test_non_provider_cannot_assign_client(client):
         district=district,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     resp = client.post(
         "/api/provider/assign-client/",
         data={"bed_id": bed.id, "idoc_id": parolee.idoc_id},
@@ -307,10 +307,10 @@ def test_provider_hold_can_be_approved(client):
         role=User.Role.PROVIDER,
         provider=provider,
     )
-    case_manager = User.objects.create_user(
-        username="case_mgr_approve",
+    staff_user = User.objects.create_user(
+        username="staff_approve",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
     facility = Facility.objects.create(
@@ -333,7 +333,7 @@ def test_provider_hold_can_be_approved(client):
     hold = Hold.objects.create(
         bed=bed,
         parolee=parolee,
-        placed_by=case_manager,
+        placed_by=staff_user,
         reason="Awaiting provider review",
         expires_at=timezone.now() + timedelta(hours=48),
     )
@@ -361,10 +361,10 @@ def test_provider_hold_can_be_denied(client):
         role=User.Role.PROVIDER,
         provider=provider,
     )
-    case_manager = User.objects.create_user(
-        username="case_mgr_deny",
+    staff_user = User.objects.create_user(
+        username="staff_deny",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
     facility = Facility.objects.create(
@@ -387,7 +387,7 @@ def test_provider_hold_can_be_denied(client):
     hold = Hold.objects.create(
         bed=bed,
         parolee=parolee,
-        placed_by=case_manager,
+        placed_by=staff_user,
         reason="Testing denial",
         expires_at=timezone.now() + timedelta(hours=48),
     )

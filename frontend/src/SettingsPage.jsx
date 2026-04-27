@@ -11,8 +11,7 @@ const INITIAL_FORM = {
 
 const ROLE_LABELS = {
   admin: "Admin",
-  case_manager: "Case Manager",
-  parole_officer: "Parole Officer",
+  idoc_staff: "IDOC Staff",
   provider: "Provider",
 };
 

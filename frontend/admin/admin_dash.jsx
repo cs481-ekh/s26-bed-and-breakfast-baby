@@ -7,8 +7,7 @@ import { apiJson } from "../src/apiClient";
 
 const ROLES = [
     { value: "admin", label: "Admin" },
-    { value: "case_manager", label: "Case Manager" },
-    { value: "parole_officer", label: "Parole Officer" },
+    { value: "idoc_staff", label: "IDOC Staff" },
     { value: "provider", label: "Housing Provider" },
 ];
 
@@ -19,11 +18,11 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
     const [activePanel, setActivePanel] = useState("users");
 
     const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedRole, setSelectedRole] = useState("case_manager");
+    const [selectedRole, setSelectedRole] = useState("idoc_staff");
     const [userActionMessage, setUserActionMessage] = useState("");
 
     const [inviteEmail, setInviteEmail] = useState("");
-    const [inviteRole, setInviteRole] = useState("case_manager");
+    const [inviteRole, setInviteRole] = useState("idoc_staff");
     const [inviteLink, setInviteLink] = useState("");
     const [inviteMessage, setInviteMessage] = useState("");
     const [copyFeedback, setCopyFeedback] = useState("");
@@ -42,7 +41,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
 
     const handleSelectUser = (user) => {
         setSelectedUser(user);
-        setSelectedRole(user?.role || "case_manager");
+        setSelectedRole(user?.role || "idoc_staff");
         setUserActionMessage("");
     };
 

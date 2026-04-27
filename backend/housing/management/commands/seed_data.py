@@ -193,9 +193,9 @@ class Command(BaseCommand):
             )
 
         sample_users = [
-            ("cm_adams", "Chris", "Adams", User.Role.CASE_MANAGER, 4, None),
-            ("cm_baker", "Jamie", "Baker", User.Role.CASE_MANAGER, 3, None),
-            ("po_stone", "Alex", "Stone", User.Role.PAROLE_OFFICER, 4, None),
+            ("staff_adams", "Chris", "Adams", User.Role.IDOC_STAFF, 4, None),
+            ("staff_baker", "Jamie", "Baker", User.Role.IDOC_STAFF, 3, None),
+            ("staff_stone", "Alex", "Stone", User.Role.IDOC_STAFF, 4, None),
             ("prov_johnson", "Sarah", "Johnson", User.Role.PROVIDER, None, providers[0]),
             ("prov_chen", "Mike", "Chen", User.Role.PROVIDER, None, providers[1]),
         ]
@@ -256,7 +256,7 @@ class Command(BaseCommand):
         hold_bed = all_beds[5]
         hold_bed.status = Bed.Status.HELD
         hold_bed.save()
-        cm = User.objects.filter(role=User.Role.CASE_MANAGER).first()
+        cm = User.objects.filter(role=User.Role.IDOC_STAFF).first()
         hold, _ = Hold.objects.get_or_create(
             bed=hold_bed,
             parolee=parolees[1],
@@ -371,26 +371,26 @@ class Command(BaseCommand):
             # -----------------------------------------------------------
             # Additional users
             # -----------------------------------------------------------
-            extra_case_managers = [
-                ("cm_clark", "Jordan", "Clark", 1),
-                ("cm_diaz", "Taylor", "Diaz", 2),
-                ("cm_evans", "Morgan", "Evans", 3),
-                ("cm_foster", "Riley", "Foster", 4),
-                ("cm_grant", "Casey", "Grant", 5),
-                ("cm_hughes", "Avery", "Hughes", 6),
-                ("cm_ivy", "Drew", "Ivy", 7),
-                ("cm_kim", "Parker", "Kim", 4),
-                ("cm_lopez", "Reese", "Lopez", 3),
-                ("cm_morris", "Quinn", "Morris", 5),
+            extra_staff = [
+                ("staff_clark", "Jordan", "Clark", 1),
+                ("staff_diaz", "Taylor", "Diaz", 2),
+                ("staff_evans", "Morgan", "Evans", 3),
+                ("staff_foster", "Riley", "Foster", 4),
+                ("staff_grant", "Casey", "Grant", 5),
+                ("staff_hughes", "Avery", "Hughes", 6),
+                ("staff_ivy", "Drew", "Ivy", 7),
+                ("staff_kim", "Parker", "Kim", 4),
+                ("staff_lopez", "Reese", "Lopez", 3),
+                ("staff_morris", "Quinn", "Morris", 5),
             ]
-            for username, first, last, district_num in extra_case_managers:
+            for username, first, last, district_num in extra_staff:
                 if not User.objects.filter(username=username).exists():
                     User.objects.create_user(
                         username=username,
                         password="testpass123",
                         first_name=first,
                         last_name=last,
-                        role=User.Role.CASE_MANAGER,
+                        role=User.Role.IDOC_STAFF,
                         district=districts[district_num],
                     )
 
@@ -411,7 +411,7 @@ class Command(BaseCommand):
                         role=User.Role.PROVIDER,
                         provider=extra_providers[(idx - 1) % len(extra_providers)],
                     )
-            self.stdout.write("  Added extra provider/case-manager users")
+            self.stdout.write("  Added extra provider/IDOC-staff users")
 
             # -----------------------------------------------------------
             # Additional parolees and placements
@@ -459,7 +459,7 @@ class Command(BaseCommand):
                 placed_count += 1
 
             # Create extra waitlist entries to make larger list views useful.
-            active_cm = User.objects.filter(role=User.Role.CASE_MANAGER).first()
+            active_cm = User.objects.filter(role=User.Role.IDOC_STAFF).first()
             waitlist_created = 0
             waitlist_pool = list(Parolee.objects.order_by("id")[:120])
             for idx, parolee in enumerate(waitlist_pool, start=1):
@@ -483,6 +483,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\nDatabase seeded successfully!"))
         self.stdout.write("\nSample login credentials:")
         self.stdout.write("  Admin:        admin / admin123")
-        self.stdout.write("  Case Manager: cm_adams / testpass123")
+        self.stdout.write("  IDOC Staff:   staff_adams / testpass123")
         self.stdout.write("  Provider:     prov_johnson / testpass123")
-        self.stdout.write("  Parole Off.:  po_stone / testpass123")
+        self.stdout.write("  (Also):       staff_stone / testpass123")

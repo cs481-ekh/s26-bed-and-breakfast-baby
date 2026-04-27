@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 
 const ROLE_LABELS = {
   admin: "Admin",
-  case_manager: "Case Manager",
-  parole_officer: "Parole Officer",
+  idoc_staff: "IDOC Staff",
   provider: "Housing Provider",
 };
 

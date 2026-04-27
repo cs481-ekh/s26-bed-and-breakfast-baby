@@ -14,13 +14,13 @@ def test_admin_clients_requires_authentication(client):
 
 @pytest.mark.django_db
 def test_admin_clients_requires_admin_role(client):
-    case_manager = User.objects.create_user(
-        username="case_manager_user",
+    staff_user = User.objects.create_user(
+        username="staff_user",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     response = client.get("/api/admin/clients/")
 
     assert response.status_code == 403
@@ -77,10 +77,10 @@ def test_admin_clients_returns_all_clients_sorted_by_months_desc(client):
 
 @pytest.mark.django_db
 def test_admin_client_remove_requires_admin_role(client):
-    case_manager = User.objects.create_user(
-        username="case_manager_user_remove",
+    staff_user = User.objects.create_user(
+        username="staff_user_remove",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
     district = District.objects.create(number=2, name="Second")
     parolee = Parolee.objects.create(
@@ -90,7 +90,7 @@ def test_admin_client_remove_requires_admin_role(client):
         district=district,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     response = client.post(f"/api/admin/clients/{parolee.id}/remove/", {}, content_type="application/json")
 
     assert response.status_code == 403

@@ -19,9 +19,9 @@ def test_non_admin_cannot_edit_bed_notes(client):
     )
     bed = Bed.objects.create(facility=facility, label="Bed 1", notes="Existing note")
     non_admin = User.objects.create_user(
-        username="case_manager_user",
+        username="staff_user",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(non_admin)

@@ -64,10 +64,10 @@ def test_unassign_single_bed_without_assignment_conflict(client):
 def test_request_hold_on_available_bed(client):
     district = District.objects.create(number=10, name="Hold District")
     provider = Provider.objects.create(name="Provider Hold")
-    case_manager = User.objects.create_user(
-        username="case_mgr_hold",
+    staff_user = User.objects.create_user(
+        username="staff_hold",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
     facility = Facility.objects.create(
@@ -88,7 +88,7 @@ def test_request_hold_on_available_bed(client):
         district=district,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     resp = client.post(
         f"/api/beds/{bed.id}/hold/",
         data={"parolee_id": parolee.id},
@@ -106,10 +106,10 @@ def test_request_hold_on_available_bed(client):
 def test_multiple_hold_requests_can_be_placed_on_same_bed(client):
     district = District.objects.create(number=14, name="Multiple Hold District")
     provider = Provider.objects.create(name="Provider Multiple Holds")
-    case_manager = User.objects.create_user(
-        username="case_mgr_multiple_holds",
+    staff_user = User.objects.create_user(
+        username="staff_multiple_holds",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
     facility = Facility.objects.create(
@@ -136,7 +136,7 @@ def test_multiple_hold_requests_can_be_placed_on_same_bed(client):
         district=district,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     first_resp = client.post(
         f"/api/beds/{bed.id}/hold/",
         data={"parolee_id": first_parolee.id},
@@ -158,14 +158,13 @@ def test_multiple_hold_requests_can_be_placed_on_same_bed(client):
 
 
 @pytest.mark.django_db
-def test_request_hold_requires_case_manager_or_admin(client):
+def test_request_hold_requires_idoc_staff_or_admin(client):
     district = District.objects.create(number=13, name="Restricted District")
     provider = Provider.objects.create(name="Provider Restricted")
-    parole_officer = User.objects.create_user(
-        username="po_hold",
+    provider_user = User.objects.create_user(
+        username="provider_hold",
         password="testpass123",
-        role=User.Role.PAROLE_OFFICER,
-        district=district,
+        role=User.Role.PROVIDER,
     )
     facility = Facility.objects.create(
         provider=provider,
@@ -185,7 +184,7 @@ def test_request_hold_requires_case_manager_or_admin(client):
         district=district,
     )
 
-    client.force_login(parole_officer)
+    client.force_login(provider_user)
     resp = client.post(
         f"/api/beds/{bed.id}/hold/",
         data={"parolee_id": parolee.id},
@@ -193,17 +192,17 @@ def test_request_hold_requires_case_manager_or_admin(client):
     )
 
     assert resp.status_code == 403
-    assert "only case managers and admins" in resp.json()["error"].lower()
+    assert "only idoc staff and admins" in resp.json()["error"].lower()
 
 
 @pytest.mark.django_db
 def test_request_hold_requires_parolee(client):
     district = District.objects.create(number=12, name="Hold Required District")
     provider = Provider.objects.create(name="Provider Hold Required")
-    case_manager = User.objects.create_user(
-        username="case_mgr_hold_required",
+    staff_user = User.objects.create_user(
+        username="staff_hold_required",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
         district=district,
     )
     facility = Facility.objects.create(
@@ -218,7 +217,7 @@ def test_request_hold_requires_parolee(client):
     )
     bed = Bed.objects.create(facility=facility, label="Bed Hold Required", status=Bed.Status.AVAILABLE)
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
     resp = client.post(f"/api/beds/{bed.id}/hold/", data={}, content_type="application/json")
 
     assert resp.status_code == 400

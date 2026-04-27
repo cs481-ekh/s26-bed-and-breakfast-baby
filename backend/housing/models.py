@@ -12,31 +12,30 @@ from .encryption import EncryptedField, EncryptedCharField
 class User(AbstractUser):
     """
     Extended user model supporting role-based dashboards.
-    Roles: Admin, Case Manager, Provider Staff
+    Roles: Admin, IDOC Staff, Provider Staff
     """
 
     class Role(models.TextChoices):
         ADMIN = "admin", "Administrator"
-        CASE_MANAGER = "case_manager", "Case Manager"
-        PAROLE_OFFICER = "parole_officer", "Parole Officer"
+        IDOC_STAFF = "idoc_staff", "IDOC Staff"
         PROVIDER = "provider", "Housing Provider"
 
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
-        default=Role.CASE_MANAGER,
+        default=Role.IDOC_STAFF,
     )
     # Contact phone number - encrypted
     phone = EncryptedCharField(max_length=300, blank=True)
 
-    # Case managers belong to a judicial district
+    # IDOC staff belong to a judicial district
     district = models.ForeignKey(
         "District",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="staff",
-        help_text="Judicial district (for case managers)",
+        help_text="Judicial district (for IDOC staff)",
     )
 
     # Provider staff are linked to a housing provider
@@ -62,7 +61,7 @@ class Invite(models.Model):
     role = models.CharField(
         max_length=20,
         choices=User.Role.choices,
-        default=User.Role.CASE_MANAGER,
+        default=User.Role.IDOC_STAFF,
     )
     token = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -98,7 +97,7 @@ class Invite(models.Model):
 class District(models.Model):
     """
     Idaho's seven judicial districts.
-    Used for filtering beds and associating case managers.
+    Used for filtering beds and associating IDOC staff.
     """
     number = models.PositiveSmallIntegerField(unique=True)
     name = models.CharField(max_length=100)
@@ -323,7 +322,7 @@ class Parolee(models.Model):
 
 class Hold(models.Model):
     """
-    A temporary hold placed on a bed by a case manager while
+    A temporary hold placed on a bed by IDOC staff while
     administrative paperwork is being processed.
     """
 

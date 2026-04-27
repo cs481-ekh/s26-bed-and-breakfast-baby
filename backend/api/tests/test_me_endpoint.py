@@ -12,9 +12,9 @@ def test_me_endpoint_requires_authentication(client):
 @pytest.mark.django_db
 def test_me_endpoint_returns_current_user_role(client):
     user = User.objects.create_user(
-        username="po_user",
+        username="staff_user",
         password="testpass123",
-        role=User.Role.PAROLE_OFFICER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(user)
@@ -22,5 +22,5 @@ def test_me_endpoint_returns_current_user_role(client):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["username"] == "po_user"
-    assert body["role"] == "parole_officer"
+    assert body["username"] == "staff_user"
+    assert body["role"] == "idoc_staff"

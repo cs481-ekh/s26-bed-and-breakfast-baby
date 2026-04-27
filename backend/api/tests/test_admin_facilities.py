@@ -5,13 +5,13 @@ from housing.models import Bed, District, Facility, Provider, User
 
 @pytest.mark.django_db
 def test_admin_provider_and_district_lists_require_admin_role(client):
-    case_manager = User.objects.create_user(
-        username="cm_facilities_read",
+    staff_user = User.objects.create_user(
+        username="staff_facilities_read",
         password="testpass123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
-    client.force_login(case_manager)
+    client.force_login(staff_user)
 
     providers_response = client.get("/api/admin/providers/")
     districts_response = client.get("/api/admin/districts/")

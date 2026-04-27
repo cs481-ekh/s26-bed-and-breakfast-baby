@@ -23,7 +23,7 @@ def test_change_password_updates_password_and_invalidates_old_credentials(client
     user = User.objects.create_user(
         username="settings_user",
         password="old-pass-123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(user)
@@ -64,7 +64,7 @@ def test_change_password_rejects_wrong_current_password(client):
     user = User.objects.create_user(
         username="settings_user2",
         password="old-pass-123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(user)
@@ -88,7 +88,7 @@ def test_change_password_rejects_mismatch_confirmation(client):
     user = User.objects.create_user(
         username="settings_user3",
         password="old-pass-123",
-        role=User.Role.CASE_MANAGER,
+        role=User.Role.IDOC_STAFF,
     )
 
     client.force_login(user)
