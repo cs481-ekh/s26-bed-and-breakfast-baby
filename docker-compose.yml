@@ -16,6 +16,8 @@ services:
   backend:
     build:
       context: ./backend
+    ports:
+      - "${HOST_PORT_API:-8000}:8000"
     environment:
       SECRET_KEY: ${SECRET_KEY:-django-insecure-dev-key-change-in-production}
       DEBUG: ${DEBUG:-True}
@@ -25,7 +27,8 @@ services:
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-5432}
       DJANGO_SETTINGS_MODULE: config.settings
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,frontend,sdp.boisestate.edu}
+      APP_ROOT: ${APP_ROOT:-}
     depends_on:
       db:
         condition: service_healthy
@@ -33,4 +36,9 @@ services:
   frontend:
     build:
       context: ./frontend
+    ports:
+      - "${HOST_PORT:-5173}:5173"
+    environment:
+      VITE_PUBLIC_URL: ${VITE_PUBLIC_URL:-}
+      VITE_API_ROOT: ${VITE_API_ROOT:-}
     command: ["bash", "-lc", "node -v"]

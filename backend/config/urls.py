@@ -16,8 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 
-urlpatterns = [
+# Site patterns (before APP_ROOT prefix)
+site_patterns = [
     path('admin/', admin.site.urls),
     path("api/", include("api.urls")),
 ]
+
+# Apply APP_ROOT prefix to all URL patterns
+if settings.APP_ROOT:
+    urlpatterns = [
+        path(settings.APP_ROOT.rstrip('/'), include(site_patterns)),
+    ]
+else:
+    urlpatterns = site_patterns

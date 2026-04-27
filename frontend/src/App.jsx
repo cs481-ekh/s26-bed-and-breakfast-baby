@@ -166,8 +166,9 @@ function SettingsRoutePage() {
 }
 
 export default function App() {
+  const publicUrl = import.meta.env.VITE_PUBLIC_URL || '';
   return (
-    <Router>
+    <Router basename={publicUrl}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
