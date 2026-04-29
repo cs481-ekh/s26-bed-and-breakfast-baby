@@ -213,6 +213,58 @@
   font-size: 0.86rem;
 }
 
+.admin-form textarea {
+  width: 100%;
+  min-height: 90px;
+  box-sizing: border-box;
+  border: 1px solid #c9d6e6;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.86rem;
+  resize: vertical;
+}
+
+.admin-providers-list {
+  margin-bottom: 1rem;
+}
+
+.admin-provider-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.25rem;
+}
+
+.admin-provider-table th,
+.admin-provider-table td {
+  border: 1px solid #d8e1ec;
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.86rem;
+}
+
+.admin-provider-table th {
+  background: #f5f8ff;
+  color: #1d2c44;
+  font-weight: 700;
+}
+
+.admin-provider-subtext {
+  margin-top: 0.15rem;
+  color: #4f617d;
+  font-size: 0.82rem;
+}
+
+.admin-provider-multiline {
+  white-space: pre-wrap;
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+
+.admin-providers-create-title {
+  margin: 0.75rem 0 0.25rem;
+}
+
 .admin-primary-button,
 .admin-secondary-button,
 .admin-danger-button {

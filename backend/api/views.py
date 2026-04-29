@@ -318,7 +318,7 @@ class SignUpView(APIView):
             errors["first_name"] = "First name is required."
         if not last_name:
             errors["last_name"] = "Last name is required."
-        if not employee_id:
+        if role != User.Role.PROVIDER and not employee_id:
             errors["employee_id"] = "Employee ID is required."
         if not email:
             errors["email"] = "Email is required."
@@ -403,6 +403,8 @@ class ValidateInviteView(APIView):
                 {
                     "email": invite.email,
                     "role": invite.role,
+                    "provider_id": invite.provider_id,
+                    "provider_name": invite.provider.name if invite.provider else None,
                     "expires_at": invite.expires_at.isoformat(),
                 },
                 status=status.HTTP_200_OK
@@ -461,7 +463,7 @@ class SignUpWithInviteView(APIView):
             errors["first_name"] = "First name is required."
         if not last_name:
             errors["last_name"] = "Last name is required."
-        if not employee_id:
+        if invite.role != User.Role.PROVIDER and not employee_id:
             errors["employee_id"] = "Employee ID is required."
         if not password:
             errors["password"] = "Password is required."
@@ -488,6 +490,7 @@ class SignUpWithInviteView(APIView):
             password=password,
             email=invite.email,
             role=invite.role,
+            provider=invite.provider if invite.role == User.Role.PROVIDER else None,
         )
         
         # Mark invite as used
@@ -695,6 +698,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         email = (request.data.get('email') or '').strip()
         role = (request.data.get('role') or User.Role.IDOC_STAFF).strip()
+        provider_id = request.data.get("provider_id")
         
         if not email:
             return Response(
@@ -708,6 +712,21 @@ class UserViewSet(viewsets.ModelViewSet):
                 {"error": "Invalid role specified."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        provider = None
+        if role == User.Role.PROVIDER:
+            if not provider_id:
+                return Response(
+                    {"error": "provider_id is required for provider invites."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                provider = Provider.objects.get(pk=provider_id, is_active=True)
+            except Provider.DoesNotExist:
+                return Response(
+                    {"error": "A valid active provider is required for provider invites."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         # Check if user already exists
         if User.objects.filter(username=email).exists():
@@ -726,7 +745,8 @@ class UserViewSet(viewsets.ModelViewSet):
             role=role,
             token=token,
             expires_at=expires_at,
-            created_by=request.user if request.user.is_authenticated else None
+            created_by=request.user if request.user.is_authenticated else None,
+            provider=provider,
         )
         
         logger.info(f"Invite created for {email} with role {role} by {request.user.username}")
@@ -923,11 +943,94 @@ class AdminProviderListView(APIView):
                 {
                     "provider_id": provider.id,
                     "provider_name": provider.name,
+                    "contact_name": provider.contact_name,
+                    "contact_phone": provider.contact_phone,
+                    "contact_email": provider.contact_email,
+                    "address": getattr(provider, "address", None),
+                    "notes": getattr(provider, "notes", None),
+                    "website": provider.website,
+                    "district_id": provider.district_id,
+                    "district_number": provider.district.number if provider.district else None,
+                    "district_name": provider.district.name if provider.district else None,
                     "is_active": provider.is_active,
                 }
                 for provider in providers
             ],
             status=status.HTTP_200_OK,
+        )
+
+
+class AdminProviderCreateView(APIView):
+    """Create a new housing provider (admin only)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        admin_error = _require_admin_user(request)
+        if admin_error is not None:
+            return admin_error
+
+        name = (request.data.get("name") or "").strip()
+        contact_name = (request.data.get("contact_name") or "").strip()
+        contact_phone = (request.data.get("contact_phone") or "").strip()
+        contact_email = (request.data.get("contact_email") or "").strip()
+        address = (request.data.get("address") or "").strip()
+        district_id = request.data.get("district_id")
+        notes = (request.data.get("notes") or "").strip()
+        website = (request.data.get("website") or "").strip()
+
+        if not name:
+            return Response({"error": "name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not contact_name:
+            return Response({"error": "contact_name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not contact_phone:
+            return Response({"error": "contact_phone is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not contact_email:
+            return Response({"error": "contact_email is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not district_id:
+            return Response({"error": "district_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not address:
+            return Response({"error": "address is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if Provider.objects.filter(name__iexact=name).exists():
+            return Response({"error": "A provider with this name already exists."}, status=status.HTTP_409_CONFLICT)
+
+        try:
+            district = District.objects.get(pk=district_id)
+        except District.DoesNotExist:
+            return Response({"error": "District not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        provider = Provider.objects.create(
+            name=name,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            address=address,
+            notes=notes,
+            district=district,
+            website=website,
+            is_active=True,
+        )
+
+        return Response(
+            {
+                "message": f"Created provider {provider.name}.",
+                "provider": {
+                    "provider_id": provider.id,
+                    "provider_name": provider.name,
+                    "is_active": provider.is_active,
+                    "contact_name": provider.contact_name,
+                    "contact_email": provider.contact_email,
+                    "contact_phone": provider.contact_phone,
+                    "address": provider.address,
+                    "notes": provider.notes,
+                    "district_id": provider.district_id,
+                    "district_number": provider.district.number if provider.district else None,
+                    "district_name": provider.district.name if provider.district else None,
+                    "website": provider.website,
+                },
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 
