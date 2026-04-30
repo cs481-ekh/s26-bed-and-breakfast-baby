@@ -335,7 +335,7 @@ def test_provider_hold_can_be_approved(client):
         parolee=parolee,
         placed_by=staff_user,
         reason="Awaiting provider review",
-        expires_at=timezone.now() + timedelta(hours=48),
+        expires_at=timezone.now() + timedelta(days=7),
     )
 
     client.force_login(provider_user)
@@ -389,7 +389,7 @@ def test_provider_hold_can_be_denied(client):
         parolee=parolee,
         placed_by=staff_user,
         reason="Testing denial",
-        expires_at=timezone.now() + timedelta(hours=48),
+        expires_at=timezone.now() + timedelta(days=7),
     )
 
     client.force_login(provider_user)
