@@ -1203,7 +1203,7 @@ class BedHoldRequestView(APIView):
             parolee=parolee,
             placed_by=request_user,
             reason="Testing hold request from main dashboard",
-            expires_at=timezone.now() + timedelta(hours=48),
+            expires_at=timezone.now() + timedelta(days=7),
         )
 
         bed.notes = f"{bed.notes}\n{hold_note}".strip() if bed.notes else hold_note
@@ -1692,7 +1692,7 @@ class ProviderHoldListView(APIView):
                 parolee=parolee,
                 placed_by=request_user,
                 reason=hold_reason,
-                expires_at=timezone.now() + timedelta(hours=48),
+                expires_at=timezone.now() + timedelta(days=7),
             )
 
             _append_bed_note(
