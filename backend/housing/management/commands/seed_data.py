@@ -257,15 +257,15 @@ class Command(BaseCommand):
         hold_bed.status = Bed.Status.HELD
         hold_bed.save()
         cm = User.objects.filter(role=User.Role.IDOC_STAFF).first()
-            hold, _ = Hold.objects.get_or_create(
-                bed=hold_bed,
-                parolee=parolees[1],
-                defaults={
-                    "placed_by": cm,
-                    "reason": "Awaiting program enrollment paperwork",
-                    "expires_at": timezone.now() + timedelta(days=7),
-                },
-            )
+        hold, _ = Hold.objects.get_or_create(
+            bed=hold_bed,
+            parolee=parolees[1],
+            defaults={
+                "placed_by": cm,
+                "reason": "Awaiting program enrollment paperwork",
+                "expires_at": timezone.now() + timedelta(days=7),
+            },
+        )
         Hold.objects.filter(pk=hold.pk).update(created_at=random_past_datetime(min_days_ago=1, max_days_ago=180))
 
         # Create a waitlist entry
