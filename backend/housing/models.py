@@ -73,6 +73,14 @@ class Invite(models.Model):
         null=True,
         related_name="created_invites",
     )
+    provider = models.ForeignKey(
+        "Provider",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invites",
+        help_text="Linked provider when invite role is housing provider",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -116,9 +124,20 @@ class Provider(models.Model):
     """
     name = models.CharField(max_length=200)
     contact_name = models.CharField(max_length=150, blank=True)
+    district = models.ForeignKey(
+        District,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="providers",
+    )
     # Contact information - encrypted for security
     contact_email = EncryptedCharField(max_length=1000, blank=True)
     contact_phone = EncryptedCharField(max_length=300, blank=True)
+    # Provider home address - encrypted for security
+    address = EncryptedField(blank=True, null=True)
+    # Extra admin notes about provider - encrypted for security
+    notes = EncryptedField(blank=True, null=True)
     website = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

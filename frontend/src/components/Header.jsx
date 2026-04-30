@@ -51,7 +51,6 @@ export default function Header() {
   // Determine current page to highlight active link
   const isMainDashboard = location.pathname === '/main-dashboard' || location.pathname === '/main-dashboard.html';
   const isAdminDashboard = location.pathname.includes('admin');
-  const isProviderDashboard = location.pathname === '/provider-dashboard';
 
   return (
     <header className="app-header">
@@ -77,15 +76,6 @@ export default function Header() {
               onClick={() => window.location.assign('/admin')}
             >
               Admin Dashboard
-            </button>
-          )}
-          {role === 'admin' && (
-            <button
-              className={`nav-link ${isProviderDashboard ? 'active' : ''}`}
-              onClick={() => window.location.assign('/provider-dashboard')}
-            >
-              Housing Provider
-              <span className="nav-test-badge">Test Quick Link</span>
             </button>
           )}
         </nav>

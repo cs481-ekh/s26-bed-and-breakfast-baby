@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import UserTable from "./user_table";
 import ManageClientsTable from "./manage_clients_table";
 import ManageFacilitiesTable from "./manage_facilities_table";
@@ -23,9 +23,45 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
 
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteRole, setInviteRole] = useState("idoc_staff");
+    const [inviteProviderId, setInviteProviderId] = useState("");
     const [inviteLink, setInviteLink] = useState("");
     const [inviteMessage, setInviteMessage] = useState("");
     const [copyFeedback, setCopyFeedback] = useState("");
+    const [providers, setProviders] = useState([]);
+    const [districts, setDistricts] = useState([]);
+
+    const [providerName, setProviderName] = useState("");
+    const [providerContactName, setProviderContactName] = useState("");
+    const [providerContactEmail, setProviderContactEmail] = useState("");
+    const [providerContactPhone, setProviderContactPhone] = useState("");
+    const [providerDistrictId, setProviderDistrictId] = useState("");
+    const [providerAddress, setProviderAddress] = useState("");
+    const [providerNotes, setProviderNotes] = useState("");
+    const [providerWebsite, setProviderWebsite] = useState("");
+    const [providerMessage, setProviderMessage] = useState("");
+
+    const loadProviders = async () => {
+        const { response, payload } = await apiJson("/api/admin/providers/");
+        if (!response.ok) {
+            throw new Error(payload?.error || "Could not load providers.");
+        }
+        setProviders(Array.isArray(payload) ? payload : []);
+    };
+
+    const loadDistricts = async () => {
+        const { response, payload } = await apiJson("/api/admin/districts/");
+        if (!response.ok) {
+            throw new Error(payload?.error || "Could not load districts.");
+        }
+        setDistricts(Array.isArray(payload) ? payload : []);
+    };
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        Promise.all([loadProviders(), loadDistricts()]).catch(() => {
+            setInviteMessage("Could not load providers/districts.");
+        });
+    }, []);
 
     const refreshUsers = () => {
         userTableRef.current?.fetchUsers?.();
@@ -144,6 +180,10 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
             setInviteMessage("Enter an email address first.");
             return;
         }
+        if (inviteRole === "provider" && !inviteProviderId) {
+            setInviteMessage("Select which housing provider this account should be linked to.");
+            return;
+        }
 
         try {
             const { response, payload } = await apiJson("/api/users/create-invite/", {
@@ -152,6 +192,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                 body: JSON.stringify({
                     email: inviteEmail.trim(),
                     role: inviteRole,
+                    provider_id: inviteRole === "provider" ? Number(inviteProviderId) : null,
                 }),
             });
 
@@ -166,6 +207,71 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
             );
         } catch {
             setInviteMessage("Failed to create invite. Please try again.");
+        }
+    };
+
+    const handleCreateProvider = async (event) => {
+        event.preventDefault();
+        setProviderMessage("");
+
+        if (!providerName.trim()) {
+            setProviderMessage("Provider name is required.");
+            return;
+        }
+        if (!providerContactName.trim()) {
+            setProviderMessage("Contact name is required.");
+            return;
+        }
+        if (!providerContactPhone.trim()) {
+            setProviderMessage("Contact phone is required.");
+            return;
+        }
+        if (!providerContactEmail.trim()) {
+            setProviderMessage("Contact email is required.");
+            return;
+        }
+        if (!providerDistrictId) {
+            setProviderMessage("District is required.");
+            return;
+        }
+        if (!providerAddress.trim()) {
+            setProviderMessage("Address is required.");
+            return;
+        }
+
+        try {
+            const { response, payload } = await apiJson("/api/admin/providers/create/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: providerName.trim(),
+                    contact_name: providerContactName.trim(),
+                    contact_email: providerContactEmail.trim(),
+                    contact_phone: providerContactPhone.trim(),
+                    district_id: Number(providerDistrictId),
+                    address: providerAddress.trim(),
+                    notes: providerNotes.trim(),
+                    website: providerWebsite.trim(),
+                }),
+            });
+
+            if (!response.ok) {
+                setProviderMessage(payload?.error || "Could not create provider.");
+                return;
+            }
+
+            setProviderMessage(payload?.message || "Provider created.");
+            setProviderName("");
+            setProviderContactName("");
+            setProviderContactEmail("");
+            setProviderContactPhone("");
+            setProviderDistrictId("");
+            setProviderAddress("");
+            setProviderNotes("");
+            setProviderWebsite("");
+            await loadProviders();
+        } catch {
+            setProviderMessage("Could not create provider.");
         }
     };
 
@@ -198,10 +304,17 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                     </button>
                     <button
                         type="button"
-                        className={`admin-nav-button ${activePanel === "create-account" ? "active" : ""}`}
-                        onClick={() => setActivePanel("create-account")}
+                        className={`admin-nav-button ${activePanel === "create-user-account" ? "active" : ""}`}
+                        onClick={() => setActivePanel("create-user-account")}
                     >
-                        Create Account
+                        Create User Account
+                    </button>
+                    <button
+                        type="button"
+                        className={`admin-nav-button ${activePanel === "providers" ? "active" : ""}`}
+                        onClick={() => setActivePanel("providers")}
+                    >
+                        Providers
                     </button>
                     <button
                         type="button"
@@ -303,9 +416,9 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                             )}
                         </div>
                     </div>
-                ) : activePanel === "create-account" ? (
+                ) : activePanel === "create-user-account" ? (
                     <div className="admin-panel-card admin-create-card">
-                        <h2>Create Account</h2>
+                        <h2>Create User Account</h2>
                         <p>
                             Generate a secure invitation link for a new user. The link will be valid for 3 days and can only be used once.
                             Copy the generated link and send it to the user via email.
@@ -326,7 +439,13 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                             <select
                                 id="invite-role"
                                 value={inviteRole}
-                                onChange={(event) => setInviteRole(event.target.value)}
+                                onChange={(event) => {
+                                    const nextRole = event.target.value;
+                                    setInviteRole(nextRole);
+                                    if (nextRole !== "provider") {
+                                        setInviteProviderId("");
+                                    }
+                                }}
                             >
                                 {ROLES.map((role) => (
                                     <option key={role.value} value={role.value}>
@@ -334,6 +453,26 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                                     </option>
                                 ))}
                             </select>
+                            {inviteRole === "provider" && (
+                                <>
+                                    <label htmlFor="invite-provider">Housing Provider</label>
+                                    <select
+                                        id="invite-provider"
+                                        value={inviteProviderId}
+                                        onChange={(event) => setInviteProviderId(event.target.value)}
+                                        required
+                                    >
+                                        <option value="">Select a provider</option>
+                                        {providers
+                                            .filter((provider) => provider.is_active)
+                                            .map((provider) => (
+                                                <option key={provider.provider_id} value={provider.provider_id}>
+                                                    {provider.provider_name}
+                                                </option>
+                                            ))}
+                                    </select>
+                                </>
+                            )}
 
                             <button type="submit" className="admin-primary-button">Generate Link</button>
                         </form>
@@ -356,6 +495,142 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
                                 <p>{inviteLink}</p>
                             </div>
                         )}
+                    </div>
+                ) : activePanel === "providers" ? (
+                    <div className="admin-panel-card admin-create-card">
+                        <div className="admin-panel-header">
+                            <h2>Providers</h2>
+                            <div className="admin-header-actions">
+                                <button type="button" className="admin-secondary-button" onClick={loadProviders}>
+                                    Refresh Providers
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="admin-providers-list">
+                            <table className="admin-provider-table">
+                                <thead>
+                                    <tr>
+                                        <th>Provider</th>
+                                        <th>Contact</th>
+                                        <th>District</th>
+                                        <th>Address</th>
+                                        <th>Notes</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {providers.map((provider) => (
+                                        <tr key={provider.provider_id}>
+                                            <td>
+                                                <strong>{provider.provider_name}</strong>
+                                                <div className="admin-provider-subtext">{provider.contact_name || ""}</div>
+                                            </td>
+                                            <td>
+                                                <div className="admin-provider-subtext">{provider.contact_phone || ""}</div>
+                                                <div className="admin-provider-subtext">{provider.contact_email || ""}</div>
+                                            </td>
+                                            <td>
+                                                {provider.district_number ? `${provider.district_number} - ${provider.district_name || ""}` : (provider.district_name || "")}
+                                            </td>
+                                            <td className="admin-provider-multiline">{provider.address || ""}</td>
+                                            <td className="admin-provider-multiline">{provider.notes || ""}</td>
+                                            <td>{provider.is_active ? "Active" : "Inactive"}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3 className="admin-providers-create-title">Create Provider</h3>
+                        <p>Create a new housing provider organization (not a user account).</p>
+
+                        <form onSubmit={handleCreateProvider} className="admin-form admin-create-form">
+                            <label htmlFor="provider-name">Provider Name</label>
+                            <input
+                                id="provider-name"
+                                type="text"
+                                value={providerName}
+                                onChange={(event) => setProviderName(event.target.value)}
+                                placeholder="North Star Housing"
+                                required
+                            />
+
+                            <label htmlFor="provider-contact-name">Contact Name</label>
+                            <input
+                                id="provider-contact-name"
+                                type="text"
+                                value={providerContactName}
+                                onChange={(event) => setProviderContactName(event.target.value)}
+                                placeholder="Jane Smith"
+                                required
+                            />
+
+                            <label htmlFor="provider-contact-email">Contact Email</label>
+                            <input
+                                id="provider-contact-email"
+                                type="email"
+                                value={providerContactEmail}
+                                onChange={(event) => setProviderContactEmail(event.target.value)}
+                                placeholder="contact@provider.org"
+                                required
+                            />
+
+                            <label htmlFor="provider-contact-phone">Contact Phone</label>
+                            <input
+                                id="provider-contact-phone"
+                                type="text"
+                                value={providerContactPhone}
+                                onChange={(event) => setProviderContactPhone(event.target.value)}
+                                placeholder="(208) 555-0142"
+                                required
+                            />
+
+                            <label htmlFor="provider-district">District</label>
+                            <select
+                                id="provider-district"
+                                value={providerDistrictId}
+                                onChange={(event) => setProviderDistrictId(event.target.value)}
+                                required
+                            >
+                                <option value="">Select a district</option>
+                                {districts.map((district) => (
+                                    <option key={district.district_id} value={district.district_id}>
+                                        {district.district_number} - {district.district_name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <label htmlFor="provider-address">Home Address</label>
+                            <textarea
+                                id="provider-address"
+                                value={providerAddress}
+                                onChange={(event) => setProviderAddress(event.target.value)}
+                                placeholder="123 Main St, City, ID 83701"
+                                required
+                            />
+
+                            <label htmlFor="provider-notes">Notes (optional)</label>
+                            <textarea
+                                id="provider-notes"
+                                value={providerNotes}
+                                onChange={(event) => setProviderNotes(event.target.value)}
+                                placeholder="Any extra notes about this provider..."
+                            />
+
+                            <label htmlFor="provider-website">Website (optional)</label>
+                            <input
+                                id="provider-website"
+                                type="url"
+                                value={providerWebsite}
+                                onChange={(event) => setProviderWebsite(event.target.value)}
+                                placeholder="https://provider.org"
+                            />
+
+                            <button type="submit" className="admin-primary-button">Create Provider</button>
+                        </form>
+
+                        {providerMessage && <p className="admin-inline-message">{providerMessage}</p>}
                     </div>
                 ) : activePanel === "manage-clients" ? (
                     <div className="admin-panel-card admin-create-card">

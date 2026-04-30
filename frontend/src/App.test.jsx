@@ -40,10 +40,16 @@ describe("App", () => {
       if (url === "/api/users/create-invite/") {
         return jsonResponse({
           message: "Invite created for new.user@example.com.",
-          invite_link: "http://localhost:3000/register?token=test-token-123",
+          invite_link: "http://localhost:3000/register#test-token-123",
           expires_at: "2026-04-22T00:00:00Z",
           token: "test-token-123"
         }, 201);
+      }
+
+      if (url === "/api/admin/providers/") {
+        return jsonResponse([
+          { provider_id: 10, provider_name: "Provider A", is_active: true },
+        ], 200);
       }
 
       return jsonResponse({}, 200);
@@ -61,14 +67,15 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: /admin dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /users/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create user account/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /providers/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^users$/i })).toBeInTheDocument();
   });
 
-  test("create account generates an invite link", async () => {
+  test("create user account generates an invite link", async () => {
     render(<App />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /create account/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /create user account/i }));
     fireEvent.change(screen.getByLabelText(/^email$/i), {
       target: { value: "new.user@example.com" },
     });
@@ -79,7 +86,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText(/\/register\?token=/i)).toBeInTheDocument();
+      expect(screen.getByText(/\/register#/i)).toBeInTheDocument();
     });
   });
 });

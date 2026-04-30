@@ -20,6 +20,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const isProviderInvite = inviteData?.role === "provider";
 
   // Validate token on component mount
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function RegisterPage() {
     const errors = {};
     if (!firstName.trim()) errors.first_name = "First name is required.";
     if (!lastName.trim()) errors.last_name = "Last name is required.";
-    if (!employeeId.trim()) errors.employee_id = "Employee ID is required.";
+    if (!isProviderInvite && !employeeId.trim()) errors.employee_id = "Employee ID is required.";
     if (!password) errors.password = "Password is required.";
     if (!confirmPassword) errors.confirm_password = "Please confirm your password.";
     if (password && confirmPassword && password !== confirmPassword) {
@@ -176,16 +177,20 @@ export default function RegisterPage() {
         />
         {formErrors.last_name && <p className="error-message">{formErrors.last_name}</p>}
 
-        <label htmlFor="employee-id">Employee ID</label>
-        <input
-          id="employee-id"
-          type="text"
-          value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          placeholder="EMP001"
-          required
-        />
-        {formErrors.employee_id && <p className="error-message">{formErrors.employee_id}</p>}
+        {!isProviderInvite && (
+          <>
+            <label htmlFor="employee-id">Employee ID</label>
+            <input
+              id="employee-id"
+              type="text"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+              placeholder="EMP001"
+              required
+            />
+            {formErrors.employee_id && <p className="error-message">{formErrors.employee_id}</p>}
+          </>
+        )}
 
         <label htmlFor="password">Password</label>
         <input
