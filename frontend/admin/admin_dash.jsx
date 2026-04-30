@@ -57,6 +57,7 @@ export default function AdminDash({ onRemoveUser, onDisableUser, onEnableUser, o
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         Promise.all([loadProviders(), loadDistricts()]).catch(() => {
             setInviteMessage("Could not load providers/districts.");
         });
